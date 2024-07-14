@@ -7,8 +7,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/darklight-interactive/com.darklight.unityext.core"
-  },
-  "dependencies": {
-    "com.dbrizov.naughtyattributes": "https://github.com/dbrizov/NaughtyAttributes.git"
   }
 }
