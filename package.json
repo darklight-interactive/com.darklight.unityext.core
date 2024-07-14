@@ -2,6 +2,10 @@
   "name": "com.darklight.unityext.core",
   "version": "0.1.0",
   "displayName": "Darklight UnityExt Core Library",
-  "description": "The Core Unity Extenstion Library for Darklight Interactive Studios",
-  "unity": "2023.2"
+  "description": "The Core Unity Extension Library for Darklight Interactive Studios",
+  "unity": "2023.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/darklight-interactive/com.darklight.unityext.core"
+  }
 }
