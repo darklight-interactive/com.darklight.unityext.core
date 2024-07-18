@@ -2,7 +2,7 @@
     "name": "DefaultInputActions",
     "maps": [
         {
-            "name": "DefaultKeyboard",
+            "name": "Default",
             "id": "3f9bcd6e-e740-4129-9fb4-a29172ff848a",
             "actions": [
                 {
@@ -49,7 +49,7 @@
                     "path": "<Keyboard>/z",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "PrimaryInteract",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -60,7 +60,18 @@
                     "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
+                    "action": "PrimaryInteract",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d57e6ed7-ddf4-481f-955d-a3f5e158c2c3",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "PrimaryInteract",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -71,7 +82,18 @@
                     "path": "<Keyboard>/x",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
+                    "action": "SecondaryInteract",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d6d859ee-fef1-493c-8f12-edcc548d4367",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "SecondaryInteract",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -93,7 +115,7 @@
                     "path": "<Keyboard>/upArrow",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -104,7 +126,7 @@
                     "path": "<Keyboard>/downArrow",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -115,7 +137,7 @@
                     "path": "<Keyboard>/leftArrow",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -126,7 +148,7 @@
                     "path": "<Keyboard>/rightArrow",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -148,7 +170,7 @@
                     "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -159,7 +181,7 @@
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -170,7 +192,7 @@
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -181,10 +203,21 @@
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "d5c6260d-79c4-4578-bad0-ac47f65f32fb",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "MoveInput",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
@@ -192,129 +225,47 @@
                     "path": "<Keyboard>/escape",
                     "interactions": "Tap",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Keyboard",
                     "action": "MenuButton",
                     "isComposite": false,
                     "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "DefaultController",
-            "id": "89246896-21ba-481b-9292-33c1c4560e6f",
-            "actions": [
-                {
-                    "name": "PrimaryInteract",
-                    "type": "Button",
-                    "id": "ac2e0611-8a73-46d8-bc08-fe9b72a3fc8b",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "SecondaryInteract",
-                    "type": "Button",
-                    "id": "bfdce821-be60-4b0e-8a26-ad02ba08de23",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "MoveInput",
-                    "type": "Value",
-                    "id": "c47c5ff9-c956-4758-a3aa-b66b81532f70",
-                    "expectedControlType": "Vector2",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
-                    "name": "MenuButton",
-                    "type": "Button",
-                    "id": "8ee7c2fd-697f-4914-b69b-563bf1843ebd",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "5feee0f9-a144-4cbf-834f-202fb4e3741f",
-                    "path": "<Gamepad>/buttonSouth",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "PrimaryInteract",
-                    "isComposite": false,
-                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "d2e47fe1-5b57-4349-9e83-324a19a7022c",
-                    "path": "<Gamepad>/buttonWest",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SecondaryInteract",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9e422df4-189a-41e8-a22d-c2bf716db4bb",
+                    "id": "16de712b-c840-4be4-b030-d8d170672ccc",
                     "path": "<Gamepad>/start",
-                    "interactions": "Tap",
+                    "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": "Gamepad",
                     "action": "MenuButton",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "fb273a32-675f-4090-bfe0-2a8795ec5405",
-                    "path": "<Gamepad>/leftStick",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "MoveInput",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                }
-            ]
-        },
-        {
-            "name": "DefaultTouch",
-            "id": "e4928cab-0728-44b7-b8cd-b078e2d19987",
-            "actions": [
-                {
-                    "name": "New action",
-                    "type": "Button",
-                    "id": "9db45468-e62b-4d00-aacc-f3cd89dc04ec",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
-            ],
-            "bindings": [
-                {
-                    "name": "",
-                    "id": "0f0c0837-cc40-4aa0-b6e6-392df238b390",
-                    "path": "",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "New action",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
             ]
         }
     ],
-    "controlSchemes": []
+    "controlSchemes": [
+        {
+            "name": "Keyboard",
+            "bindingGroup": "Keyboard",
+            "devices": [
+                {
+                    "devicePath": "<Keyboard>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        },
+        {
+            "name": "Gamepad",
+            "bindingGroup": "Gamepad",
+            "devices": [
+                {
+                    "devicePath": "<Gamepad>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
 }
