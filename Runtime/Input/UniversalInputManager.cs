@@ -3,6 +3,8 @@ using Darklight.UnityExt.Behaviour;
 
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Users;
+using System.Collections.Generic;
 
 namespace Darklight.UnityExt.Input
 {
@@ -24,6 +26,7 @@ namespace Darklight.UnityExt.Input
         // -------------- [[ SERIALIZED FIELDS ]] -------------- >>
         [SerializeField] private InputActionAsset _inputActionAsset;
         [SerializeField, ShowOnly] private InputType _deviceInputType;
+        [SerializeField, ShowOnly] private List<string> _connectedDevices;
         [SerializeField, ShowOnly] private Vector2 _moveInput;
         [SerializeField, ShowOnly] private bool _primaryInteract;
         [SerializeField, ShowOnly] private bool _secondaryInteract;
@@ -60,164 +63,103 @@ namespace Darklight.UnityExt.Input
         /// <summary> Event for the menu button input from the active device. </summary>
         public static event OnInput_Trigger OnMenuButton;
 
-        private void OnEnable()
+        void OnEnable()
         {
-            // Enable all input action maps
+            // Enable the input action asset
+            _inputActionAsset.Enable();
+
+            // Initialize all input action maps
             foreach (InputActionMap map in _inputActionAsset.actionMaps)
             {
-                map.Enable();
+                InitializeActionMap(map);
             }
 
-            // Subscribe to device change events
-            InputSystem.onDeviceChange += OnDeviceChange;
-
-            PrintAllConnectedDevices();
+            // Subscribe to device change event
+            InputUser.onChange += OnDeviceChange;
         }
 
-        private void OnDisable()
+        void OnDisable()
         {
-            // Unsubscribe from device change events
-            InputSystem.onDeviceChange -= OnDeviceChange;
+            // Disable the input action asset
+            _inputActionAsset.Disable();
 
             // Disable all input action maps
             foreach (InputActionMap map in _inputActionAsset.actionMaps)
             {
                 map.Disable();
             }
+
+            // Unsubscribe to device change event
+            InputUser.onChange -= OnDeviceChange;
         }
 
-        private void OnDeviceChange(InputDevice device, InputDeviceChange change)
+        private void OnDeviceChange(InputUser user, InputUserChange change, InputDevice device)
         {
-            if (change == InputDeviceChange.Added || change == InputDeviceChange.Removed || change == InputDeviceChange.ConfigurationChanged)
+            if (change == InputUserChange.ControlSchemeChanged || change == InputUserChange.DevicePaired || change == InputUserChange.DeviceUnpaired)
             {
-                UpdateControlScheme();
+                string currentDevice = device.displayName;
+                Debug.Log("Current input device: " + currentDevice);
             }
         }
-
-        private void UpdateControlScheme()
+        
+        private void OnDestroy()
         {
-            if (Keyboard.current != null && Keyboard.current.wasUpdatedThisFrame)
-            {
-                DeviceInputType = InputType.KEYBOARD;
-                _activeActionMap = _keyboardActionMap;
-            }
-            else if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
-            {
-                DeviceInputType = InputType.GAMEPAD;
-                _activeActionMap = _gamepadActionMap;
-            }
-            else if (Touchscreen.current != null && Touchscreen.current.wasUpdatedThisFrame)
-            {
-                DeviceInputType = InputType.TOUCH;
-                _activeActionMap = _touchActionMap;
-            }
-            else
-            {
-                DeviceInputType = InputType.NULL;
-            }
-
-            Debug.Log($"Control Scheme Changed to: {DeviceInputType}");
+            ResetInputEvents();
         }
 
         public override void Initialize()
         {
-            /*
-            if (DetectAndEnableInputDevice())
-            {
-                Debug.Log($"{Prefix}Found Input: {DeviceInputType}");
-            }
-            _inputActionAsset.Enable();
-            */
-        }
-
-        public void Reset()
-        {
-            ResetInputEvents();
-            _inputActionAsset.Disable();
-        }
-
-        public void OnDestroy()
-        {
-            ResetInputEvents();
+            // Print all connected devices
+            LoadAllConnectedDevices();
         }
 
         // Method to print all connected devices
-        private void PrintAllConnectedDevices()
+        private void LoadAllConnectedDevices()
         {
             Debug.Log("Connected Devices:");
-            foreach (var device in InputSystem.devices)
+            _connectedDevices = new List<string>();
+            int index = 0;
+            foreach (InputDevice device in InputSystem.devices)
             {
-                Debug.Log($"- {device.displayName} ({device.deviceId})");
+                Debug.Log($"- {device.displayName} ({device.deviceId}) :: index {index}");
+                index++;
+                _connectedDevices.Add(device.displayName);
             }
         }
 
         #region ---- [[ DEVICE INPUT DETECTION ]] ---->>
-        bool DetectAndEnableInputDevice()
-        {
-            DisableAllActionMaps();
-            return EnableDeviceBasedActionMap();
-        }
 
-        void DisableAllActionMaps()
+        bool InitializeActionMap(InputActionMap map)
         {
-            if (_keyboardActionMap != null) { _keyboardActionMap.Disable(); }
-            if (_gamepadActionMap != null) { _gamepadActionMap.Disable(); }
-            if (_touchActionMap != null) { _touchActionMap.Disable(); }
-        }
-
-        bool EnableDeviceBasedActionMap()
-        {
-            // Detect the device and enable the action map
-            switch (InputSystem.devices[0])
-            {
-                case Keyboard:
-                    _keyboardActionMap = _inputActionAsset.FindActionMap("DefaultKeyboard");
-                    return EnableActionMap(_keyboardActionMap, InputType.KEYBOARD);
-                case Gamepad:
-                    _gamepadActionMap = _inputActionAsset.FindActionMap("DefaultGamepad");
-                    return EnableActionMap(_gamepadActionMap, InputType.GAMEPAD);
-                case Touchscreen:
-                    _touchActionMap = _inputActionAsset.FindActionMap("DefaultTouch");
-                    return EnableActionMap(_touchActionMap, InputType.TOUCH);
-                default:
-                    Debug.LogError($"{Prefix}Could not find Input Type");
-                    return false;
-            }
-        }
-
-        bool EnableActionMap(InputActionMap map, InputType type)
-        {
-            DisableAllActionMaps();
-            if (map == null)
-            {
-                Debug.LogError($"{Prefix} Could not find Action Map for {type}");
-                return false;
-            }
-
             // Set the active action map
             _activeActionMap = map;
             _activeActionMap.Enable();
 
-            // Set the device input type
-            DeviceInputType = type;
+            try {
+                // Enable the actions
+                _moveInputAction.Enable();
+                _primaryButtonAction.Enable();
+                _secondaryButtonAction.Enable();
 
-            // Enable the actions
-            _moveInputAction.Enable();
-            _primaryButtonAction.Enable();
-            _secondaryButtonAction.Enable();
+                // << -- Set the input events -- >>
+                _moveInputAction.started += HandleMoveStarted;
+                _moveInputAction.performed += HandleMovePerformed;
+                _moveInputAction.canceled += HandleMoveCanceled;
 
-            // << -- Set the input events -- >>
-            _moveInputAction.started += HandleMoveStarted;
-            _moveInputAction.performed += HandleMovePerformed;
-            _moveInputAction.canceled += HandleMoveCanceled;
+                _primaryButtonAction.performed += HandlePrimaryPerformed;
+                _primaryButtonAction.canceled += HandlePrimaryCanceled;
 
-            _primaryButtonAction.performed += HandlePrimaryPerformed;
-            _primaryButtonAction.canceled += HandlePrimaryCanceled;
+                _secondaryButtonAction.performed += HandleSecondaryPerformed;
+                _secondaryButtonAction.canceled += HandleSecondaryCanceled;
 
-            _secondaryButtonAction.performed += HandleSecondaryPerformed;
-            _secondaryButtonAction.canceled += HandleSecondaryCanceled;
+                _menuButtonAction.started += HandleMenuStarted;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"{Prefix} {map.name} Error: {e.Message}");
+                return false;
+            }
 
-            _menuButtonAction.started += HandleMenuStarted;
             return true;
         }
 
@@ -244,8 +186,6 @@ namespace Darklight.UnityExt.Input
                 _secondaryButtonAction.performed -= HandleSecondaryPerformed;
                 _secondaryButtonAction.canceled -= HandleSecondaryCanceled;
             }
-
-            DisableAllActionMaps();
         }
         #endregion
 

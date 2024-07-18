@@ -201,12 +201,39 @@
         },
         {
             "name": "DefaultController",
-            "id": "32e4f255-5503-49ea-a402-0772370878a0",
+            "id": "89246896-21ba-481b-9292-33c1c4560e6f",
             "actions": [
                 {
-                    "name": "New action",
+                    "name": "PrimaryInteract",
                     "type": "Button",
-                    "id": "35d6464c-ec91-411d-ab4d-752357860556",
+                    "id": "ac2e0611-8a73-46d8-bc08-fe9b72a3fc8b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SecondaryInteract",
+                    "type": "Button",
+                    "id": "bfdce821-be60-4b0e-8a26-ad02ba08de23",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MoveInput",
+                    "type": "Value",
+                    "id": "c47c5ff9-c956-4758-a3aa-b66b81532f70",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "MenuButton",
+                    "type": "Button",
+                    "id": "8ee7c2fd-697f-4914-b69b-563bf1843ebd",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -216,12 +243,45 @@
             "bindings": [
                 {
                     "name": "",
-                    "id": "62a110e7-6d36-422a-99e8-9a0e7176bc86",
-                    "path": "",
+                    "id": "5feee0f9-a144-4cbf-834f-202fb4e3741f",
+                    "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "New action",
+                    "action": "PrimaryInteract",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d2e47fe1-5b57-4349-9e83-324a19a7022c",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SecondaryInteract",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9e422df4-189a-41e8-a22d-c2bf716db4bb",
+                    "path": "<Gamepad>/start",
+                    "interactions": "Tap",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MenuButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fb273a32-675f-4090-bfe0-2a8795ec5405",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MoveInput",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
