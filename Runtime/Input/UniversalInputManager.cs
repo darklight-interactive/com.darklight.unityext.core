@@ -60,13 +60,74 @@ namespace Darklight.UnityExt.Input
         /// <summary> Event for the menu button input from the active device. </summary>
         public static event OnInput_Trigger OnMenuButton;
 
+        private void OnEnable()
+        {
+            // Enable all input action maps
+            foreach (InputActionMap map in _inputActionAsset.actionMaps)
+            {
+                map.Enable();
+            }
+
+            // Subscribe to device change events
+            InputSystem.onDeviceChange += OnDeviceChange;
+
+            PrintAllConnectedDevices();
+        }
+
+        private void OnDisable()
+        {
+            // Unsubscribe from device change events
+            InputSystem.onDeviceChange -= OnDeviceChange;
+
+            // Disable all input action maps
+            foreach (InputActionMap map in _inputActionAsset.actionMaps)
+            {
+                map.Disable();
+            }
+        }
+
+        private void OnDeviceChange(InputDevice device, InputDeviceChange change)
+        {
+            if (change == InputDeviceChange.Added || change == InputDeviceChange.Removed || change == InputDeviceChange.ConfigurationChanged)
+            {
+                UpdateControlScheme();
+            }
+        }
+
+        private void UpdateControlScheme()
+        {
+            if (Keyboard.current != null && Keyboard.current.wasUpdatedThisFrame)
+            {
+                DeviceInputType = InputType.KEYBOARD;
+                _activeActionMap = _keyboardActionMap;
+            }
+            else if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
+            {
+                DeviceInputType = InputType.GAMEPAD;
+                _activeActionMap = _gamepadActionMap;
+            }
+            else if (Touchscreen.current != null && Touchscreen.current.wasUpdatedThisFrame)
+            {
+                DeviceInputType = InputType.TOUCH;
+                _activeActionMap = _touchActionMap;
+            }
+            else
+            {
+                DeviceInputType = InputType.NULL;
+            }
+
+            Debug.Log($"Control Scheme Changed to: {DeviceInputType}");
+        }
+
         public override void Initialize()
         {
+            /*
             if (DetectAndEnableInputDevice())
             {
                 Debug.Log($"{Prefix}Found Input: {DeviceInputType}");
             }
             _inputActionAsset.Enable();
+            */
         }
 
         public void Reset()
@@ -80,8 +141,17 @@ namespace Darklight.UnityExt.Input
             ResetInputEvents();
         }
 
-        #region ---- [[ DEVICE INPUT DETECTION ]] ---->>
+        // Method to print all connected devices
+        private void PrintAllConnectedDevices()
+        {
+            Debug.Log("Connected Devices:");
+            foreach (var device in InputSystem.devices)
+            {
+                Debug.Log($"- {device.displayName} ({device.deviceId})");
+            }
+        }
 
+        #region ---- [[ DEVICE INPUT DETECTION ]] ---->>
         bool DetectAndEnableInputDevice()
         {
             DisableAllActionMaps();
