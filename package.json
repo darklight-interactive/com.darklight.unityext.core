@@ -1,7 +1,12 @@
 {
   "name": "com.darklight.unityext.core",
-  "version": "0.1.2",
+  "version": "0.1.21",
   "displayName": "Darklight UnityExt Core Library",
   "description": "The Core Unity Extension Library for Darklight Interactive Studios",
-  "unity": "2023.2"
+  "unity": "2023.2",
+  "author": {
+    "name": "Sky Casey { skysfalling }",
+    "email": "skysfalling22@gmail.com",
+    "url": "https://www.skysfalling.online"
+  }
 }
