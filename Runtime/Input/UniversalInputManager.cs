@@ -97,8 +97,8 @@ namespace Darklight.UnityExt.Input
         {
             if (change == InputUserChange.ControlSchemeChanged || change == InputUserChange.DevicePaired || change == InputUserChange.DeviceUnpaired)
             {
-                string currentDevice = device.displayName;
-                Debug.Log("Current input device: " + currentDevice);
+                //string currentDevice = device.displayName;
+                //Debug.Log("Current input device: " + currentDevice);
             }
         }
         
@@ -116,13 +116,9 @@ namespace Darklight.UnityExt.Input
         // Method to print all connected devices
         private void LoadAllConnectedDevices()
         {
-            Debug.Log("Connected Devices:");
             _connectedDevices = new List<string>();
-            int index = 0;
             foreach (InputDevice device in InputSystem.devices)
             {
-                Debug.Log($"- {device.displayName} ({device.deviceId}) :: index {index}");
-                index++;
                 _connectedDevices.Add(device.displayName);
             }
         }
