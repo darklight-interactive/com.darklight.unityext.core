@@ -35,7 +35,7 @@ namespace Darklight.UnityExt.Game.Camera
         public enum CameraStateKey { DEFAULT, FOLLOW_TARGET, CLOSE_UP }
 
         #region State Machine ============================================== >>>>
-        public StateMachine _stateMachine;
+        protected StateMachine stateMachine { get; private set; }
 
         public class StateMachine : FiniteStateMachine<CameraStateKey>
         {
@@ -75,8 +75,8 @@ namespace Darklight.UnityExt.Game.Camera
         {
             base.Update();
 
-            if (_stateMachine != null)
-                _stateMachine.Step();
+            if (stateMachine != null)
+                stateMachine.Step();
         }
     }
 }
