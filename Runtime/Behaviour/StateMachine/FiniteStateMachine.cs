@@ -144,7 +144,7 @@ namespace Darklight.UnityExt.Behaviour
             if (currentFiniteState != null) { currentFiniteState.Exit(); }
 
             // Check if the state exists
-            if (possibleStates.ContainsKey(state))
+            if (possibleStates != null && possibleStates.Count > 0 && possibleStates.ContainsKey(state))
             {
                 // Enter the new state
                 currentFiniteState = possibleStates[state];
