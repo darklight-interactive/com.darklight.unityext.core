@@ -82,8 +82,8 @@ namespace Darklight.UnityExt.Game.Camera
         // this is instead of including _distanceX
 
         [Space(10), Header("Distance")]
-        [SerializeField, Range(-50, 50)] private float _distanceY = 0f; // distance from the target on the Y axis
-        [SerializeField, Range(0, 100)] private float _distanceZ = 10f; // distance from the target on the Z axis
+        [SerializeField, Range(-3000, 3000)] private float _distanceY = 0f; // distance from the target on the Y axis
+        [SerializeField, Range(-3000, 3000)] private float _distanceZ = 10f; // distance from the target on the Z axis
 
 
 
