@@ -74,14 +74,15 @@ namespace Darklight.UnityExt.Game.Camera
         }
 
         [Header("Lerp Speed")]
-        [SerializeField, Range(0, 10)] private float _positionLerpSpeed = 5f;
-        [SerializeField, Range(0, 10)] private float _rotationLerpSpeed = 5f;
-        [SerializeField, Range(0, 10)] private float _fovLerpSpeed = 5f;
+        [SerializeField, Range(0, 10)] private float _positionLerpSpeed = 10f;
+        [SerializeField, Range(0, 10)] private float _rotationLerpSpeed = 10f;
+        [SerializeField, Range(0, 10)] private float _fovLerpSpeed = 10f;
 
         // TODO : Rotate the Camera around the target
         // this is instead of including _distanceX
 
         [Space(10), Header("Distance")]
+        [SerializeField, Range(-3000, 3000)] private float _distanceX = 0f; // distance from the target on the X axis
         [SerializeField, Range(-3000, 3000)] private float _distanceY = 0f; // distance from the target on the Y axis
         [SerializeField, Range(-3000, 3000)] private float _distanceZ = 10f; // distance from the target on the Z axis
 
@@ -128,7 +129,7 @@ namespace Darklight.UnityExt.Game.Camera
             }
 
             // set the offsets
-            _offsetPosition = new Vector3(0, _distanceY, -_distanceZ);
+            _offsetPosition = new Vector3(_distanceX, _distanceY, _distanceZ);
             _focusTargetPositionOffset = new Vector3(0, _focusOffsetY, 0);
 
             // set the position
