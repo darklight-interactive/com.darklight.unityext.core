@@ -2,90 +2,139 @@ using System.Collections.Generic;
 using UnityEngine;
 using Darklight.UnityExt.Editor;
 
+using NaughtyAttributes;
+using System;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Game.Grid2D
+namespace Darklight.UnityExt.Game
 {
 
-    #region ---- [[ GRID2D ]] -----------------------------------------------------------
-    public abstract class Grid2D : MonoBehaviour
+    /// <summary>
+    /// Definition of the Grid2D MonoBehaviour class. This class is used to create and manage a 2D grid of cells.
+    /// </summary>
+    public class Grid2D : MonoBehaviour
     {
-        private const string DEFAULT_PRESET_PATH = "Grid2D/Simple_1x1";
+        public ConsoleGUI consoleGUI { get; private set; } = new ConsoleGUI();
 
-        [Header("Grid2D")]
-        [Tooltip("A scriptable object that contains the preset settings for a Grid2D instance.")]
-        [SerializeField] private Grid2D_Preset _preset; // The settings for the grid
-
-
-        // ------------------- [[ PUBLIC ACCESSORS ]] -------------------
-        public Grid2D_Preset Preset
+        #region << DATA >> : Map ------------------------------------------- >>
+        [System.Serializable]
+        public class Map
         {
-            get
+            Grid2D _grid;
+            Dictionary<Vector2Int, Cell2D> _dataMap = new();
+            [SerializeField] List<Cell2D> _dataList = new();
+
+            public Map(Grid2D grid)
             {
-                if (_preset == null)
+                _grid = grid;
+                InitializeDataMap();
+            }
+
+            /// <summary>
+            /// Initializes the data map with default grid data values
+            /// </summary>
+            void InitializeDataMap()
+            {
+                _grid.consoleGUI.Log("Initializing Data Map");
+
+                if (_grid == null || _grid.settings == null) return;
+
+                _dataMap.Clear();
+                for (int x = 0; x < _grid.settings.gridWidth; x++)
                 {
-                    _preset = Resources.Load<Grid2D_Preset>(DEFAULT_PRESET_PATH);
-                    if (_preset == null)
+                    for (int y = 0; y < _grid.settings.gridHeight; y++)
                     {
-                        Debug.LogError("Default Grid2D_Preset not found. Please assign a valid preset.");
+                        // Create a new data object & initialize it
+                        Vector2Int gridKey = new Vector2Int(x, y);
+
+                        // Check if there is existing data for this cell
+                        Cell2D existingData = GetCellData(gridKey);
+                        if (existingData == null)
+                        {
+                            Cell2D newData = new Cell2D(_grid, gridKey);
+                            AddCellData(gridKey, newData);
+                            _grid.consoleGUI.Log($"New Cell2D: {gridKey}");
+                        }
                     }
                 }
-                return _preset;
+
+                _dataList = new List<Cell2D>(_dataMap.Values); // Update the data list
+                _grid.consoleGUI.Log("Data Map Initialized");
             }
-        }
-        public Vector2Int GridArea => new Vector2Int(_preset.gridSizeX, _preset.gridSizeY); // The Vect2Int size of the grid
-        public Vector2Int OriginKey => new Vector2Int(_preset.originKeyX, _preset.originKeyY); // The origin key of the grid
 
+            void AddCellData(Vector2Int key, Cell2D data)
+            {
+                if (_dataMap.ContainsKey(key))
+                    _dataMap[key] = data;
+                else
+                    _dataMap.Add(key, data);
+            }
 
-        /// <summary>
-        /// Initializes the data map with default grid data values
-        /// </summary>
-        protected abstract void InitializeDataMap();
+            public virtual Cell2D GetCellData(Vector2Int key)
+            {
+                _dataMap.TryGetValue(key, out Cell2D data);
+                return data;
+            }
 
-        /// <summary>
-        /// Calculates the world space position of the specified position key in the grid.
-        /// </summary>
-        /// <param name="positionKey">The position key in the grid.</param>
-        /// <returns>The world space position of the specified position key.</returns>
-        public Vector3 GetWorldPositionOfCell(Vector2Int positionKey)
-        {
-            Vector3 origin = transform.position + new Vector3(OriginKey.x * Preset.cellSize, OriginKey.y * Preset.cellSize, 0);
-            Vector3 cellPos = origin + (new Vector3(positionKey.x, positionKey.y) * Preset.cellSize);
-            return cellPos;
-        }
+            public void UpdateData()
+            {
+                _dataList = new List<Cell2D>(_dataMap.Values);
+            }
+
+            public void RefreshData()
+            {
+                InitializeDataMap();
+            }
+
+            public virtual void ClearData()
+            {
+                _dataMap.Clear();
+            }
 
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Draws the grid in the scene view from the given preset and origin position.
-        /// </summary>
-        /// <param name="preset">
-        ///     The preset settings for the grid.
-        /// </param>
-        /// <param name="originWorldPosition">
-        ///     The world position of the origin cell of the grid.
-        /// </param>
-        public static void DrawGrid2D(Grid2D grid2D)
-        {
-            Grid2D_Preset preset = grid2D.Preset;
-            for (int x = 0; x < preset.gridSizeX; x++)
+
+            public void DrawGizmos()
             {
-                for (int y = 0; y < preset.gridSizeY; y++)
+                foreach (Cell2D data in _dataList)
                 {
-                    Vector3 cellPos = grid2D.GetWorldPositionOfCell(new Vector2Int(x, y));
-                    CustomGizmos.DrawWireSquare(cellPos, preset.cellSize, Vector3.forward, Color.green);
+                    data.DrawGizmos();
                 }
             }
-        }
 
-        public virtual void OnDrawGizmosSelected()
-        {
-            DrawGrid2D(this);
-        }
 #endif
 
+        }
+        #endregion
+
+        [SerializeField, Expandable] Grid2DSettings _settings;
+        public Grid2DSettings settings => _settings;
+
+        [SerializeField] Map _map;
+        public Map map => _map;
+
+        public void Awake()
+        {
+            _map = new Map(this);
+        }
+
+        public void Update()
+        {
+            _map.UpdateData();
+        }
+
+        public void Refresh()
+        {
+            _map.RefreshData();
+        }
+
+        void OnDrawGizmos()
+        {
+            _map.DrawGizmos();
+        }
     }
 
 #if UNITY_EDITOR
@@ -94,10 +143,12 @@ namespace Darklight.UnityExt.Game.Grid2D
     {
         SerializedObject _serializedObject;
         Grid2D _script;
+        bool _showInternalConsole = false;
         private void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
             _script = (Grid2D)target;
+            _script.Awake();
         }
 
         public override void OnInspectorGUI()
@@ -106,88 +157,20 @@ namespace Darklight.UnityExt.Game.Grid2D
 
             EditorGUI.BeginChangeCheck();
 
-            base.OnInspectorGUI();
+            CustomInspectorGUI.CreateFoldout(ref _showInternalConsole, "Internal Console", () =>
+            {
+                _script.consoleGUI.DrawInEditor();
+            });
+
+            CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
 
             if (EditorGUI.EndChangeCheck())
             {
                 _serializedObject.ApplyModifiedProperties();
+                _script.Refresh();
+                EditorUtility.SetDirty(_script);
             }
         }
     }
 #endif
-    #endregion --------------------------------------------------------------------------
-
-
-    /// <summary>
-    /// An adapted version of the Grid2D class that stores a generic data type.
-    /// </summary>
-    /// <typeparam name="TData">
-    ///     The type of inherited Grid2D_Data to store in the grid.
-    /// </typeparam>
-    public class Grid2D<TData> : Grid2D where TData : IGrid2D_Data, new()
-    {
-        protected Dictionary<Vector2Int, TData> DataMap { get; private set; } = new Dictionary<Vector2Int, TData>();
-        public IEnumerable<Vector2Int> PositionKeys => DataMap.Keys;
-        public IEnumerable<TData> DataValues => DataMap.Values;
-
-        public virtual void Awake()
-        {
-            InitializeDataMap();
-        }
-
-        /// <summary>
-        /// Initializes the data map with default grid data values
-        /// </summary>
-        protected override void InitializeDataMap()
-        {
-            if (Preset == null) return;
-
-            DataMap.Clear();
-            for (int x = 0; x < GridArea.x; x++)
-            {
-                for (int y = 0; y < GridArea.y; y++)
-                {
-                    Vector2Int positionKey = new Vector2Int(x, y);
-                    Vector3 worldPosition = GetWorldPositionOfCell(positionKey);
-
-                    // Create a new data object & initialize it
-                    TData newData = new TData();
-                    Grid2D_SerializedData existingData = Preset.LoadData(positionKey);
-                    if (existingData != null)
-                    {
-                        newData.Initialize(existingData, worldPosition, Preset.cellSize);
-                    }
-                    else
-                    {
-                        newData.Initialize(positionKey, true, 0, worldPosition, Preset.cellSize);
-                    }
-
-                    // Set the data in the map
-                    if (DataMap.ContainsKey(positionKey))
-                        DataMap[positionKey] = newData;
-                    else
-                        DataMap.Add(positionKey, newData);
-
-                    // Notify listeners of the data change
-                    newData.OnDataStateChanged += (data) =>
-                    {
-                        Preset.SaveData(data);
-                    };
-                }
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the data at a given position in the grid.
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        public virtual TData GetData(Vector2Int position)
-        {
-            DataMap.TryGetValue(position, out TData data);
-            return data;
-        }
-    }
-
-
 }

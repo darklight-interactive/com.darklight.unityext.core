@@ -4,6 +4,9 @@
   "displayName": "Darklight UnityExt Core Library",
   "description": "The Core Unity Extension Library for Darklight Interactive Studios",
   "unity": "2023.2",
+  "dependencies": {
+    "com.dbrizov.naughtyattributes": "2.1.4"
+  },
   "author": {
     "name": "Sky Casey { skysfalling }",
     "email": "skysfalling22@gmail.com",

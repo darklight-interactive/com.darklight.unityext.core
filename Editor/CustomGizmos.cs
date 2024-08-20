@@ -43,6 +43,13 @@ namespace Darklight.UnityExt.Editor
                 GetRectangleVertices(position, size * Vector2.one, direction),
                 color, Color.clear);
         }
+
+        public static void DrawWireRect(Vector3 position, Vector2 area, Vector3 direction, Color color)
+        {
+            Handles.color = color;
+            Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), Color.clear, color);
+        }
+
         // Draws a Handles.Button and executes the given action when clicked.
         public static void DrawButtonHandle(Vector3 position, float size, Vector3 direction, Color color, System.Action onClick, Handles.CapFunction capFunction)
         {
@@ -54,7 +61,7 @@ namespace Darklight.UnityExt.Editor
         }
 
 
-        private static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normalDirection)
+        static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normalDirection)
         {
             Vector2 halfArea = area * 0.5f;
             Vector3[] vertices = new Vector3[4]
