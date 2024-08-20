@@ -16,7 +16,7 @@ MonoBehaviour:
   _gridHeight: 3
   _gridSpacing: 1
   _gridDirection: {x: 0, y: 0, z: 1}
-  _gridOriginX: 0
-  _gridOriginY: 0
+  _gridOriginX: 1
+  _gridOriginY: 1
   _cellWidth: 1
   _cellHeight: 1

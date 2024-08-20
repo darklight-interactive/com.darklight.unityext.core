@@ -7,116 +7,17 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game
 {
-    /*
     /// <summary>
     /// A 2D Grid that stores Overlap_Grid2DData objects. 
     /// </summary>
     [ExecuteAlways]
-    public class OverlapGrid2D : Grid2D
+    public class OverlapGrid2D : Grid2D<OverlapCell>
     {
-
-        /// <summary>
-        /// Create and stores the data from a Physics2D.OverlapBoxAll call at the world position of the Grid2DData. 
-        /// </summary>
-        public class OverlapCell : Grid2D.BasicCell
-        {
-            private bool disabledInitially = false;
-            public LayerMask layerMask; // The layer mask to use for the OverlapBoxAll called
-            public Collider2D[] colliders = new Collider2D[0]; /// The colliders found by the OverlapBoxAll call
-
-            public OverlapCell(Grid2D grid, Vector2Int key) : base(grid, key)
-            {
-
-            }
-
-
-
-            public void Initialize(Vector2Int positionKey, Vector3 worldPosition, float coordinateSize, LayerMask layerMask)
-            {
-                base.Initialize(positionKey, disabled, weight, worldPosition, coordinateSize);
-                this.layerMask = layerMask;
-                this.disabledInitially = disabled; // << set equal to initial value
-            }
-
-            public override void CycleDataState()
-            {
-                base.CycleDataState();
-                this.disabledInitially = disabled; // << set to match the new state
-            }
-
-            public override void UpdateData()
-            {
-                // Update the collider data
-                this.colliders = Physics2D.OverlapBoxAll(worldPosition, Vector2.one * _cellWidth, 0, layerMask);
-                if (!disabledInitially)
-                {
-                    this._disabled = colliders.Length > 0;
-                }
-            }
-        }
-
         [SerializeField,
         Tooltip("OverlapGrid2D uses OverlapBoxAll to detect colliders in the grid. This is the layer mask used to filter which colliders are detected.")]
         private LayerMask layerMask;
-        public bool editMode = false;
 
-        public override void Awake()
-        {
-            base.Awake();
-            InitializeDataMap();
-        }
-
-        protected override void InitializeDataMap()
-        {
-            if (Settings == null) return;
-
-            cellDataMap.Clear();
-            for (int x = 0; x < gridArea.x; x++)
-            {
-                for (int y = 0; y < gridArea.y; y++)
-                {
-                    Vector2Int positionKey = new Vector2Int(x, y);
-                    Vector3 worldPosition = GetWorldPositionOfCell(positionKey);
-
-                    OverlapCell newData = new OverlapCell();
-                    Grid2D_SerializedData existingData = Settings.LoadData(positionKey);
-                    if (existingData != null)
-                    {
-                        newData.Initialize(existingData, worldPosition, Settings.cellWidth);
-                        newData.layerMask = layerMask;
-
-                    }
-                    else
-                    {
-                        newData.Initialize(positionKey, worldPosition, Settings.cellWidth, layerMask);
-                    }
-
-                    // Set the data in the map
-                    if (cellDataMap.ContainsKey(positionKey))
-                        cellDataMap[positionKey] = newData;
-                    else
-                        cellDataMap.Add(positionKey, newData);
-
-                    // Notify listeners of the data change
-                    newData.OnDataStateChanged += (data) =>
-                    {
-                        Settings.SaveData(data);
-                    };
-                }
-            }
-        }
-
-        public virtual void Update()
-        {
-            foreach (OverlapCell data in cellDataMap.Values)
-            {
-                Vector3 worldPosition = GetWorldPositionOfCell(data._key);
-                data.worldPosition = worldPosition;
-
-                data.UpdateData();
-            }
-        }
-
+        /*
         public OverlapCell GetBestOverlapGridData()
         {
             OverlapCell bestData = cellDataMap.Values.GetEnumerator().Current;
@@ -137,6 +38,7 @@ namespace Darklight.UnityExt.Game
             //Debug.Log($"{this.name} OverlapGrid2D Best Data: {bestData.positionKey} - {bestData.worldPosition}");
             return bestData;
         }
+        */
     }
 
 #if UNITY_EDITOR
@@ -171,9 +73,10 @@ namespace Darklight.UnityExt.Game
         public void OnSceneGUI()
         {
             grid2D = (OverlapGrid2D)target;
-            DrawOverlapGrid(grid2D, grid2D.editMode);
+            //DrawOverlapGrid(grid2D, grid2D.editMode);
         }
 
+        /*
         public static void DrawOverlapGrid(OverlapGrid2D grid2D, bool editMode = false)
         {
             Grid2D_Settings preset = grid2D.Settings;
@@ -202,9 +105,8 @@ namespace Darklight.UnityExt.Game
                     }
                 }
             }
-        }
+        }*/
     }
 #endif
-*/
 
 }

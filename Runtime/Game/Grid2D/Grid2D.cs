@@ -15,19 +15,16 @@ namespace Darklight.UnityExt.Game
     /// <summary>
     /// Definition of the Grid2D MonoBehaviour class. This class is used to create and manage a 2D grid of cells.
     /// </summary>
-    public class Grid2D : MonoBehaviour
+    public class Grid2D<TCell2D> : MonoBehaviour where TCell2D : Cell2D
     {
-        public ConsoleGUI consoleGUI { get; private set; } = new ConsoleGUI();
-
         #region << DATA >> : Map ------------------------------------------- >>
-        [System.Serializable]
         public class Map
         {
-            Grid2D _grid;
-            Dictionary<Vector2Int, Cell2D> _dataMap = new();
-            [SerializeField] List<Cell2D> _dataList = new();
+            Grid2D<TCell2D> _grid;
+            Dictionary<Vector2Int, TCell2D> _dataMap = new();
+            [SerializeField] List<TCell2D> _dataList = new();
 
-            public Map(Grid2D grid)
+            public Map(Grid2D<TCell2D> grid)
             {
                 _grid = grid;
                 InitializeDataMap();
@@ -54,18 +51,18 @@ namespace Darklight.UnityExt.Game
                         Cell2D existingData = GetCellData(gridKey);
                         if (existingData == null)
                         {
-                            Cell2D newData = new Cell2D(_grid, gridKey);
+                            TCell2D newData = new Cell2D(_grid.settings, gridKey, _grid.position) as TCell2D;
                             AddCellData(gridKey, newData);
                             _grid.consoleGUI.Log($"New Cell2D: {gridKey}");
                         }
                     }
                 }
 
-                _dataList = new List<Cell2D>(_dataMap.Values); // Update the data list
+                _dataList = new List<TCell2D>(_dataMap.Values); // Update the data list
                 _grid.consoleGUI.Log("Data Map Initialized");
             }
 
-            void AddCellData(Vector2Int key, Cell2D data)
+            void AddCellData(Vector2Int key, TCell2D data)
             {
                 if (_dataMap.ContainsKey(key))
                     _dataMap[key] = data;
@@ -73,15 +70,15 @@ namespace Darklight.UnityExt.Game
                     _dataMap.Add(key, data);
             }
 
-            public virtual Cell2D GetCellData(Vector2Int key)
+            public virtual TCell2D GetCellData(Vector2Int key)
             {
-                _dataMap.TryGetValue(key, out Cell2D data);
+                _dataMap.TryGetValue(key, out TCell2D data);
                 return data;
             }
 
             public void UpdateData()
             {
-                _dataList = new List<Cell2D>(_dataMap.Values);
+                _dataList = new List<TCell2D>(_dataMap.Values);
             }
 
             public void RefreshData()
@@ -97,44 +94,50 @@ namespace Darklight.UnityExt.Game
 
 #if UNITY_EDITOR
 
-            public void DrawGizmos()
+            public void DrawGizmos(bool editMode = false)
             {
                 foreach (Cell2D data in _dataList)
                 {
-                    data.DrawGizmos();
+                    data.DrawGizmos(editMode);
                 }
             }
-
 #endif
 
         }
         #endregion
 
         [SerializeField, Expandable] Grid2DSettings _settings;
+        [SerializeField] Map _cellMap;
+        [SerializeField] bool _editMode;
+
+        public ConsoleGUI consoleGUI { get; private set; } = new ConsoleGUI();
         public Grid2DSettings settings => _settings;
+        public Map cellMap => _cellMap;
+        public bool editMode => _editMode;
+        public Vector3 position => transform.position;
 
-        [SerializeField] Map _map;
-        public Map map => _map;
-
-        public void Awake()
+        public virtual void Awake()
         {
-            _map = new Map(this);
+            _cellMap = new Map(this);
         }
 
         public void Update()
         {
-            _map.UpdateData();
+            _cellMap.UpdateData();
         }
 
         public void Refresh()
         {
-            _map.RefreshData();
+            _cellMap.RefreshData();
         }
+    }
 
-        void OnDrawGizmos()
-        {
-            _map.DrawGizmos();
-        }
+    /// <summary>
+    /// Base class for a 2D grid. Creates a Grid2D with Cell2D objects.
+    /// </summary>
+    public class Grid2D : Grid2D<Cell2D>
+    {
+
     }
 
 #if UNITY_EDITOR
@@ -170,6 +173,12 @@ namespace Darklight.UnityExt.Game
                 _script.Refresh();
                 EditorUtility.SetDirty(_script);
             }
+        }
+
+        void OnSceneGUI()
+        {
+            _script = (Grid2D)target;
+            _script.cellMap.DrawGizmos(_script.editMode);
         }
     }
 #endif
