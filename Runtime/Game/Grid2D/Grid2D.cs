@@ -19,23 +19,19 @@ namespace Darklight.UnityExt.Game
         public class Config
         {
             // -- Dimensions ---- >>
-            [SerializeField, ShowOnly]
-            Vector2Int _dimensions = new Vector2Int(3, 3);
+            [SerializeField, ShowOnly] Vector2Int _dimensions = new Vector2Int(3, 3);
             public Vector2Int dimensions { get => _dimensions; set => _dimensions = value; }
             public int numRows => _dimensions.y;
             public int numColumns => _dimensions.x;
 
             // -- Transform ---- >>
-            [SerializeField, ShowOnly]
-            Vector3 _worldPosition = Vector3.zero;
-            [SerializeField, ShowOnly]
-            Vector3 _worldDirection = Vector3.up;
-            public Vector3 worldPosition { get => _worldPosition; set => _worldPosition = value; }
-            public Vector3 worldDirection { get => _worldDirection; set => _worldDirection = value; }
+            [SerializeField, ShowOnly] Vector3 _position = Vector3.zero;
+            [SerializeField, ShowOnly] Vector3 _normal = Vector3.up;
+            public Vector3 position { get => _position; set => _position = value; }
+            public Vector3 normal { get => _normal; set => _normal = value; }
 
             // -- Origin ---- >>
-            [SerializeField, ShowOnly]
-            Vector2Int _originOffset = Vector2Int.zero;
+            [SerializeField, ShowOnly] Vector2Int _originOffset = Vector2Int.zero;
             public Vector2Int originOffset { get => _originOffset; set => _originOffset = value; }
 
             // -- Cell Dimensions ---- >>
@@ -66,13 +62,26 @@ namespace Darklight.UnityExt.Game
                 Grid2D _grid; // Reference to the parent grid
                 Vector2Int _key; // The position key of the cell in the grid
                 Color _color = Color.white; // Color of the cell fpr visualization
+                public Vector2Int key => _key;
+                public Color color
+                {
+                    get
+                    {
+                        if (_disabled)
+                            _color = Color.gray;
+                        return _color;
+                    }
+                }
 
                 // -- Dimensions ---- >>
                 Vector2 _dimensions = Vector2.one; // Dimensions of the cell
+                public Vector2 dimensions => _dimensions;
 
                 // -- Transform ---- >>
-                Vector3 _cellPosition = Vector3.zero; // World position of the cell
-                Vector3 _cellNormal = Vector3.up; // Normal direction of the cell
+                Vector3 _position = Vector3.zero; // World position of the cell
+                Vector3 _normal = Vector3.up; // Normal direction of the cell
+                public Vector3 position => _position;
+                public Vector3 normal => _normal;
 
                 // -- States ---- >>
                 bool _disabled = false; // Is the cell active or not
@@ -83,29 +92,38 @@ namespace Darklight.UnityExt.Game
                     _grid = grid;
                     _key = key;
                     _dimensions = grid.config.cellDimensions;
-                    _cellPosition = CalculateWorldPosition();
-                    _cellNormal = grid.config.worldDirection;
+                    _position = CalculateWorldPosition();
+                    _normal = grid.config.normal;
                 }
 
+                /// <summary>
+                /// Internal method to calculate the world position of the cell based on its key and the grid configuration.
+                /// </summary>
+                /// <returns></returns>
                 Vector3 CalculateWorldPosition()
                 {
                     Vector2Int key = _key;
-                    Grid2D.Config config = _grid.config;
+                    Grid2D.Config gridConfig = _grid.config;
 
                     // Start with the grid's origin position in world space
-                    Vector3 basePosition = config.worldPosition;
+                    Vector3 basePosition = gridConfig.position;
 
                     // Calculate the offset for the grid origin key
-                    Vector2 originOffset = (Vector2)config.originOffset * config.cellDimensions * -1;
+                    Vector2 originOffset = (Vector2)gridConfig.originOffset * gridConfig.cellDimensions * -1;
 
                     // Calculate the offset for the current key position
-                    Vector2 keyOffset = (Vector2)key * config.cellDimensions;
+                    Vector2 keyOffset = (Vector2)key * gridConfig.cellDimensions;
 
-                    // Combine origin offset and key offset
-                    Vector2 gridOffset = (originOffset + keyOffset) * config.cellSpacing;
+                    // Calculate the spacing offset && clamp it to avoid overlapping cells
+                    Vector2 spacingOffset = gridConfig.cellSpacing;
+                    spacingOffset.x = Mathf.Clamp(spacingOffset.x, 1, float.MaxValue);
+                    spacingOffset.y = Mathf.Clamp(spacingOffset.y, 1, float.MaxValue);
+
+                    // Combine origin offset and key offset, then apply spacing
+                    Vector2 gridOffset = (originOffset + keyOffset) * spacingOffset;
 
                     // Create a rotation matrix based on the grid's direction
-                    Quaternion rotation = Quaternion.LookRotation(config.worldDirection, Vector3.up);
+                    Quaternion rotation = Quaternion.LookRotation(gridConfig.normal, Vector3.up);
 
                     // Apply the rotation to the grid offset to get the final world offset
                     Vector3 worldOffset = rotation * new Vector3(gridOffset.x, gridOffset.y, 0);
@@ -114,10 +132,7 @@ namespace Darklight.UnityExt.Game
                     return basePosition + worldOffset;
                 }
 
-                public virtual Color GetColor()
-                {
-                    return _disabled ? Color.white : Color.black;
-                }
+
             }
             #endregion
 
@@ -128,11 +143,35 @@ namespace Darklight.UnityExt.Game
             {
                 data = new Data(grid, key);
             }
+
+#if UNITY_EDITOR
+            public virtual void DrawGizmos(bool editMode = false)
+            {
+                // Draw the cell square
+                CustomGizmos.DrawWireRect(data.position, data.dimensions, data.normal, data.color);
+
+                string label = $"{data.key}";
+                CustomGizmos.DrawLabel(label, data.position, CustomGUIStyles.CenteredStyle);
+
+
+                if (editMode)
+                {
+                    float size = Mathf.Min(data.dimensions.x, data.dimensions.y);
+                    size *= 0.75f;
+
+                    // Draw the button handle only if the grid is in edit mode
+                    CustomGizmos.DrawButtonHandle(data.position, size, data.normal, data.color, () =>
+                    {
+                        //OnEditorSimpleToggle?.Invoke();
+                    }, Handles.RectangleHandleCap);
+                }
+            }
+#endif
         }
         #endregion
 
-        #region -- << CLASS >> : MAP ------------------------------------ >>
-        protected class Map<TCell> where TCell : Cell
+        #region -- << CLASS >> : CELL MAP ------------------------------------ >>
+        protected class CellMap<TCell> where TCell : Cell
         {
             Grid2D _grid; // Reference to the parent grid
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
@@ -145,8 +184,8 @@ namespace Darklight.UnityExt.Game
             }
 
             // Constructors
-            public Map() { }
-            public Map(Grid2D grid) => Initialize(grid);
+            public CellMap() { }
+            public CellMap(Grid2D grid) => Initialize(grid);
 
             // Initialization
             public void Initialize(Grid2D grid2D)
@@ -171,12 +210,20 @@ namespace Darklight.UnityExt.Game
                     }
                 }
             }
+
+            public void DrawGizmos(bool editMode = false)
+            {
+                foreach (var cell in _cellMap.Values)
+                {
+                    cell.DrawGizmos(editMode);
+                }
+            }
         }
 
         #endregion
 
         [SerializeField] protected Config config = new Config();
-        protected Map<Cell> cellMap = new Map<Cell>();
+        protected CellMap<Cell> cellMap = new CellMap<Cell>();
 
         public Grid2D() => Initialize();
         public Grid2D(Config config)
@@ -188,24 +235,27 @@ namespace Darklight.UnityExt.Game
         /// <summary>
         /// Initializes the data map with cells created by the derived class.
         /// </summary>
-        protected virtual void Initialize()
+        public virtual void Initialize()
         {
             // ( Rebuild the cell map )
             cellMap.Initialize(this);
         }
 
-
+        public virtual void DrawGizmos()
+        {
+            cellMap.DrawGizmos();
+        }
     }
 
     public class Grid2D<TCell> : Grid2D where TCell : Grid2D.Cell
     {
         // Override the cell map to use the generic cell type
-        protected new Map<TCell> cellMap = new Map<TCell>();
+        protected new CellMap<TCell> cellMap = new CellMap<TCell>();
 
         public Grid2D() : base() => Initialize();
         public Grid2D(Config config) : base(config) => Initialize();
 
-        protected override void Initialize()
+        public override void Initialize()
         {
             // ( Rebuild the cell map )
             cellMap.Initialize(this);

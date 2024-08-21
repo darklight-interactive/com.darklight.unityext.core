@@ -26,6 +26,11 @@ public class SimpleGrid2D : MonoBehaviour
             _grid = new Grid2D(_configObj.ToConfig());
         }
     }
+
+    public void OnDrawGizmos()
+    {
+        _grid.DrawGizmos();
+    }
 }
 
 #if UNITY_EDITOR
@@ -55,6 +60,11 @@ public class Grid2DCustomEditor : UnityEditor.Editor
             _script.Initialize();
             EditorUtility.SetDirty(_script);
         }
+        else
+        {
+            _script.OnDrawGizmos();
+        }
+
     }
 }
 #endif
