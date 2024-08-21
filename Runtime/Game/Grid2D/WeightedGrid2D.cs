@@ -40,6 +40,20 @@ public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
         public WeightedCell() { }
         public WeightedCell(Grid2D grid, Vector2Int key) : base(grid, key) { }
 
+        void ToggleWeight()
+        {
+            if (data.weight >= 100)
+            {
+                data.weight = 0;
+                data.disabled = true;
+            }
+            else
+            {
+                data.weight += 10;
+                data.disabled = false;
+            }
+        }
+
         public override void DrawGizmos(bool editMode = false)
         {
             // Draw the cell square
@@ -56,17 +70,23 @@ public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
                 // Draw the button handle only if the grid is in edit mode
                 CustomGizmos.DrawButtonHandle(data.position, size, data.normal, data.color, () =>
                 {
-                    data.disabled = !data.disabled;
+                    ToggleWeight();
                     data.Refresh();
                 }, Handles.RectangleHandleCap);
             }
         }
     }
 
-
-    public override void Initialize()
+    public class WeightedGridDataObject : Grid2D_DataObject<WeightedCell> { }
+    public override void InitializeGrid()
     {
-        base.Initialize();
+        base.InitializeGrid();
+
+        if (dataObj == null)
+        {
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<WeightedGridDataObject>(DATA_PATH, "WeightedGridDataObject");
+            dataObj.Initialize(grid);
+        }
 
         // Apply random weights to each cell
         grid.cellMap.ModifyCells((cell) =>

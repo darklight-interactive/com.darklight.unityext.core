@@ -21,5 +21,8 @@ namespace Darklight.UnityExt.Game
                 _data = data;
             }
         }
+
+        public class SimpleGrid2D_DataObject : Grid2D_DataObject<Grid2D.Cell> { }
+
     }
 }

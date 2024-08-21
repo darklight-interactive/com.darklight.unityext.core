@@ -15,7 +15,24 @@ namespace Darklight.UnityExt.Game
 {
     public interface IGrid2D
     {
-        void Initialize();
+        /// <summary>
+        /// Generates a new grid based on the current configuration.
+        /// Overwrites the current grid data.
+        /// </summary>
+        void InitializeGrid();
+
+        /// <summary>
+        /// Refreshes the grid data based on the current configuration.
+        /// Assumes the grid has already been initialized.
+        /// </summary>
+        void RefreshData();
+
+        /// <summary>
+        /// Draws the gizmos for the grid.
+        /// </summary>
+        /// <param name="editMode">
+        ///     If true, the edit mode gizmos will be drawn.
+        /// </param>
         void DrawGizmos(bool editMode = false);
     }
 
@@ -226,6 +243,7 @@ namespace Darklight.UnityExt.Game
             Grid2D _grid; // Reference to the parent grid
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
             [SerializeField] List<TCell> _cellList = new List<TCell>();
+            public List<TCell> cellList => _cellList;
 
             // Indexer to access cells by their key
             public TCell this[Vector2Int key]
@@ -274,7 +292,7 @@ namespace Darklight.UnityExt.Game
                 RefreshData();
             }
 
-            void RefreshData()
+            public void RefreshData()
             {
                 _cellList.Clear();
                 foreach (TCell cell in _cellMap.Values)
@@ -301,13 +319,14 @@ namespace Darklight.UnityExt.Game
         public Config config { get => _config; protected set => _config = value; }
 
         // ===================== >> INITIALIZATION << ===================== //
-        public Grid2D() => Initialize();
+        public Grid2D() => InitializeGrid();
         public Grid2D(Config config)
         {
             _config = config;
-            Initialize();
+            InitializeGrid();
         }
-        public abstract void Initialize();
+        public abstract void InitializeGrid();
+        public abstract void RefreshData();
         public abstract void DrawGizmos(bool editMode);
     }
 
@@ -318,11 +337,16 @@ namespace Darklight.UnityExt.Game
         public CellMap<TCell> cellMap { get => _cellMap; protected set => _cellMap = value; }
         public Grid2D() : base() { }
         public Grid2D(Config config) : base(config) { }
-        public override void Initialize()
+        public override void InitializeGrid()
         {
             // ( Rebuild the cell map )
             cellMap.Initialize(this);
             initialized = true;
+        }
+
+        public override void RefreshData()
+        {
+            cellMap.RefreshData();
         }
 
         public override void DrawGizmos(bool editMode)
