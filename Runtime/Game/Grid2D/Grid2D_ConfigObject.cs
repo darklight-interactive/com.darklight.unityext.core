@@ -3,7 +3,7 @@ using NaughtyAttributes;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
-public class Grid2DConfigObject : ScriptableObject
+public class Grid2D_ConfigObject : ScriptableObject
 {
     #region ---- ( EDITOR VALUES ) --------- >>
     DropdownList<Vector3> _directions = new DropdownList<Vector3>()

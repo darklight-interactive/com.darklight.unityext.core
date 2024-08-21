@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
+
 using Darklight.UnityExt.Editor;
 
-using NaughtyAttributes;
-using System;
+using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -12,7 +12,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game
 {
     [System.Serializable]
-    public class Grid2D
+    public abstract class Grid2D
     {
         #region -- << CLASS >> : CONFIG ------------------------------------ >>
         [System.Serializable]
@@ -59,22 +59,25 @@ namespace Darklight.UnityExt.Game
         /// Definition of the Grid2D_CellData class. This class is used by the Grid2D class to store the data for each grid cell.
         /// </summary>
         [System.Serializable]
-        public class Cell
+        public abstract class Cell
         {
             #region -- << CLASS >> : DATA ------------------------------------ >>
+            [System.Serializable]
             public class Data
             {
                 // -- Identifiers ---- >>
                 Grid2D _grid; // Reference to the parent grid
-                Vector2Int _key; // The position key of the cell in the grid
+                [SerializeField, ShowOnly] string _name = "Cell"; // Name of the cell
+                [SerializeField, ShowOnly] Vector2Int _key; // The position key of the cell in the grid
                 Color _color = Color.white; // Color of the cell fpr visualization
+                public string name => _name;
                 public Vector2Int key => _key;
                 public Color color
                 {
                     get
                     {
-                        if (_disabled)
-                            _color = Color.gray;
+                        if (_disabled) _color = Color.gray;
+                        else _color = Color.white;
                         return _color;
                     }
                 }
@@ -104,17 +107,24 @@ namespace Darklight.UnityExt.Game
                 }
 
                 // -- States ---- >>
-                bool _disabled = false; // Is the cell active or not
-                public bool disabled => _disabled;
+                [SerializeField, ShowOnly] bool _disabled = false; // Is the cell active or not
+                public bool disabled { get => _disabled; set => _disabled = value; }
+
+                // -- Object Value ---- >>
+                public object value; // Placeholder for any object value
 
                 public Data(Grid2D grid, Vector2Int key)
                 {
                     _grid = grid;
                     _key = key;
+                    _name = $"Cell {key}";
                     _dimensions = grid.config.cellDimensions;
                     _position = CalculateWorldPosition();
                     _normal = grid.config.normal;
                 }
+
+                public void SetName(string name) => _name = name;
+                public void SetObject(object value) => this.value = value;
 
                 /// <summary>
                 /// Internal method to calculate the world position of the cell based on its key and the grid configuration.
@@ -156,45 +166,37 @@ namespace Darklight.UnityExt.Game
             }
             #endregion
 
-            // -- Protected Data ---- >>
-            protected Data data; // Cell data
+            public Data data { get; protected set; }
 
             public Cell(Grid2D grid, Vector2Int key)
             {
                 data = new Data(grid, key);
             }
+            public abstract void Initialize();
+            public abstract void DrawGizmos(bool editMode = false);
+        }
 
-#if UNITY_EDITOR
-            public virtual void DrawGizmos(bool editMode = false)
+        public class Cell<TData> : Cell where TData : Cell.Data
+        {
+            public new TData data;
+
+            public Cell(Grid2D grid, Vector2Int key) : base(grid, key)
             {
-                // Draw the cell square
-                CustomGizmos.DrawWireRect(data.position, data.dimensions, data.normal, data.color);
-
-                string label = $"{data.key}";
-                CustomGizmos.DrawLabel(label, data.position, CustomGUIStyles.CenteredStyle);
-
-
-                if (editMode)
-                {
-                    float size = Mathf.Min(data.dimensions.x, data.dimensions.y);
-                    size *= 0.75f;
-
-                    // Draw the button handle only if the grid is in edit mode
-                    CustomGizmos.DrawButtonHandle(data.position, size, data.normal, data.color, () =>
-                    {
-                        //OnEditorSimpleToggle?.Invoke();
-                    }, Handles.RectangleHandleCap);
-                }
+                data = (TData)Activator.CreateInstance(typeof(TData), grid, key);
             }
-#endif
+
+            public override void Initialize() { }
+            public override void DrawGizmos(bool editMode = false) { }
         }
         #endregion
 
         #region -- << CLASS >> : CELL MAP ------------------------------------ >>
-        protected class CellMap<TCell> where TCell : Cell
+        [System.Serializable]
+        public class CellMap<TCell> where TCell : Cell
         {
             Grid2D _grid; // Reference to the parent grid
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
+            [SerializeField] List<TCell> _cellList = new List<TCell>();
 
             // Indexer to access cells by their key
             public TCell this[Vector2Int key]
@@ -229,6 +231,17 @@ namespace Darklight.UnityExt.Game
                         }
                     }
                 }
+
+                RefreshData();
+            }
+
+            void RefreshData()
+            {
+                _cellList.Clear();
+                foreach (TCell cell in _cellMap.Values)
+                {
+                    _cellList.Add(cell);
+                }
             }
 
             public void DrawGizmos(bool editMode = false)
@@ -243,27 +256,33 @@ namespace Darklight.UnityExt.Game
         #endregion
 
         // ===================== >> PROTECTED DATA << ===================== //
-        [SerializeField] protected Config config = new Config();
-        [SerializeField] protected CellMap<Cell> cellMap = new CellMap<Cell>();
+        [SerializeField, ShowOnly] bool _initialized;
+        [SerializeField] Config _config = new Config();
+        public bool initialized { get => _initialized; protected set => _initialized = value; }
+        public Config config { get => _config; protected set => _config = value; }
 
-        // ===================== >> CONSTRUCTORS << ===================== //
+        // ===================== >> INITIALIZATION << ===================== //
         public Grid2D() => Initialize();
         public Grid2D(Config config)
         {
-            this.config = config;
+            _config = config;
             Initialize();
         }
+        protected abstract void Initialize();
+    }
 
-        public virtual void Initialize()
+    [System.Serializable]
+    public class Grid2D<TCell> : Grid2D where TCell : Grid2D.Cell
+    {
+        [SerializeField] CellMap<TCell> _cellMap = new CellMap<TCell>();
+        public CellMap<TCell> cellMap { get => _cellMap; protected set => _cellMap = value; }
+        public Grid2D() : base() { }
+        public Grid2D(Config config) : base(config) { }
+        protected override void Initialize()
         {
             // ( Rebuild the cell map )
             cellMap.Initialize(this);
-        }
-
-        public virtual void Initialize(Config config)
-        {
-            this.config = config;
-            Initialize();
+            initialized = true;
         }
 
         // ===================== >> HANDLER METHODS << ===================== //
@@ -274,25 +293,10 @@ namespace Darklight.UnityExt.Game
         }
 
         // ===================== >> GIZMOS << ===================== //
-        public virtual void DrawGizmos()
+        public virtual void DrawGizmos(bool editMode)
         {
             if (!config.showGizmos) return;
-            cellMap.DrawGizmos();
-        }
-    }
-
-    public class Grid2D<TCell> : Grid2D where TCell : Grid2D.Cell
-    {
-        // Override the cell map to use the generic cell type
-        protected new CellMap<TCell> cellMap = new CellMap<TCell>();
-
-        public Grid2D() : base() => Initialize();
-        public Grid2D(Config config) : base(config) => Initialize();
-
-        public override void Initialize()
-        {
-            // ( Rebuild the cell map )
-            cellMap.Initialize(this);
+            cellMap.DrawGizmos(editMode);
         }
     }
 }
