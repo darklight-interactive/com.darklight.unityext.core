@@ -11,20 +11,37 @@ using UnityEditor;
 /// <summary>
 /// Base class for a 2D grid. Creates a Grid2D with Cell2D objects.
 /// </summary>
+[ExecuteAlways]
 public class SimpleGrid2D : MonoBehaviour
 {
     [SerializeField] Grid2D _grid = new Grid2D();
 
+    // ======= SIMPLE GRID CONFIGURATION ======= //
     [HorizontalLine(4)]
     [SerializeField, Expandable] Grid2DConfigObject _configObj;
+
+    [HorizontalLine(2)]
+    [SerializeField] bool _lockToTransform = true;
 
     public void Awake() => Initialize();
     public virtual void Initialize()
     {
         if (_configObj != null)
         {
-            _grid = new Grid2D(_configObj.ToConfig());
+            _grid.Initialize(_configObj.ToConfig());
         }
+    }
+
+    public void Update()
+    {
+        ApplyTransform();
+    }
+
+    void ApplyTransform()
+    {
+        _configObj.showTransformValues = !_lockToTransform;
+        if (_lockToTransform)
+            _grid.SetTransform(transform);
     }
 
     public void OnDrawGizmos()
@@ -60,11 +77,6 @@ public class Grid2DCustomEditor : UnityEditor.Editor
             _script.Initialize();
             EditorUtility.SetDirty(_script);
         }
-        else
-        {
-            _script.OnDrawGizmos();
-        }
-
     }
 }
 #endif

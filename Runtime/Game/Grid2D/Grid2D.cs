@@ -18,6 +18,10 @@ namespace Darklight.UnityExt.Game
         [System.Serializable]
         public class Config
         {
+            // -- States ---- >>
+            [SerializeField, ShowOnly] bool _showGizmos = true;
+            public bool showGizmos { get => _showGizmos; set => _showGizmos = value; }
+
             // -- Dimensions ---- >>
             [SerializeField, ShowOnly] Vector2Int _dimensions = new Vector2Int(3, 3);
             public Vector2Int dimensions { get => _dimensions; set => _dimensions = value; }
@@ -45,6 +49,8 @@ namespace Darklight.UnityExt.Game
             [SerializeField, ShowOnly]
             Vector2 _cellSpacing = new Vector2(0, 0);
             public Vector2 cellSpacing { get => _cellSpacing; set => _cellSpacing = value; }
+
+
         }
         #endregion
 
@@ -80,8 +86,22 @@ namespace Darklight.UnityExt.Game
                 // -- Transform ---- >>
                 Vector3 _position = Vector3.zero; // World position of the cell
                 Vector3 _normal = Vector3.up; // Normal direction of the cell
-                public Vector3 position => _position;
-                public Vector3 normal => _normal;
+                public Vector3 position
+                {
+                    get
+                    {
+                        _position = CalculateWorldPosition();
+                        return _position;
+                    }
+                }
+                public Vector3 normal
+                {
+                    get
+                    {
+                        _normal = GetNormal();
+                        return _normal;
+                    }
+                }
 
                 // -- States ---- >>
                 bool _disabled = false; // Is the cell active or not
@@ -132,7 +152,7 @@ namespace Darklight.UnityExt.Game
                     return basePosition + worldOffset;
                 }
 
-
+                Vector3 GetNormal() => _grid.config.normal;
             }
             #endregion
 
@@ -191,10 +211,10 @@ namespace Darklight.UnityExt.Game
             public void Initialize(Grid2D grid2D)
             {
                 _grid = grid2D;
-                InitializeDataMap(grid2D.config.dimensions);
+                Generate(grid2D.config.dimensions);
             }
 
-            void InitializeDataMap(Vector2Int dimensions)
+            void Generate(Vector2Int dimensions)
             {
                 _cellMap.Clear();
                 for (int x = 0; x < dimensions.x; x++)
@@ -222,9 +242,11 @@ namespace Darklight.UnityExt.Game
 
         #endregion
 
+        // ===================== >> PROTECTED DATA << ===================== //
         [SerializeField] protected Config config = new Config();
-        protected CellMap<Cell> cellMap = new CellMap<Cell>();
+        [SerializeField] protected CellMap<Cell> cellMap = new CellMap<Cell>();
 
+        // ===================== >> CONSTRUCTORS << ===================== //
         public Grid2D() => Initialize();
         public Grid2D(Config config)
         {
@@ -232,17 +254,29 @@ namespace Darklight.UnityExt.Game
             Initialize();
         }
 
-        /// <summary>
-        /// Initializes the data map with cells created by the derived class.
-        /// </summary>
         public virtual void Initialize()
         {
             // ( Rebuild the cell map )
             cellMap.Initialize(this);
         }
 
+        public virtual void Initialize(Config config)
+        {
+            this.config = config;
+            Initialize();
+        }
+
+        // ===================== >> HANDLER METHODS << ===================== //
+        public virtual void SetTransform(Transform transform)
+        {
+            config.position = transform.position;
+            config.normal = transform.forward;
+        }
+
+        // ===================== >> GIZMOS << ===================== //
         public virtual void DrawGizmos()
         {
+            if (!config.showGizmos) return;
             cellMap.DrawGizmos();
         }
     }

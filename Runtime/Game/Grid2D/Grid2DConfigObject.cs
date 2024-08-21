@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
 public class Grid2DConfigObject : ScriptableObject
 {
+    #region ---- ( EDITOR VALUES ) --------- >>
     DropdownList<Vector3> _directions = new DropdownList<Vector3>()
     {
         { "Up", Vector3.up },
@@ -15,14 +16,22 @@ public class Grid2DConfigObject : ScriptableObject
         { "Back", Vector3.back }
     };
 
+    bool _showTransform = true;
+    public bool showTransformValues { get => _showTransform; set => _showTransform = value; }
+    #endregion
+
     // -- (( SERIALIZED DATA )) --------------------------------- >>
+    [SerializeField] bool _showGizmos;
+
     [Header("-- Dimensions ---- >>")]
     [SerializeField, Range(1, 10)] int _numColumns = 3;
     [SerializeField, Range(1, 10)] int _numRows = 3;
 
     [Header("-- Transform ---- >>")]
-    [SerializeField] Vector3 _position = Vector3.zero;
-    [SerializeField, Dropdown("_directions")] Vector3 _normal = Vector3.up;
+    [SerializeField, ShowIf("_showTransform")]
+    Vector3 _position = Vector3.zero;
+    [SerializeField, ShowIf("_showTransform")]
+    [Dropdown("_directions")] Vector3 _normal = Vector3.up;
 
     [Header("-- Origin ---- >>")]
     [SerializeField] Vector2Int _originOffset = new Vector2Int(0, 0);
@@ -39,6 +48,7 @@ public class Grid2DConfigObject : ScriptableObject
     {
         Grid2D.Config config = new Grid2D.Config()
         {
+            showGizmos = _showGizmos,
             dimensions = new Vector2Int(_numColumns, _numRows),
             position = _position,
             normal = _normal,
