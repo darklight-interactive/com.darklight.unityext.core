@@ -11,7 +11,7 @@ namespace Darklight.UnityExt.Game
     /// A 2D Grid that stores Overlap_Grid2DData objects. 
     /// </summary>
     [ExecuteAlways]
-    public class OverlapGrid2D : SimpleGrid2D
+    public class OverlapGrid2D : MonoBehaviour
     {
         [SerializeField,
         Tooltip("OverlapGrid2D uses OverlapBoxAll to detect colliders in the grid. This is the layer mask used to filter which colliders are detected.")]

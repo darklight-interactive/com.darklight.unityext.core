@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 
+public interface IWeightedData
+{
+    int weight { get; }
+}
+
 /// <summary>
 /// A utility class for selecting random items based on weight.
 /// Uses a cumulative weight approach to select items.
@@ -12,16 +17,25 @@ public static class WeightedDataSelector
     private static Dictionary<IList, float> cachedTotalWeights = new Dictionary<IList, float>();
 
     /// <summary>
+    /// Clear the cache for total weights. Useful if the item list changes frequently.
+    /// </summary>
+    public static void ClearCache()
+    {
+        cachedTotalWeights.Clear();
+    }
+
+    /// <summary>
     /// Selects a random item based on weight.
     /// </summary>
-    /// <typeparam name="T">The type of the item.</typeparam>
+    /// <typeparam name="T">The type of the item, which must implement IWeightedData.</typeparam>
     /// <typeparam name="TResult">The type of the result item.</typeparam>
     /// <param name="items">A list of items to choose from.</param>
     /// <param name="itemSelector">A function to select the item from the list element.</param>
-    /// <param name="weightSelector">A function to select the weight from the list element.</param>
     /// <param name="defaultItem">A default item to return if the selection fails.</param>
     /// <returns>A randomly selected item based on its weight.</returns>
-    public static TResult SelectRandomWeightedItem<T, TResult>(IList<T> items, Func<T, TResult> itemSelector, Func<T, float> weightSelector, TResult defaultItem = default)
+    public static TResult SelectRandomWeightedItem<T, TResult>
+        (IList<T> items, Func<T, TResult> itemSelector, TResult defaultItem = default)
+        where T : IWeightedData
     {
         if (items == null || items.Count == 0)
         {
@@ -33,7 +47,7 @@ public static class WeightedDataSelector
         // Cache the total weight to avoid recalculating if the list hasn't changed
         if (!cachedTotalWeights.TryGetValue((IList)items, out totalWeight))
         {
-            totalWeight = items.Sum(weightSelector);
+            totalWeight = items.Sum(item => item.weight);
             cachedTotalWeights[(IList)items] = totalWeight;
         }
 
@@ -44,7 +58,7 @@ public static class WeightedDataSelector
         // Select the item based on the random weight
         foreach (var item in items)
         {
-            cumulativeWeight += weightSelector(item);
+            cumulativeWeight += item.weight;
             if (randomWeight <= cumulativeWeight)
             {
                 return itemSelector(item);
@@ -55,29 +69,31 @@ public static class WeightedDataSelector
         return defaultItem;
     }
 
+
     /// <summary>
     /// Simplified method for selecting a random item from a list of WeightedData.
     /// </summary>
     /// <typeparam name="T">The type of the item.</typeparam>
     /// <param name="items">A list of WeightedData items to choose from.</param>
     /// <returns>A randomly selected item based on its weight.</returns>
-    public static T SelectRandomWeightedItem<T>(IList<WeightedData<T>> items)
+    public static T SelectRandomWeightedItem<T>(IList<IWeightedData> items)
     {
-        return SelectRandomWeightedItem(items, x => x.item, x => x.weight);
+        return SelectRandomWeightedItem(items, item => (T)item);
     }
 
     /// <summary>
     /// Selects multiple random items based on weight, optionally with replacement.
     /// </summary>
-    /// <typeparam name="T">The type of the item.</typeparam>
-    /// <param name="items">A list of WeightedData items to choose from.</param>
+    /// <typeparam name="T">The type of the item, which must implement IWeightedData.</typeparam>
+    /// <param name="items">A list of items to choose from.</param>
     /// <param name="count">The number of items to select.</param>
     /// <param name="withReplacement">If true, items can be selected multiple times.</param>
     /// <returns>A list of randomly selected items based on their weights.</returns>
-    public static List<T> SelectMultipleRandomWeightedItems<T>(IList<WeightedData<T>> items, int count, bool withReplacement = false)
+    public static List<T> SelectMultipleRandomWeightedItems<T>(IList<T> items, int count, bool withReplacement = false)
+        where T : IWeightedData
     {
         List<T> selectedItems = new List<T>();
-        List<WeightedData<T>> workingList = withReplacement ? new List<WeightedData<T>>(items) : items.ToList();
+        List<T> workingList = withReplacement ? new List<T>(items) : items.ToList();
 
         for (int i = 0; i < count; i++)
         {
@@ -86,24 +102,18 @@ public static class WeightedDataSelector
                 break;
             }
 
-            var selectedItem = SelectRandomWeightedItem(workingList);
+            // Use the reworked SelectRandomWeightedItem method to select an item
+            T selectedItem = SelectRandomWeightedItem(workingList, item => item, default(T));
 
             if (!withReplacement)
             {
-                workingList.Remove(workingList.First(x => x.item.Equals(selectedItem)));
+                // Remove the selected item from the working list
+                workingList.Remove(selectedItem);
             }
 
             selectedItems.Add(selectedItem);
         }
 
         return selectedItems;
-    }
-
-    /// <summary>
-    /// Clear the cache for total weights. Useful if the item list changes frequently.
-    /// </summary>
-    public static void ClearCache()
-    {
-        cachedTotalWeights.Clear();
     }
 }
