@@ -11,175 +11,204 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game
 {
-
-    /// <summary>
-    /// Definition of the Grid2D MonoBehaviour class. This class is used to create and manage a 2D grid of cells.
-    /// </summary>
-    public class Grid2D<TCell2D> : MonoBehaviour where TCell2D : Cell2D
+    [System.Serializable]
+    public class Grid2D
     {
-        #region << DATA >> : Map ------------------------------------------- >>
-        public class Map
+        #region -- << CLASS >> : CONFIG ------------------------------------ >>
+        [System.Serializable]
+        public class Config
         {
-            Grid2D<TCell2D> _grid;
-            Dictionary<Vector2Int, TCell2D> _dataMap = new();
-            [SerializeField] List<TCell2D> _dataList = new();
+            // -- Dimensions ---- >>
+            [SerializeField, ShowOnly]
+            Vector2Int _dimensions = new Vector2Int(3, 3);
+            public Vector2Int dimensions { get => _dimensions; set => _dimensions = value; }
+            public int numRows => _dimensions.y;
+            public int numColumns => _dimensions.x;
 
-            public Map(Grid2D<TCell2D> grid)
-            {
-                _grid = grid;
-                InitializeDataMap();
-            }
+            // -- Transform ---- >>
+            [SerializeField, ShowOnly]
+            Vector3 _worldPosition = Vector3.zero;
+            [SerializeField, ShowOnly]
+            Vector3 _worldDirection = Vector3.up;
+            public Vector3 worldPosition { get => _worldPosition; set => _worldPosition = value; }
+            public Vector3 worldDirection { get => _worldDirection; set => _worldDirection = value; }
 
-            /// <summary>
-            /// Initializes the data map with default grid data values
-            /// </summary>
-            void InitializeDataMap()
-            {
-                _grid.consoleGUI.Log("Initializing Data Map");
+            // -- Origin ---- >>
+            [SerializeField, ShowOnly]
+            Vector2Int _originOffset = Vector2Int.zero;
+            public Vector2Int originOffset { get => _originOffset; set => _originOffset = value; }
 
-                if (_grid == null || _grid.settings == null) return;
+            // -- Cell Dimensions ---- >>
+            [SerializeField, ShowOnly]
+            Vector2 _cellDimensions = new Vector2(1, 1);
+            public Vector2 cellDimensions { get => _cellDimensions; set => _cellDimensions = value; }
+            public float cellWidth => _cellDimensions.x;
+            public float cellHeight => _cellDimensions.y;
 
-                _dataMap.Clear();
-                for (int x = 0; x < _grid.settings.gridWidth; x++)
-                {
-                    for (int y = 0; y < _grid.settings.gridHeight; y++)
-                    {
-                        // Create a new data object & initialize it
-                        Vector2Int gridKey = new Vector2Int(x, y);
-
-                        // Check if there is existing data for this cell
-                        Cell2D existingData = GetCellData(gridKey);
-                        if (existingData == null)
-                        {
-                            TCell2D newData = new Cell2D(_grid.settings, gridKey, _grid.position) as TCell2D;
-                            AddCellData(gridKey, newData);
-                            _grid.consoleGUI.Log($"New Cell2D: {gridKey}");
-                        }
-                    }
-                }
-
-                _dataList = new List<TCell2D>(_dataMap.Values); // Update the data list
-                _grid.consoleGUI.Log("Data Map Initialized");
-            }
-
-            void AddCellData(Vector2Int key, TCell2D data)
-            {
-                if (_dataMap.ContainsKey(key))
-                    _dataMap[key] = data;
-                else
-                    _dataMap.Add(key, data);
-            }
-
-            public virtual TCell2D GetCellData(Vector2Int key)
-            {
-                _dataMap.TryGetValue(key, out TCell2D data);
-                return data;
-            }
-
-            public void UpdateData()
-            {
-                _dataList = new List<TCell2D>(_dataMap.Values);
-            }
-
-            public void RefreshData()
-            {
-                InitializeDataMap();
-            }
-
-            public virtual void ClearData()
-            {
-                _dataMap.Clear();
-            }
-
-
-#if UNITY_EDITOR
-
-            public void DrawGizmos(bool editMode = false)
-            {
-                foreach (Cell2D data in _dataList)
-                {
-                    data.DrawGizmos(editMode);
-                }
-            }
-#endif
-
+            // -- Spacing ---- >>
+            [SerializeField, ShowOnly]
+            Vector2 _cellSpacing = new Vector2(0, 0);
+            public Vector2 cellSpacing { get => _cellSpacing; set => _cellSpacing = value; }
         }
         #endregion
 
-        [SerializeField, Expandable] Grid2DSettings _settings;
-        [SerializeField] Map _cellMap;
-        [SerializeField] bool _editMode;
-
-        public ConsoleGUI consoleGUI { get; private set; } = new ConsoleGUI();
-        public Grid2DSettings settings => _settings;
-        public Map cellMap => _cellMap;
-        public bool editMode => _editMode;
-        public Vector3 position => transform.position;
-
-        public virtual void Awake()
+        #region -- << CLASS >> : CELL ------------------------------------ >>
+        /// <summary>
+        /// Definition of the Grid2D_CellData class. This class is used by the Grid2D class to store the data for each grid cell.
+        /// </summary>
+        [System.Serializable]
+        public class Cell
         {
-            _cellMap = new Map(this);
-        }
-
-        public void Update()
-        {
-            _cellMap.UpdateData();
-        }
-
-        public void Refresh()
-        {
-            _cellMap.RefreshData();
-        }
-    }
-
-    /// <summary>
-    /// Base class for a 2D grid. Creates a Grid2D with Cell2D objects.
-    /// </summary>
-    public class Grid2D : Grid2D<Cell2D>
-    {
-
-    }
-
-#if UNITY_EDITOR
-    [CustomEditor(typeof(Grid2D))]
-    public class Grid2DCustomEditor : UnityEditor.Editor
-    {
-        SerializedObject _serializedObject;
-        Grid2D _script;
-        bool _showInternalConsole = false;
-        private void OnEnable()
-        {
-            _serializedObject = new SerializedObject(target);
-            _script = (Grid2D)target;
-            _script.Awake();
-        }
-
-        public override void OnInspectorGUI()
-        {
-            _serializedObject.Update();
-
-            EditorGUI.BeginChangeCheck();
-
-            CustomInspectorGUI.CreateFoldout(ref _showInternalConsole, "Internal Console", () =>
+            #region -- << CLASS >> : DATA ------------------------------------ >>
+            public class Data
             {
-                _script.consoleGUI.DrawInEditor();
-            });
+                // -- Identifiers ---- >>
+                Grid2D _grid; // Reference to the parent grid
+                Vector2Int _key; // The position key of the cell in the grid
+                Color _color = Color.white; // Color of the cell fpr visualization
 
-            CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+                // -- Dimensions ---- >>
+                Vector2 _dimensions = Vector2.one; // Dimensions of the cell
 
-            if (EditorGUI.EndChangeCheck())
+                // -- Transform ---- >>
+                Vector3 _cellPosition = Vector3.zero; // World position of the cell
+                Vector3 _cellNormal = Vector3.up; // Normal direction of the cell
+
+                // -- States ---- >>
+                bool _disabled = false; // Is the cell active or not
+                public bool disabled => _disabled;
+
+                public Data(Grid2D grid, Vector2Int key)
+                {
+                    _grid = grid;
+                    _key = key;
+                    _dimensions = grid.config.cellDimensions;
+                    _cellPosition = CalculateWorldPosition();
+                    _cellNormal = grid.config.worldDirection;
+                }
+
+                Vector3 CalculateWorldPosition()
+                {
+                    Vector2Int key = _key;
+                    Grid2D.Config config = _grid.config;
+
+                    // Start with the grid's origin position in world space
+                    Vector3 basePosition = config.worldPosition;
+
+                    // Calculate the offset for the grid origin key
+                    Vector2 originOffset = (Vector2)config.originOffset * config.cellDimensions * -1;
+
+                    // Calculate the offset for the current key position
+                    Vector2 keyOffset = (Vector2)key * config.cellDimensions;
+
+                    // Combine origin offset and key offset
+                    Vector2 gridOffset = (originOffset + keyOffset) * config.cellSpacing;
+
+                    // Create a rotation matrix based on the grid's direction
+                    Quaternion rotation = Quaternion.LookRotation(config.worldDirection, Vector3.up);
+
+                    // Apply the rotation to the grid offset to get the final world offset
+                    Vector3 worldOffset = rotation * new Vector3(gridOffset.x, gridOffset.y, 0);
+
+                    // Combine the base position with the calculated world offset
+                    return basePosition + worldOffset;
+                }
+
+                public virtual Color GetColor()
+                {
+                    return _disabled ? Color.white : Color.black;
+                }
+            }
+            #endregion
+
+            // -- Protected Data ---- >>
+            protected Data data; // Cell data
+
+            public Cell(Grid2D grid, Vector2Int key)
             {
-                _serializedObject.ApplyModifiedProperties();
-                _script.Refresh();
-                EditorUtility.SetDirty(_script);
+                data = new Data(grid, key);
+            }
+        }
+        #endregion
+
+        #region -- << CLASS >> : MAP ------------------------------------ >>
+        protected class Map<TCell> where TCell : Cell
+        {
+            Grid2D _grid; // Reference to the parent grid
+            Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
+
+            // Indexer to access cells by their key
+            public TCell this[Vector2Int key]
+            {
+                get => _cellMap[key];
+                set => _cellMap[key] = value;
+            }
+
+            // Constructors
+            public Map() { }
+            public Map(Grid2D grid) => Initialize(grid);
+
+            // Initialization
+            public void Initialize(Grid2D grid2D)
+            {
+                _grid = grid2D;
+                InitializeDataMap(grid2D.config.dimensions);
+            }
+
+            void InitializeDataMap(Vector2Int dimensions)
+            {
+                _cellMap.Clear();
+                for (int x = 0; x < dimensions.x; x++)
+                {
+                    for (int y = 0; y < dimensions.y; y++)
+                    {
+                        Vector2Int gridKey = new Vector2Int(x, y);
+                        if (!_cellMap.ContainsKey(gridKey))
+                        {
+                            TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), _grid, gridKey);
+                            _cellMap[gridKey] = newCell;
+                        }
+                    }
+                }
             }
         }
 
-        void OnSceneGUI()
+        #endregion
+
+        [SerializeField] protected Config config = new Config();
+        protected Map<Cell> cellMap = new Map<Cell>();
+
+        public Grid2D() => Initialize();
+        public Grid2D(Config config)
         {
-            _script = (Grid2D)target;
-            _script.cellMap.DrawGizmos(_script.editMode);
+            this.config = config;
+            Initialize();
+        }
+
+        /// <summary>
+        /// Initializes the data map with cells created by the derived class.
+        /// </summary>
+        protected virtual void Initialize()
+        {
+            // ( Rebuild the cell map )
+            cellMap.Initialize(this);
+        }
+
+
+    }
+
+    public class Grid2D<TCell> : Grid2D where TCell : Grid2D.Cell
+    {
+        // Override the cell map to use the generic cell type
+        protected new Map<TCell> cellMap = new Map<TCell>();
+
+        public Grid2D() : base() => Initialize();
+        public Grid2D(Config config) : base(config) => Initialize();
+
+        protected override void Initialize()
+        {
+            // ( Rebuild the cell map )
+            cellMap.Initialize(this);
         }
     }
-#endif
 }

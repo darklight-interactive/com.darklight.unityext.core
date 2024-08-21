@@ -3,7 +3,7 @@ using NaughtyAttributes;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
-public class Grid2DSettings : ScriptableObject
+public class Grid2DConfigObject : ScriptableObject
 {
     DropdownList<Vector3> _directions = new DropdownList<Vector3>()
     {
@@ -32,13 +32,16 @@ public class Grid2DSettings : ScriptableObject
     [SerializeField, Range(0.1f, 10f)] float _cellWidth = 1;
     [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
 
-    // -- (( PUBLIC REFERENCES )) -------------------------------------- >>
-    public int gridWidth => _gridWidth;
-    public int gridHeight => _gridHeight;
-    public Vector3 gridDirection => _gridDirection;
-    public float gridSpacing => _gridSpacing;
-    public Vector2Int gridOriginKey => new Vector2Int(_gridOriginX, _gridOriginY);
-
-    public float cellWidth => _cellWidth;
-    public float cellHeight => _cellHeight;
+    public Grid2D.Config ToConfig()
+    {
+        Grid2D.Config config = new Grid2D.Config()
+        {
+            dimensions = new Vector2Int(_gridWidth, _gridHeight),
+            worldDirection = _gridDirection,
+            originOffset = new Vector2Int(_gridOriginX, _gridOriginY),
+            cellDimensions = new Vector2(_cellWidth, _cellHeight),
+            cellSpacing = new Vector2(_gridSpacing, _gridSpacing)
+        };
+        return config;
+    }
 }

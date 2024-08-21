@@ -3,17 +3,12 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game
 {
-    public class WeightedCell2D : Cell2D
+    public class WeightedCell2D : Grid2D.Cell
     {
         int _weight = 0;
-
-        public WeightedCell2D(Grid2DSettings settings, Vector2Int gridKey, Vector3 gridPosition) : base(settings, gridKey, gridPosition)
+        public WeightedCell2D(Grid2D grid, Vector2Int key) : base(grid, key)
         {
-        }
-
-        public WeightedCell2D(Grid2DSettings settings, Vector2Int gridKey, Vector3 gridPosition, int weight) : base(settings, gridKey, gridPosition)
-        {
-            _weight = weight;
+            _weight = 1; // Default weight
         }
     }
 }
