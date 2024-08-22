@@ -99,6 +99,12 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviourGrid2D, IGrid2D where TCe
     {
         typedGrid = new Grid2D<TCell>(config);
     }
+
+    public override void DrawGizmos(bool editMode = false)
+    {
+        if (typedGrid == null) return;
+        typedGrid.DrawGizmos(editMode);
+    }
 }
 #endregion
 
@@ -128,20 +134,7 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
             EditorGUILayout.PropertyField(gridProp, true);
 
             SerializedProperty basicGridProp = _serializedObject.FindProperty("basicGrid");
-
-            // Draw properties manually except for the one you want to exclude
-            SerializedProperty iterator = serializedObject.GetIterator();
-            iterator.NextVisible(true);
-
-            while (iterator.NextVisible(false))
-            {
-                // Skip the property you want to exclude
-                if (basicGridProp != null && iterator.propertyPath == basicGridProp.propertyPath) continue;
-                if (iterator.propertyPath == gridProp.propertyPath) continue;
-
-                // Draw the property in the inspector
-                EditorGUILayout.PropertyField(iterator, true);
-            }
+            DrawPropertiesExcluding(_serializedObject, "typedGrid", "basicGrid");
         }
         else
         {

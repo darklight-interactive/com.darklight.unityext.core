@@ -16,9 +16,14 @@ public class WeightedCell : Cell2D
         weight = 0;
     }
 
-    public override void Refresh()
+    protected override Color GetColor()
     {
-        base.Refresh();
+        return Color.Lerp(Color.white, Color.black, weight / 100f);
+    }
+
+    protected override void OnEditToggle()
+    {
+        ToggleWeight();
     }
 
     void ToggleWeight()
