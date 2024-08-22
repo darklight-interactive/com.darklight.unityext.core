@@ -22,7 +22,7 @@ namespace Darklight.UnityExt.Game
         #endregion
 
         // -- (( SERIALIZED DATA )) --------------------------------- >>
-        [SerializeField] bool _showGizmos;
+        [SerializeField] bool _showGizmos = true;
 
         [Header("-- Dimensions ---- >>")]
         [SerializeField, Range(1, 10)] int _numColumns = 3;

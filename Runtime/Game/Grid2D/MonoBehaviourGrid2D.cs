@@ -14,11 +14,12 @@ using UnityEditor;
 [ExecuteAlways]
 public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
 {
-    const string ASSET_PATH = "Assets/Resources/Grid2D";
-    const string CONFIG_PATH = ASSET_PATH + "Config";
-    const string DATA_PATH = ASSET_PATH + "Data";
+    protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
+    protected const string CONFIG_PATH = ASSET_PATH + "/Config";
+    protected const string DATA_PATH = ASSET_PATH + "/Data";
 
-    public Grid2D<Cell2D> basicGrid;
+    [SerializeField] Grid2D<Cell2D> _grid;
+    public Grid2D<Cell2D> grid { get => _grid; protected set => _grid = value; }
 
     [HorizontalLine(4)]
     [SerializeField, Expandable] Grid2D_ConfigObject _configObj;
@@ -32,7 +33,6 @@ public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
     public virtual void GenerateDataObj()
     {
         _dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_DataObject>(DATA_PATH, name);
-        _dataObj.Initialize(basicGrid);
     }
 
     [HorizontalLine(2)]
@@ -57,13 +57,13 @@ public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
 
     public virtual void Initialize(AbstractGrid2D.Config config)
     {
-        basicGrid = new Grid2D<Cell2D>(config);
+        grid = new Grid2D<Cell2D>(config);
     }
 
     public void UpdateConfig() => UpdateConfig(_configObj.ToConfig());
-    public void UpdateConfig(AbstractGrid2D.Config config)
+    public virtual void UpdateConfig(AbstractGrid2D.Config config)
     {
-        if (basicGrid == null)
+        if (grid == null)
             Initialize(config);
 
         if (_lockToTransform)
@@ -74,36 +74,46 @@ public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
         if (_configObj)
             _configObj.showTransformValues = !_lockToTransform;
 
-        if (basicGrid == null)
+        if (grid == null)
         {
             Debug.LogError("Grid2D: Cannot update config with null grid.");
             return;
         }
-        basicGrid.UpdateConfig(config);
-        _dataObj.SaveData();
+
+        grid.UpdateConfig(config);
+        _dataObj.SaveGridData(grid);
     }
 
     public virtual void DrawGizmos(bool editMode = false)
     {
-        if (basicGrid == null) return;
-        basicGrid.DrawGizmos(_editMode);
+        if (grid == null) return;
+        grid.DrawGizmos(_editMode);
     }
 }
 
 
 #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-public class MonoBehaviourGrid2D<TCell> : MonoBehaviourGrid2D, IGrid2D where TCell : Cell2D
+public class MonoBehaviourGrid2D<TCell> : MonoBehaviourGrid2D, IGrid2D where TCell : Cell2D, new()
 {
-    public Grid2D<TCell> typedGrid;
+    public new Grid2D<TCell> grid;
+
     public override void Initialize(AbstractGrid2D.Config config)
     {
-        typedGrid = new Grid2D<TCell>(config);
+        grid = new Grid2D<TCell>(config);
+    }
+
+    public override void UpdateConfig(AbstractGrid2D.Config config)
+    {
+        base.UpdateConfig(config);
+
+        grid.UpdateConfig(config);
+        dataObj.SaveGridData(grid);
     }
 
     public override void DrawGizmos(bool editMode = false)
     {
-        if (typedGrid == null) return;
-        typedGrid.DrawGizmos(editMode);
+        if (grid == null) return;
+        grid.DrawGizmos(editMode);
     }
 }
 #endregion
@@ -128,13 +138,13 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
         EditorGUI.BeginChangeCheck();
 
         // If the grid is a typed grid, draw the typed grid property instead of the basic grid property
-        SerializedProperty gridProp = _serializedObject.FindProperty("typedGrid");
+        SerializedProperty gridProp = _serializedObject.FindProperty("grid");
         if (gridProp != null)
         {
             EditorGUILayout.PropertyField(gridProp, true);
 
-            SerializedProperty basicGridProp = _serializedObject.FindProperty("basicGrid");
-            DrawPropertiesExcluding(_serializedObject, "typedGrid", "basicGrid");
+            SerializedProperty basicGridProp = _serializedObject.FindProperty("_grid");
+            DrawPropertiesExcluding(_serializedObject, "_grid", "grid");
         }
         else
         {
@@ -146,9 +156,11 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
         {
             _serializedObject.ApplyModifiedProperties();
             EditorUtility.SetDirty(target);
-            _script.UpdateConfig();
             Repaint();
         }
+
+        _script.UpdateConfig();
+
     }
 
     private void OnSceneGUI()

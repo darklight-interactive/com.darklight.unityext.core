@@ -39,11 +39,21 @@ public class WeightedCell : Cell2D
             disabled = false;
         }
     }
+
+    public override void DrawGizmos(bool editMode)
+    {
+        base.DrawGizmos(editMode);
+
+    }
 }
 
 [ExecuteAlways]
 public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedCell>
 {
-
+    public class WeightedGrid2D_DataObject : Grid2D_DataObject<WeightedCell> { }
+    public override void GenerateDataObj()
+    {
+        dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<WeightedGrid2D_DataObject>(DATA_PATH, name);
+    }
 }
 

@@ -3,25 +3,35 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game
 {
+    /// <summary>
+    /// Abstract class for a 2D grid data object that inherits from ScriptableObject.
+    /// </summary>
     public abstract class Grid2D_AbstractDataObject : ScriptableObject
     {
-        public abstract void Initialize(AbstractGrid2D grid);
-        public abstract void SaveData();
+        public abstract void SaveGridData(AbstractGrid2D grid);
     }
 
-    public abstract class Grid2D_DataObject<TCell> : Grid2D_AbstractDataObject where TCell : Cell2D, new()
+    /// <summary>
+    /// Abstract non-generic class for a 2D grid data object that inherits from Grid2D_AbstractDataObject.
+    /// </summary>
+    /// <typeparam name="TCell"></typeparam>
+    public class Grid2D_DataObject<TCell> : Grid2D_AbstractDataObject where TCell : Cell2D, new()
     {
-        Grid2D<TCell> grid;
+        public Grid2D.Config config;
         public List<TCell> cells = new List<TCell>();
-        public override void Initialize(AbstractGrid2D grid)
+
+        public override void SaveGridData(AbstractGrid2D grid)
         {
-            this.grid = grid as Grid2D<TCell>;
-            cells = this.grid.cellMap.cellList;
+            config = grid.config;
+            if (grid is Grid2D<TCell>)
+            {
+                SaveCellData((grid as Grid2D<TCell>).cellMap.cellList);
+            }
         }
 
-        public override void SaveData()
+        public virtual void SaveCellData(List<TCell> cells)
         {
-            cells = grid.cellMap.cellList;
+            this.cells = cells;
         }
     }
 
