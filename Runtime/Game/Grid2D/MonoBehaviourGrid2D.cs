@@ -88,6 +88,11 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : C
     {
         _grid.DrawGizmos(_editMode);
     }
+
+    void OnDrawGizmos()
+    {
+        DrawGizmos();
+    }
 }
 
 #if UNITY_EDITOR
@@ -126,6 +131,8 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
 
     private void OnSceneGUI()
     {
+        if (_script == null)
+            return;
         _script.DrawGizmos(true);
     }
 }

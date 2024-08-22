@@ -6,11 +6,6 @@ using Darklight.UnityExt.Editor;
 using UnityEngine;
 using System.Linq;
 
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Darklight.UnityExt.Game
 {
     #region -- << INTERFACE >> : IGRID2D ------------------------------------ >>
@@ -95,7 +90,7 @@ namespace Darklight.UnityExt.Game
         public class CellMap<TCell> where TCell : Cell2D
         {
             [SerializeField, ShowOnly] bool _initialized;
-            Config _config;
+            Grid2D<TCell> _grid;
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
             [SerializeField] List<TCell> _cellList = new List<TCell>();
             public List<TCell> cellList => _cellList;
@@ -107,15 +102,15 @@ namespace Darklight.UnityExt.Game
                 set => _cellMap[key] = value;
             }
 
-            public CellMap(Config config)
+            public CellMap(Grid2D<TCell> grid)
             {
-                _config = config;
-                if (_config == null)
+                _grid = grid;
+                if (_grid == null)
                 {
-                    Debug.LogError("CellMap: Cannot initialize cell map with null config.");
-                    _initialized = false;
+                    Debug.LogError("CellMap: Cannot initialize cell map with null grid.");
                     return;
                 }
+
                 _initialized = true;
                 Generate();
             }
@@ -125,7 +120,7 @@ namespace Darklight.UnityExt.Game
                 if (!_initialized) return;
 
                 _cellMap.Clear();
-                Vector2Int dimensions = _config.dimensions;
+                Vector2Int dimensions = _grid._config.dimensions;
                 for (int x = 0; x < dimensions.x; x++)
                 {
                     for (int y = 0; y < dimensions.y; y++)
@@ -133,7 +128,7 @@ namespace Darklight.UnityExt.Game
                         Vector2Int gridKey = new Vector2Int(x, y);
                         if (!_cellMap.ContainsKey(gridKey))
                         {
-                            TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), gridKey);
+                            TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), _grid, gridKey);
                             _cellMap[gridKey] = newCell;
                         }
                     }
@@ -144,6 +139,8 @@ namespace Darklight.UnityExt.Game
 
             public void MapFunction(Func<TCell, TCell> mapFunction)
             {
+                if (!_initialized) return;
+                if (_cellMap == null) return;
                 foreach (var key in _cellMap.Keys.ToList())
                 {
                     _cellMap[key] = mapFunction(_cellMap[key]);
@@ -158,16 +155,6 @@ namespace Darklight.UnityExt.Game
                 foreach (TCell cell in _cellMap.Values)
                 {
                     _cellList.Add(cell);
-                }
-            }
-
-            public void DrawGizmos()
-            {
-                if (!_initialized) return;
-
-                foreach (var cell in _cellMap.Values)
-                {
-                    cell.DrawGizmos();
                 }
             }
         }
@@ -210,7 +197,7 @@ namespace Darklight.UnityExt.Game
             this.config = config;
 
             // ( Rebuild the cell map )
-            cellMap = new CellMap<TCell>(this.config);
+            cellMap = new CellMap<TCell>(this);
             initialized = true;
         }
 
@@ -220,13 +207,13 @@ namespace Darklight.UnityExt.Game
             this.config = config;
 
             // ( Rebuild the cell map )
-            cellMap = new CellMap<TCell>(this.config);
+            cellMap = new CellMap<TCell>(this);
         }
 
         public override void DrawGizmos(bool editMode)
         {
             if (!config.showGizmos) return;
-            cellMap.DrawGizmos();
+            cellMap.MapFunction(cell => { cell.DrawGizmos(); return cell; });
         }
 
 

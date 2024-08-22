@@ -80,17 +80,14 @@ namespace Darklight.UnityExt.Game
 
         // ===================== [[ CONSTRUCTORS ]] ===================== //
         public Cell2D() { }
-        public Cell2D(Vector2Int key) => _data = new Data(key);
         public Cell2D(AbstractGrid2D grid, Vector2Int key) => Initialize(grid, key);
         public virtual void Initialize(AbstractGrid2D grid, Vector2Int key)
         {
             _gridParent = grid;
-            _data = new Data(key)
-            {
-                dimensions = _gridParent.config.cellDimensions,
-                position = CalculateWorldPosition(),
-                normal = GetNormal()
-            };
+            _data = new Data(key);
+            _data.position = CalculateWorldPosition();
+            _data.normal = GetNormal();
+            _data.dimensions = _gridParent.config.cellDimensions;
         }
 
         public virtual void Refresh() { }
