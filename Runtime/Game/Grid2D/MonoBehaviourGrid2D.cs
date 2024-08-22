@@ -15,13 +15,14 @@ using UnityEditor;
 /// Base class for a 2D grid. Creates a Grid2D with Cell2D objects.
 /// </summary>
 [ExecuteAlways]
-public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : Grid2D.Cell, new()
+public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : Cell2D, new()
 {
     protected const string CONFIG_PATH = "Assets/Resources/Grid2D_Config";
     protected const string DATA_PATH = "Assets/Resources/Grid2D_Data";
+    public class DataObject : Grid2D_DataObject<TCell> { }
 
-    public Type cellType => typeof(TCell);
-    [SerializeField] Grid2D<TCell> _grid = new Grid2D<TCell>();
+
+    [SerializeField] Grid2D<TCell> _grid;
     protected Grid2D<TCell> grid => _grid;
 
     [HorizontalLine(4)]
@@ -36,6 +37,7 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : G
     public virtual void GenerateDataObj()
     {
         _dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_DataObject>(DATA_PATH, name);
+        _dataObj.Initialize(_grid);
     }
 
     [HorizontalLine(2)]
@@ -49,24 +51,26 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : G
         // Create the grid based on the config object
         if (_configObj == null)
             GenerateConfigObj();
-        _grid = new Grid2D<TCell>(_configObj.ToConfig());
+        Initialize(_configObj.ToConfig());
+    }
+
+    public void Initialize(AbstractGrid2D.Config config)
+    {
+        // Create the grid based on the config object
+        _grid = new Grid2D<TCell>(config);
 
         // Initialize the data object
         if (_dataObj == null)
             GenerateDataObj();
     }
 
-    public void Update()
+    public void UpdateConfig() => UpdateConfig(_configObj.ToConfig());
+    public void UpdateConfig(AbstractGrid2D.Config config)
     {
-        if (_grid.initialized)
-        {
-            ApplyTransform();
-        }
-    }
+        _grid.UpdateConfig(config);
+        ApplyTransform();
 
-    public virtual void RefreshData()
-    {
-        _grid.RefreshData();
+        _dataObj.SaveData();
     }
 
     protected virtual void ApplyTransform()
@@ -75,7 +79,9 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : G
             _configObj.showTransformValues = !_lockToTransform;
 
         if (_lockToTransform)
-            _grid.SetTransform(transform);
+            _grid.SetTransformParent(transform);
+        else
+            _grid.ResetTransform();
     }
 
     public virtual void DrawGizmos(bool editMode = false)
@@ -89,11 +95,11 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : G
 public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
 {
     SerializedObject _serializedObject;
-    IGrid2D _script;
+    MonoBehaviourGrid2D<Cell2D> _script;
     private void OnEnable()
     {
         _serializedObject = new SerializedObject(target);
-        _script = (IGrid2D)target;
+        _script = (MonoBehaviourGrid2D<Cell2D>)target;
         _script.InitializeGrid();
     }
 
@@ -103,14 +109,13 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
 
         EditorGUI.BeginChangeCheck();
 
-
         CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
 
         if (EditorGUI.EndChangeCheck())
         {
             _serializedObject.ApplyModifiedProperties();
 
-            _script.RefreshData();
+            _script.UpdateConfig();
 
             EditorUtility.SetDirty(target);
             Repaint();
@@ -119,9 +124,9 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
         }
     }
 
-    void OnSceneGUI()
+    private void OnSceneGUI()
     {
-        _script.DrawGizmos();
+        _script.DrawGizmos(true);
     }
 }
 #endif
