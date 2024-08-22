@@ -34,7 +34,7 @@ namespace Darklight.UnityExt.Game
     }
     #endregion
 
-    #region -- << ABSTRACT CLASS >> : ABSTRACT GRID2D ------------------------------------ >>
+    #region -- << ABSTRACT CLASS >> : GRID2D ------------------------------------ >>
     /// <summary>
     ///     Abstract class for a 2D grid. Creates a Grid2D with Cell2D objects.
     /// </summary>
@@ -60,6 +60,11 @@ namespace Darklight.UnityExt.Game
             [SerializeField, ShowOnly] Vector3 _normal = Vector3.up;
             public Vector3 position { get => _position; set => _position = value; }
             public Vector3 normal { get => _normal; set => _normal = value; }
+            public void SetWorldSpaceData(Vector3 position, Vector3 normal)
+            {
+                _position = position;
+                _normal = normal;
+            }
 
             // -- Origin ---- >>
             [SerializeField, ShowOnly] Vector2Int _originOffset = Vector2Int.zero;
@@ -76,6 +81,8 @@ namespace Darklight.UnityExt.Game
             [SerializeField, ShowOnly]
             Vector2 _cellSpacing = new Vector2(0, 0);
             public Vector2 cellSpacing { get => _cellSpacing; set => _cellSpacing = value; }
+
+
         }
         #endregion
 
@@ -213,23 +220,16 @@ namespace Darklight.UnityExt.Game
         public override void DrawGizmos(bool editMode)
         {
             if (!config.showGizmos) return;
-            cellMap.MapFunction(cell => { cell.DrawGizmos(); return cell; });
+            cellMap.MapFunction(cell =>
+            {
+                cell.DrawGizmos(editMode);
+                return cell;
+            });
         }
+    }
 
-
-        // ===================== >> HANDLER METHODS << ===================== //
-        public virtual void SetTransformParent(Transform transform)
-        {
-            config.position = transform.position;
-            config.normal = transform.forward;
-        }
-
-        public virtual void ResetTransform()
-        {
-            config.position = Vector3.zero;
-            config.normal = Vector3.up;
-        }
-
-
+    public class Grid2D : Grid2D<Cell2D>
+    {
+        public Grid2D(Config config) : base(config) { }
     }
 }

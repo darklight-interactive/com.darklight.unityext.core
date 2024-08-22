@@ -11,19 +11,14 @@ using System;
 using UnityEditor;
 #endif
 
-/// <summary>
-/// Base class for a 2D grid. Creates a Grid2D with Cell2D objects.
-/// </summary>
 [ExecuteAlways]
-public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : Cell2D, new()
+public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
 {
-    protected const string CONFIG_PATH = "Assets/Resources/Grid2D_Config";
-    protected const string DATA_PATH = "Assets/Resources/Grid2D_Data";
-    public class DataObject : Grid2D_DataObject<TCell> { }
+    const string ASSET_PATH = "Assets/Resources/Grid2D";
+    const string CONFIG_PATH = ASSET_PATH + "Config";
+    const string DATA_PATH = ASSET_PATH + "Data";
 
-
-    [SerializeField] Grid2D<TCell> _grid;
-    protected Grid2D<TCell> grid => _grid;
+    public Grid2D<Cell2D> basicGrid;
 
     [HorizontalLine(4)]
     [SerializeField, Expandable] Grid2D_ConfigObject _configObj;
@@ -37,7 +32,7 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : C
     public virtual void GenerateDataObj()
     {
         _dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_DataObject>(DATA_PATH, name);
-        _dataObj.Initialize(_grid);
+        _dataObj.Initialize(basicGrid);
     }
 
     [HorizontalLine(2)]
@@ -45,67 +40,79 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviour, IGrid2D where TCell : C
     [SerializeField] bool _lockToTransform;
 
 
-    public void Awake() => InitializeGrid();
-    public virtual void InitializeGrid()
+    public void Awake() => Initialize();
+    void Initialize()
     {
         // Create the grid based on the config object
         if (_configObj == null)
             GenerateConfigObj();
+
         Initialize(_configObj.ToConfig());
-    }
 
-    public void Initialize(AbstractGrid2D.Config config)
-    {
-        // Create the grid based on the config object
-        _grid = new Grid2D<TCell>(config);
-
-        // Initialize the data object
         if (_dataObj == null)
             GenerateDataObj();
+
+        UpdateConfig();
+    }
+
+    public virtual void Initialize(AbstractGrid2D.Config config)
+    {
+        basicGrid = new Grid2D<Cell2D>(config);
     }
 
     public void UpdateConfig() => UpdateConfig(_configObj.ToConfig());
     public void UpdateConfig(AbstractGrid2D.Config config)
     {
-        _grid.UpdateConfig(config);
-        ApplyTransform();
+        if (basicGrid == null)
+            Initialize(config);
 
-        _dataObj.SaveData();
-    }
+        if (_lockToTransform)
+            config.SetWorldSpaceData(transform.position, transform.forward);
+        else
+            config.SetWorldSpaceData(Vector3.zero, Vector3.up);
 
-    protected virtual void ApplyTransform()
-    {
         if (_configObj)
             _configObj.showTransformValues = !_lockToTransform;
 
-        if (_lockToTransform)
-            _grid.SetTransformParent(transform);
-        else
-            _grid.ResetTransform();
+        if (basicGrid == null)
+        {
+            Debug.LogError("Grid2D: Cannot update config with null grid.");
+            return;
+        }
+        basicGrid.UpdateConfig(config);
+        _dataObj.SaveData();
     }
 
     public virtual void DrawGizmos(bool editMode = false)
     {
-        _grid.DrawGizmos(_editMode);
-    }
-
-    void OnDrawGizmos()
-    {
-        DrawGizmos();
+        if (basicGrid == null) return;
+        basicGrid.DrawGizmos(_editMode);
     }
 }
 
+
+#region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
+public class MonoBehaviourGrid2D<TCell> : MonoBehaviourGrid2D, IGrid2D where TCell : Cell2D
+{
+    public Grid2D<TCell> typedGrid;
+    public override void Initialize(AbstractGrid2D.Config config)
+    {
+        typedGrid = new Grid2D<TCell>(config);
+    }
+}
+#endregion
+
 #if UNITY_EDITOR
-[CustomEditor(typeof(MonoBehaviourGrid2D<>), true)]
+[CustomEditor(typeof(MonoBehaviourGrid2D), true)]
 public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
 {
     SerializedObject _serializedObject;
-    MonoBehaviourGrid2D<Cell2D> _script;
+    MonoBehaviourGrid2D _script;
     private void OnEnable()
     {
         _serializedObject = new SerializedObject(target);
-        _script = (MonoBehaviourGrid2D<Cell2D>)target;
-        _script.InitializeGrid();
+        _script = (MonoBehaviourGrid2D)target;
+        _script.Awake();
     }
 
     public override void OnInspectorGUI()
@@ -114,25 +121,45 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
 
         EditorGUI.BeginChangeCheck();
 
-        CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+        // If the grid is a typed grid, draw the typed grid property instead of the basic grid property
+        SerializedProperty gridProp = _serializedObject.FindProperty("typedGrid");
+        if (gridProp != null)
+        {
+            EditorGUILayout.PropertyField(gridProp, true);
+
+            SerializedProperty basicGridProp = _serializedObject.FindProperty("basicGrid");
+
+            // Draw properties manually except for the one you want to exclude
+            SerializedProperty iterator = serializedObject.GetIterator();
+            iterator.NextVisible(true);
+
+            while (iterator.NextVisible(false))
+            {
+                // Skip the property you want to exclude
+                if (basicGridProp != null && iterator.propertyPath == basicGridProp.propertyPath) continue;
+                if (iterator.propertyPath == gridProp.propertyPath) continue;
+
+                // Draw the property in the inspector
+                EditorGUILayout.PropertyField(iterator, true);
+            }
+        }
+        else
+        {
+            CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+        }
+
 
         if (EditorGUI.EndChangeCheck())
         {
             _serializedObject.ApplyModifiedProperties();
-
-            _script.UpdateConfig();
-
             EditorUtility.SetDirty(target);
+            _script.UpdateConfig();
             Repaint();
-
-            //Debug.Log($"Inspector Updated: {_script}", target);
         }
     }
 
     private void OnSceneGUI()
     {
-        if (_script == null)
-            return;
         _script.DrawGizmos(true);
     }
 }

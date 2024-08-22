@@ -28,7 +28,7 @@ namespace Darklight.UnityExt.Game
         /// <summary>
         /// Draws the gizmos for the cell.
         /// </summary>
-        void DrawGizmos();
+        void DrawGizmos(bool editMode);
     }
 
     /// <summary>
@@ -63,9 +63,11 @@ namespace Darklight.UnityExt.Game
                 _name = $"Cell2D {key}";
             }
 
-            public Tuple<Vector3, Vector3, Vector3, Color> GetGizmoData()
+            public void GetWorldSpaceData(out Vector3 position, out Vector2 dimensions, out Vector3 normal)
             {
-                return new Tuple<Vector3, Vector3, Vector3, Color>(_position, _dimensions, _normal, Color.white);
+                position = _position;
+                dimensions = _dimensions;
+                normal = _normal;
             }
         }
         #endregion
@@ -134,11 +136,20 @@ namespace Darklight.UnityExt.Game
         /// <returns></returns>
         Vector3 GetNormal() => _gridParent.config.normal;
 
+        /// <summary>
+        /// Updates the color of the cell based on its state.
+        /// </summary>
+        protected virtual Color GetColor()
+        {
+            return _disabled ? Color.grey : Color.white;
+        }
+
 #if UNITY_EDITOR
-        public virtual void DrawGizmos()
+        public virtual void DrawGizmos(bool editMode)
         {
             // Deconstruct tuple to get the gizmo data
-            var (position, dimensions, normal, color) = _data.GetGizmoData();
+            _data.GetWorldSpaceData(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
+            Color color = GetColor();
 
             // Draw the cell square
             CustomGizmos.DrawWireRect(position, dimensions, normal, color);
@@ -146,7 +157,6 @@ namespace Darklight.UnityExt.Game
             string label = $"{_data.key}\n{(_disabled ? "Disabled" : "Enabled")}";
             CustomGizmos.DrawLabel(label, position, CustomGUIStyles.CenteredStyle);
 
-            /*
             if (editMode)
             {
                 float size = Mathf.Min(dimensions.x, dimensions.y);
@@ -155,10 +165,14 @@ namespace Darklight.UnityExt.Game
                 // Draw the button handle only if the grid is in edit mode
                 CustomGizmos.DrawButtonHandle(position, size, normal, color, () =>
                 {
-                    disabled = !disabled;
+                    OnEditToggle();
                 }, Handles.RectangleHandleCap);
             }
-            */
+        }
+
+        protected virtual void OnEditToggle()
+        {
+            _disabled = !_disabled;
         }
 #endif
     }
