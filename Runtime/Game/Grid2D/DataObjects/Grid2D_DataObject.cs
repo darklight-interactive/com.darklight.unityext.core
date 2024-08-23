@@ -9,32 +9,42 @@ namespace Darklight.UnityExt.Game
     public abstract class Grid2D_AbstractDataObject : ScriptableObject
     {
         public abstract void SaveGridData(AbstractGrid2D grid);
+        public abstract List<TData> GetGridData<TData>() where TData : Cell2D.Data;
     }
 
     /// <summary>
-    /// Abstract non-generic class for a 2D grid data object that inherits from Grid2D_AbstractDataObject.
+    /// Abstract generic class for a 2D grid data object.
     /// </summary>
-    /// <typeparam name="TCell"></typeparam>
-    public class Grid2D_DataObject<TCell> : Grid2D_AbstractDataObject where TCell : Cell2D, new()
+    /// <typeparam name="TCell">Type of the cell.</typeparam>
+    /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
+    public class Grid2D_DataObject<TCell, TData> : Grid2D_AbstractDataObject
+        where TCell : Cell2D, new()
+        where TData : Cell2D.Data, new()
     {
-        public Grid2D.Config config;
-        public List<TCell> cells = new List<TCell>();
-
+        public List<TData> savedData = new List<TData>();
         public override void SaveGridData(AbstractGrid2D grid)
         {
-            config = grid.config;
-            if (grid is Grid2D<TCell>)
+            if (grid == null)
+                return;
+
+            if (grid is Grid2D<TCell> typedGrid)
             {
-                SaveCellData((grid as Grid2D<TCell>).cellMap.cellList);
+                // Save data from the typed grid
+                SaveCellData(typedGrid.cellMap.GetData<TData>());
             }
         }
 
-        public virtual void SaveCellData(List<TCell> cells)
+        public virtual void SaveCellData(List<TData> cells)
         {
-            this.cells = cells;
+            this.savedData = cells;
+        }
+
+        public override List<T> GetGridData<T>()
+        {
+            return savedData as List<T>;
         }
     }
 
-    public class Grid2D_DataObject : Grid2D_DataObject<Cell2D> { }
+    public class Grid2D_DataObject : Grid2D_DataObject<Cell2D, Cell2D.Data> { }
 
 }

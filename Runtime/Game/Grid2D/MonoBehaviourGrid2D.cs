@@ -81,7 +81,10 @@ public class MonoBehaviourGrid2D : MonoBehaviour, IGrid2D
         }
 
         grid.UpdateConfig(config);
-        _dataObj.SaveGridData(grid);
+
+        if (dataObj == null)
+            GenerateDataObj();
+        dataObj.SaveGridData(grid);
     }
 
     public virtual void DrawGizmos(bool editMode = false)
@@ -107,6 +110,9 @@ public class MonoBehaviourGrid2D<TCell> : MonoBehaviourGrid2D, IGrid2D where TCe
         base.UpdateConfig(config);
 
         grid.UpdateConfig(config);
+        grid.cellMap.LoadData<Cell2D.Data>(dataObj.GetGridData<Cell2D.Data>());
+
+
         dataObj.SaveGridData(grid);
     }
 

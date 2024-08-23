@@ -100,7 +100,6 @@ namespace Darklight.UnityExt.Game
             Grid2D<TCell> _grid;
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
             [SerializeField] List<TCell> _cellList = new List<TCell>();
-            public List<TCell> cellList => _cellList;
 
             // Indexer to access cells by their key
             public TCell this[Vector2Int key]
@@ -109,6 +108,7 @@ namespace Darklight.UnityExt.Game
                 set => _cellMap[key] = value;
             }
 
+            #region (( Initialization )) --------- >>
             public CellMap(Grid2D<TCell> grid)
             {
                 _grid = grid;
@@ -144,6 +144,9 @@ namespace Darklight.UnityExt.Game
                 _cellList = _cellMap.Values.ToList();
             }
 
+            #endregion
+
+            #region (( Public Methods )) --------- >>
             public void MapFunction(Func<TCell, TCell> mapFunction)
             {
                 if (!_initialized) return;
@@ -156,6 +159,15 @@ namespace Darklight.UnityExt.Game
                 RefreshData();
             }
 
+            public void Update()
+            {
+                MapFunction(cell =>
+                {
+                    cell.Update();
+                    return cell;
+                });
+            }
+
             public void RefreshData()
             {
                 _cellList.Clear();
@@ -164,6 +176,39 @@ namespace Darklight.UnityExt.Game
                     _cellList.Add(cell);
                 }
             }
+            #endregion
+
+            #region (( Getter Methods )) --------- >>
+
+            public List<TCell> GetCells() => _cellList;
+            public List<TData> GetData<TData>() where TData : Cell2D.Data
+            {
+                List<TData> dataList = new List<TData>();
+                foreach (TCell cell in _cellList)
+                {
+                    dataList.Add(cell.GetData() as TData);
+                }
+
+                return dataList;
+            }
+
+            #endregion
+
+            #region (( Loas & Save Methods )) --------- >>
+
+            public void LoadData<TData>(List<TData> dataList) where TData : Cell2D.Data
+            {
+                if (dataList == null) return;
+                foreach (TData cellData in dataList)
+                {
+                    if (_cellMap.ContainsKey(cellData.key))
+                    {
+                        TCell cell = _cellMap[cellData.key];
+                        cell.SetData(cellData);
+                    }
+                }
+            }
+            #endregion
         }
 
         #endregion
@@ -183,14 +228,17 @@ namespace Darklight.UnityExt.Game
     }
     #endregion
 
+    #region -- << GENERIC CLASS >> : GRID2D ------------------------------------ >>
     [System.Serializable]
     public class Grid2D<TCell> : AbstractGrid2D, IGrid2D where TCell : Cell2D
     {
         // Override the cell map to use the generic type TCell
         public CellMap<TCell> cellMap;
 
-        // -- Constructors ---- >>
+        // -- Constructor ---- >>
         public Grid2D(Config config) => Initialize(config);
+
+        #region (( IGrid2D Methods )) --------- >>
         public override void Initialize(Config config)
         {
             if (config == null)
@@ -213,8 +261,8 @@ namespace Darklight.UnityExt.Game
             // ( Set the config )
             this.config = config;
 
-            // ( Rebuild the cell map )
-            cellMap = new CellMap<TCell>(this);
+            // ( Update the cell map )
+            cellMap.Update();
         }
 
         public override void DrawGizmos(bool editMode)
@@ -226,7 +274,9 @@ namespace Darklight.UnityExt.Game
                 return cell;
             });
         }
+        #endregion
     }
+    #endregion
 
     public class Grid2D : Grid2D<Cell2D>
     {
