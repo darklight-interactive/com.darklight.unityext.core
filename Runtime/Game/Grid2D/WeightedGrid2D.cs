@@ -5,13 +5,19 @@ using UnityEngine;
 
 
 [ExecuteAlways]
-public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
+public class WeightedGrid2D : GenericMonoBehaviourGrid2D<
+    WeightedGrid2D.WeightedCell, WeightedGrid2D.WeightedCell.WeightedData>
 {
+    public class WeightedGrid : GenericGrid2D<WeightedCell, WeightedCell.WeightedData>
+    {
+        public WeightedGrid(Config config) : base(config) { }
+    }
+
     [System.Serializable]
-    public class WeightedCell : Cell2D<WeightedCell.WeightedData>
+    public class WeightedCell : Cell<WeightedCell.WeightedData>
     {
         [System.Serializable]
-        public class WeightedData : Cell2D.Data
+        public class WeightedData : Cell.Data
         {
             [SerializeField, ShowOnly] int _weight;
             public int weight { get => _weight; set => _weight = value; }
@@ -20,19 +26,27 @@ public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
             public WeightedData(Vector2Int key) : base(key) { }
         }
 
+        // =========================== [[ CONSTRUCTORS ]] =========================== >>
+        public WeightedCell() { }
+        public WeightedCell(WeightedData data) : base(data) { }
+        public WeightedCell(Vector2Int key) : base(key) { }
+        public WeightedCell(Vector2Int key, AbstractGrid2D.Config config) : base(key, config) { }
+
+
+        // =========================== [[ OVERRIDES ]] =========================== >>
         public WeightedData weightedData { get => data as WeightedData; protected set => data = value; }
 
-        public WeightedCell() { }
-        public WeightedCell(Grid2D<WeightedCell> grid, Vector2Int key) : base(grid, key) { }
-        public override void Initialize(AbstractGrid2D grid, Vector2Int key)
+        protected override void Initialize(WeightedCell.Data data)
         {
-            gridParent = grid;
-            weightedData = new WeightedData(key);
+            if (data is WeightedData)
+                weightedData = data as WeightedData;
+            else
+                weightedData = new WeightedData(data.key);
         }
 
-        protected override Color DetermineColor()
+        protected override void GetGizmoColor(out Color color)
         {
-            return Color.Lerp(Color.black, Color.white, weightedData.weight / 100f);
+            color = Color.Lerp(Color.black, Color.white, weightedData.weight / 100f);
         }
 
         protected override void OnEditToggle()
@@ -45,25 +59,24 @@ public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
             if (weightedData.weight >= 100)
             {
                 weightedData.weight = 0;
-                disabled = true;
+                weightedData.SetDisabled(true);
             }
             else
             {
                 weightedData.weight += 10;
-                disabled = false;
+                weightedData.SetDisabled(false);
             }
         }
 
         public override void DrawGizmos(bool editMode)
         {
             base.DrawGizmos(editMode);
-            DrawLabel();
+            DrawLabel($"WeightedCell {weightedData.key}\n{weightedData.weight}");
         }
 
-        protected override void DrawLabel()
+        protected override void DrawLabel(string label)
         {
-            weightedData.GetWorldSpaceData(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
-            Color color = DetermineColor();
+            GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
 
             Handles.Label(position, $"{weightedData.key}\n{weightedData.weight}", new GUIStyle()
             {
@@ -74,7 +87,7 @@ public class WeightedGrid2D : MonoBehaviourGrid2D<WeightedGrid2D.WeightedCell>
     }
 
     public class DataObject : Grid2D_DataObject<WeightedCell, WeightedCell.WeightedData> { }
-    public override void GenerateDataObj()
+    protected override void GenerateDataObj()
     {
         dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<DataObject>(DATA_PATH, name);
     }

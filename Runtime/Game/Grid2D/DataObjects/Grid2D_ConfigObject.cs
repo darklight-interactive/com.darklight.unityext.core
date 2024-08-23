@@ -1,3 +1,4 @@
+using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace Darklight.UnityExt.Game
     public class Grid2D_ConfigObject : ScriptableObject
     {
         #region ---- ( EDITOR VALUES ) --------- >>
-        DropdownList<Vector3> _directions = new DropdownList<Vector3>()
+        DropdownList<Vector3> _editor_directions = new DropdownList<Vector3>()
     {
         { "Up", Vector3.up },
         { "Down", Vector3.down },
@@ -16,27 +17,33 @@ namespace Darklight.UnityExt.Game
         { "Forward", Vector3.forward },
         { "Back", Vector3.back }
     };
-
-        bool _showTransform = true;
-        public bool showTransformValues { get => _showTransform; set => _showTransform = value; }
+        bool _editor_showTransform => !_lockToTransform;
         #endregion
 
         // -- (( SERIALIZED DATA )) --------------------------------- >>
         [SerializeField] bool _showGizmos = true;
+        [SerializeField] bool _lockToTransform = true;
+        [SerializeField, ShowOnly] Transform _transformParent;
 
+
+        // (( Transform )) ------------------------------ >>
+        [Header("-- Transform ---- >>")]
+        [SerializeField, Foldout("Transform"), ShowIf("_editor_showTransform")]
+        Vector3 _position = Vector3.zero;
+
+        [SerializeField, Foldout("Transform"), ShowIf("_editor_showTransform")]
+        [Dropdown("_directions")] Vector3 _normal = Vector3.up;
+
+        // (( Origin )) ------------------------------ >>
+        [Header("-- Origin ---- >>")]
+        [SerializeField] Vector2Int _originOffset = new Vector2Int(0, 0);
+
+        // (( Grid Dimensions )) ------------------------------ >>
         [Header("-- Dimensions ---- >>")]
         [SerializeField, Range(1, 10)] int _numColumns = 3;
         [SerializeField, Range(1, 10)] int _numRows = 3;
 
-        [Header("-- Transform ---- >>")]
-        [SerializeField, ShowIf("_showTransform")]
-        Vector3 _position = Vector3.zero;
-        [SerializeField, ShowIf("_showTransform")]
-        [Dropdown("_directions")] Vector3 _normal = Vector3.up;
-
-        [Header("-- Origin ---- >>")]
-        [SerializeField] Vector2Int _originOffset = new Vector2Int(0, 0);
-
+        // (( Cell Dimensions )) ------------------------------ >>
         [Header("-- Cell Dimensions ---- >>")]
         [SerializeField, Range(0.1f, 10f)] float _cellWidth = 1;
         [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
@@ -44,6 +51,8 @@ namespace Darklight.UnityExt.Game
         [Header("-- Cell Spacing ---- >>")]
         [SerializeField, Range(1, 10)] float _cellHorzSpacing = 1;
         [SerializeField, Range(1, 10)] float _cellVertSpacing = 1;
+
+
 
         public AbstractGrid2D.Config ToConfig()
         {
