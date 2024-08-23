@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Game
@@ -8,8 +9,10 @@ namespace Darklight.UnityExt.Game
     /// </summary>
     public abstract class Grid2D_AbstractDataObject : ScriptableObject
     {
+
+
         public abstract void SaveGridData(AbstractGrid2D grid);
-        public abstract List<TData> GetGridData<TData>() where TData : Cell.Data;
+        public abstract void ClearData();
     }
 
     /// <summary>
@@ -17,34 +20,53 @@ namespace Darklight.UnityExt.Game
     /// </summary>
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
-    public class Grid2D_DataObject<TCell, TData> : Grid2D_AbstractDataObject
-        where TCell : Cell, new()
-        where TData : Cell.Data, new()
+    public class Grid2D_GenericDataObject<TCell, TData> : Grid2D_AbstractDataObject
+        where TCell : Cell2D, new()
+        where TData : AbstractCellData, new()
     {
-        public List<TData> savedData = new List<TData>();
+
+        // (( STATIC METHODS )) ------------------------------ >>
+        public static List<TData> GetDataCopy(List<TData> data)
+        {
+            List<TData> copy = new List<TData>();
+            foreach (TData d in data)
+            {
+                TData newData = new TData();
+                newData.CopyFrom(d);
+                copy.Add(newData);
+            }
+            return copy;
+        }
+
+
+        [SerializeField] protected List<TData> savedData = new List<TData>();
         public override void SaveGridData(AbstractGrid2D grid)
         {
-            if (grid == null)
-                return;
+            if (grid == null) return;
+            if (grid is not GenericGrid2D<TCell, TData> genericGrid) return;
 
-            if (grid is GenericGrid2D<TCell, TData> typedGrid)
-            {
-                // Save data from the typed grid
-                SaveCellData(typedGrid.cellMap.GetCellData());
-            }
+            List<TData> data = genericGrid.cellMap.GetCellData();
+            SaveCellData(data);
         }
 
-        public virtual void SaveCellData(List<TData> cells)
+        public void SaveCellData(List<TData> data)
         {
-            this.savedData = cells;
+            savedData.Clear();
+            savedData = GetDataCopy(data);
+
+            Debug.Log($"Saved {savedData.Count} cells.", this);
         }
 
-        public override List<T> GetGridData<T>()
+        public List<TData> GetCellData()
         {
-            return savedData as List<T>;
+            return GetDataCopy(savedData);
+        }
+
+        public override void ClearData()
+        {
+            savedData.Clear();
         }
     }
 
-    public class Grid2D_DataObject : Grid2D_DataObject<Cell, Cell.Data> { }
-
+    public class Grid2D_DataObject : Grid2D_GenericDataObject<Cell2D, Cell2D.Data> { }
 }

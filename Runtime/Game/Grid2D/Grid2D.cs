@@ -16,7 +16,8 @@ namespace Darklight.UnityExt.Game
     [System.Serializable]
     public abstract class AbstractGrid2D
     {
-        protected static TCell CreateCell<TCell>(Vector2Int key, Config config) where TCell : Cell
+        #region (( Static Methods )) --------- >>
+        protected static TCell CreateCell<TCell>(Vector2Int key, Config config) where TCell : Cell2D
         {
             if (config == null)
             {
@@ -60,6 +61,7 @@ namespace Darklight.UnityExt.Game
             // Combine the base position with the calculated world offset
             return basePosition + worldOffset;
         }
+        #endregion
 
         #region -- << INTERNAL CLASS >> : CONFIG ------------------------------------ >>
         [System.Serializable]
@@ -139,11 +141,10 @@ namespace Darklight.UnityExt.Game
         /// <typeparam name="TCell"></typeparam>
         [System.Serializable]
         public class CellMap<TCell, TData>
-            where TCell : Cell
-            where TData : Cell.Data
+            where TCell : Cell2D
+            where TData : AbstractCellData
         {
             Config _config; // Config object for the grid
-            Grid2D_AbstractDataObject _dataObj; // Data object for the grid
 
             Dictionary<Vector2Int, TCell> _cellMap = new Dictionary<Vector2Int, TCell>(); // Dictionary to store cells
             [SerializeField] List<TData> _dataList = new List<TData>(); // List to store cell data
@@ -157,11 +158,9 @@ namespace Darklight.UnityExt.Game
 
             #region (( Initialization )) --------- >>
             public CellMap(Config config) => Initialize(config);
-            public CellMap(Config config, Grid2D_AbstractDataObject dataObj) => Initialize(config, dataObj);
-            void Initialize(Config config, Grid2D_AbstractDataObject dataObj = null)
+            void Initialize(Config config)
             {
                 this._config = config;
-                _dataObj = dataObj;
                 Generate();
             }
 
@@ -181,27 +180,49 @@ namespace Darklight.UnityExt.Game
                         }
                     }
                 }
+                _dataList = GetCellData();
             }
 
             public void RefreshData()
             {
-                _dataList.Clear();
-                foreach (TCell cell in _cellMap.Values)
-                {
-                    _dataList.Add(cell.GetData() as TData);
-                }
+                _dataList = GetCellData();
             }
 
+            #region (( Getter Methods )) --------- >>
+            public List<TData> GetCellData()
+            {
+                List<TData> data = new List<TData>();
+                foreach (TCell cell in _cellMap.Values)
+                {
+                    data.Add(cell.GetData() as TData);
+                }
+                return data;
+            }
+            #endregion
 
+            #region (( Setter Methods )) --------- >>
+            public void SetCellData(List<TData> dataList)
+            {
+                _dataList = dataList;
+                ApplyDataToMap(dataList);
+            }
+            #endregion
             #endregion
 
             #region (( MapFunction Methods )) --------- >>
             public void MapFunction(Func<TCell, TCell> mapFunction)
             {
                 if (_cellMap == null) return;
-                foreach (var key in _cellMap.Keys.ToList())
+
+                List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
+                foreach (Vector2Int key in keys)
                 {
-                    _cellMap[key] = mapFunction(_cellMap[key]);
+                    // Skip if the key is not in the map
+                    if (!_cellMap.ContainsKey(key)) continue;
+
+                    // Apply the map function to the cell
+                    TCell cell = _cellMap[key];
+                    _cellMap[key] = mapFunction(cell);
                 }
 
                 RefreshData();
@@ -211,39 +232,40 @@ namespace Darklight.UnityExt.Game
             {
                 MapFunction(cell =>
                 {
-                    cell.ApplyConfigToData(_config);
+                    cell.ApplyConfigToData(config);
                     return cell;
                 });
             }
-
-
             #endregion
 
-            #region (( Getter Methods )) --------- >>
-            public List<TData> GetCellData()
-            {
-                RefreshData();
-                return _dataList;
-            }
 
-            #endregion
 
-            #region (( Loas & Save Methods )) --------- >>
+            #region (( Load & Save Methods )) --------- >>
 
-            public void LoadData(List<TData> dataList)
+            public void ApplyDataToMap(List<TData> dataList)
             {
                 if (dataList == null) return;
+                if (_cellMap == null || _cellMap.Count == 0) return;
+
                 foreach (TData cellData in dataList)
                 {
+                    if (cellData == null || cellData.key == null) continue;
                     if (_cellMap.ContainsKey(cellData.key))
                     {
                         TCell cell = _cellMap[cellData.key];
                         cell.SetData(cellData);
                     }
                 }
+
                 RefreshData();
             }
             #endregion
+
+            public void Clear()
+            {
+                _cellMap.Clear();
+                _dataList.Clear();
+            }
         }
 
         #endregion
@@ -266,10 +288,11 @@ namespace Darklight.UnityExt.Game
     #region -- << GENERIC CLASS >> : GRID2D ------------------------------------ >>
     [System.Serializable]
     public class GenericGrid2D<TCell, TData> : AbstractGrid2D
-        where TCell : Cell
-        where TData : Cell.Data
+        where TCell : Cell2D
+        where TData : AbstractCellData
     {
-        // Override the cell map to use the generic type TCell
+
+        // Create a cell map of the specified types
         public CellMap<TCell, TData> cellMap;
 
         // -- Constructor ---- >>

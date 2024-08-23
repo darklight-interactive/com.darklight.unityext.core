@@ -13,34 +13,64 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game
 {
+    public abstract class AbstractCellData
+    {
+        public abstract string name { get; protected set; }
+        public abstract Vector2Int key { get; protected set; }
+        public abstract Vector2 dimensions { get; protected set; }
+        public abstract Vector3 position { get; protected set; }
+        public abstract Vector3 normal { get; protected set; }
+        public abstract bool disabled { get; protected set; }
+
+        public abstract void GetWorldSpaceData(out Vector3 position, out Vector3 normal);
+        public abstract void GetDimensions(out Vector2 dimensions);
+
+        public abstract void SetWorldSpaceData(Vector3 position, Vector3 normal);
+        public abstract void SetDimensions(Vector2 dimensions);
+        public abstract void SetDisabled(bool disabled);
+
+        public virtual void CopyFrom(AbstractCellData data)
+        {
+            if (data == null)
+            {
+                Debug.LogError("Cannot copy data from null object.");
+                return;
+            }
+
+            name = data.name;
+            key = data.key;
+            dimensions = data.dimensions;
+            position = data.position;
+            normal = data.normal;
+            disabled = data.disabled;
+        }
+    }
+
+
     [System.Serializable]
-    public class Cell
+    public class Cell2D
     {
         [System.Serializable]
-        public class Data
+        public class Data : AbstractCellData
         {
-            [SerializeField, ShowOnly] string _name = "DefaultCell"; // Name of the cell
-            [SerializeField, ShowOnly] Vector2Int _key; // The position key of the cell in the grid
-            public string name { get => _name; protected set => _name = value; }
-            public Vector2Int key { get => _key; protected set => _key = value; }
+            [SerializeField, ShowOnly] string _name = "DefaultCell";
+            [SerializeField, ShowOnly] Vector2Int _key;
+            [SerializeField, ShowOnly] Vector2 _dimensions = Vector2.one;
+            [SerializeField, ShowOnly] Vector3 _position = Vector3.zero;
+            [SerializeField, ShowOnly] Vector3 _normal = Vector3.up;
+            [SerializeField, ShowOnly] bool _disabled = false;
 
-            // -- Dimensions ---- >>
-            [SerializeField] Vector2 _dimensions = Vector2.one; // Dimensions of the cell
-            public Vector2 dimensions { get => _dimensions; protected set => _dimensions = value; }
+            public override string name { get => _name; protected set => _name = value; }
+            public override Vector2Int key { get => _key; protected set => _key = value; }
+            public override Vector2 dimensions { get => _dimensions; protected set => _dimensions = value; }
+            public override Vector3 position { get => _position; protected set => _position = value; }
+            public override Vector3 normal { get => _normal; protected set => _normal = value; }
+            public override bool disabled { get => _disabled; protected set => _disabled = value; }
 
-            // -- Transform ---- >>
-            [SerializeField] Vector3 _position = Vector3.zero; // World position of the cell
-            [SerializeField] Vector3 _normal = Vector3.up; // Normal direction of the cell
-            public Vector3 position { get => _position; protected set => _position = value; }
-            public Vector3 normal { get => _normal; protected set => _normal = value; }
-
-            // -- States ---- >>
-            [SerializeField, ShowOnly] bool _disabled = false; // Is the cell active or not
-            public bool disabled { get => _disabled; protected set => _disabled = value; }
 
             public Data() { }
             public Data(Vector2Int key) => Initialize(key);
-            public Data(Cell.Data data)
+            public Data(AbstractCellData data)
             {
                 _name = data.name;
                 _key = data.key;
@@ -50,26 +80,28 @@ namespace Darklight.UnityExt.Game
                 _disabled = data.disabled;
             }
 
-            protected void Initialize(Vector2Int key)
+            public void Initialize(Vector2Int key)
             {
                 _key = key;
                 _name = $"Cell2D {key}";
             }
 
+
+
             #region (( Getter Methods )) -------- >>
-            public void GetWorldSpaceData(out Vector3 position, out Vector3 normal)
+            public override void GetWorldSpaceData(out Vector3 position, out Vector3 normal)
             {
                 position = _position;
                 normal = _normal;
             }
-            public void GetDimensions(out Vector2 dimensions)
+            public override void GetDimensions(out Vector2 dimensions)
             {
                 dimensions = _dimensions;
             }
             #endregion
 
             #region (( Setter Methods )) -------- >>
-            public void SetWorldSpaceData(Vector3 position, Vector3 normal)
+            public override void SetWorldSpaceData(Vector3 position, Vector3 normal)
             {
                 _position = position;
                 _normal = normal;
@@ -78,11 +110,11 @@ namespace Darklight.UnityExt.Game
             {
                 _position = position;
             }
-            public void SetDimensions(Vector2 dimensions)
+            public override void SetDimensions(Vector2 dimensions)
             {
                 _dimensions = dimensions;
             }
-            public void SetDisabled(bool disabled)
+            public override void SetDisabled(bool disabled)
             {
                 _disabled = disabled;
             }
@@ -90,34 +122,32 @@ namespace Darklight.UnityExt.Game
         }
 
         // -- Protected Data ---- >>
-        protected Cell.Data data; // Data object for the cell
+        protected AbstractCellData data; // Data object for the cell
 
         // ===================== [[ CONSTRUCTORS ]] ===================== //
-        public Cell() => Initialize(new Cell.Data());
-        public Cell(Cell.Data data) => Initialize(data);
-        public Cell(Vector2Int key) => Initialize(new Cell.Data(key));
-        public Cell(Vector2Int key, AbstractGrid2D.Config config)
+        public Cell2D() => Initialize(new Data());
+        public Cell2D(Cell2D.Data data) => Initialize(data);
+        public Cell2D(Vector2Int key) => Initialize(new Cell2D.Data(key));
+        public Cell2D(Vector2Int key, AbstractGrid2D.Config config)
         {
-            Cell.Data customData = new Cell.Data(key);
+            Cell2D.Data customData = new Cell2D.Data(key);
             ApplyConfigToData(config);
             Initialize(customData);
         }
 
         // ===================== [[ RUNTIME METHODS ]] ===================== //
-        protected virtual void Initialize(Cell.Data data)
+        protected virtual void Initialize(AbstractCellData data)
         {
             this.data = data;
+            Debug.Log($"Initialized Cell2D {data.key}");
         }
 
         // Update the cell to reflect any changes to the data object
-        public virtual void Update()
-        {
-
-        }
+        public virtual void Update() { }
 
         #region (( Getter Methods )) -------- >>
 
-        public Cell.Data GetData() => data;
+        public AbstractCellData GetData() => data;
 
         /// <summary>
         /// Get the gizmo color of the cell.
@@ -154,7 +184,7 @@ namespace Darklight.UnityExt.Game
         #endregion
 
         #region (( Setter Methods )) -------- >>
-        public void SetData(Cell.Data data) => this.data = data;
+        public void SetData(AbstractCellData data) => this.data = data;
         public void ApplyConfigToData(AbstractGrid2D.Config config)
         {
             if (config == null)
@@ -171,10 +201,11 @@ namespace Darklight.UnityExt.Game
 
             Vector3 pos = AbstractGrid2D.CalculateWorldPositionFromKey(data.key, config);
             data.SetWorldSpaceData(pos, config.normal);
+            data.SetDimensions(config.cellDimensions);
         }
 
         public void SetWorldSpaceData(Vector3 position, Vector3 normal) => data.SetWorldSpaceData(position, normal);
-        public void ToggeDisabled()
+        public void ToggleDisabled()
         {
             data.SetDisabled(!data.disabled);
         }
@@ -225,7 +256,7 @@ namespace Darklight.UnityExt.Game
 
         protected virtual void OnEditToggle()
         {
-            ToggeDisabled();
+            ToggleDisabled();
         }
 #endif
         #endregion
@@ -233,15 +264,28 @@ namespace Darklight.UnityExt.Game
 
     #region -- << GENERIC CLASS >> : CELL2D ------------------------------------ >>
     [System.Serializable]
-    public class Cell<TData> : Cell where TData : Cell.Data, new()
+    public class Cell<TData> : Cell2D where TData : Cell2D.Data, new()
     {
         public new TData data { get => base.data as TData; protected set => base.data = value; }
 
-        public Cell() : base() { }
-        public Cell(TData data) : base(data) { }
-        public Cell(Vector2Int key) : base(key) { }
-        public Cell(Vector2Int key, AbstractGrid2D.Config config) : base(key, config) { }
-        protected override void Initialize(Cell.Data data = null)
+        public Cell() => Initialize(new TData());
+        public Cell(TData data) => Initialize(data);
+        public Cell(Vector2Int key)
+        {
+            TData customData = new TData();
+            customData.Initialize(key);
+            Initialize(customData);
+        }
+
+        public Cell(Vector2Int key, AbstractGrid2D.Config config)
+        {
+            TData customData = new TData();
+            customData.Initialize(key);
+            ApplyConfigToData(config);
+            Initialize(customData);
+        }
+
+        protected override void Initialize(AbstractCellData data)
         {
             if (data != null)
                 this.data = data as TData;

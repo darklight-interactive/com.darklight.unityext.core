@@ -25,14 +25,18 @@ public abstract class AbstractMonoBehaviourGrid2D : MonoBehaviour
     public abstract void InitializeGrid();
     public abstract void UpdateGrid();
 
+    public abstract void SaveGridData();
+    public abstract void LoadGridData();
+    public abstract void ClearData();
+
     public abstract void DrawGizmos(bool editMode = false);
 }
 #endregion
 
 #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
 public class GenericMonoBehaviourGrid2D<TCell, TData> : AbstractMonoBehaviourGrid2D
-    where TCell : Cell, new()
-    where TData : Cell.Data, new()
+    where TCell : Cell2D, new()
+    where TData : Cell2D.Data, new()
 {
     // (( Grid2D )) ------------------------------ >>
     [SerializeField] private GenericGrid2D<TCell, TData> _grid;
@@ -68,14 +72,48 @@ public class GenericMonoBehaviourGrid2D<TCell, TData> : AbstractMonoBehaviourGri
 
         // Create a new grid from the config object
         grid = new GenericGrid2D<TCell, TData>(configObj.ToConfig());
+        LoadGridData();
     }
 
     public virtual void Update() => UpdateGrid();
     public override void UpdateGrid()
     {
-        if (grid == null) InitializeGrid();
+        if (grid == null)
+            InitializeGrid();
+
+        // Apply the config values to the grid
         grid.SetConfig(configObj.ToConfig());
     }
+
+    public override void SaveGridData()
+    {
+        if (dataObj == null) return;
+        dataObj.SaveGridData(grid);
+
+        Debug.Log($"Saved grid data to {dataObj.name}.", this);
+    }
+
+    public override void LoadGridData()
+    {
+        if (dataObj == null) return;
+        if (dataObj is not Grid2D_GenericDataObject<TCell, TData> typedDataObj) return;
+
+        List<TData> data = typedDataObj.GetCellData();
+        if (data == null || data.Count == 0) return;
+
+        grid.cellMap.SetCellData(data);
+
+        Debug.Log($"Loaded {data.Count} cells from {dataObj.name}.", this);
+    }
+
+    public override void ClearData()
+    {
+        if (dataObj == null) return;
+        dataObj.ClearData();
+
+        grid.cellMap.Clear();
+    }
+
 
     public override void DrawGizmos(bool editMode = false)
     {
@@ -85,7 +123,7 @@ public class GenericMonoBehaviourGrid2D<TCell, TData> : AbstractMonoBehaviourGri
 }
 #endregion
 
-public class MonoBehaviourGrid2D : GenericMonoBehaviourGrid2D<Cell, Cell.Data> { }
+public class MonoBehaviourGrid2D : GenericMonoBehaviourGrid2D<Cell2D, Cell2D.Data> { }
 
 #if UNITY_EDITOR
 [CustomEditor(typeof(AbstractMonoBehaviourGrid2D), true)]
@@ -105,6 +143,28 @@ public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
         _serializedObject.Update();
 
         EditorGUI.BeginChangeCheck();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save Grid Data"))
+        {
+            _script.SaveGridData();
+        }
+        if (GUILayout.Button("Load Grid Data"))
+        {
+            _script.LoadGridData();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Update Grid"))
+        {
+            _script.UpdateGrid();
+        }
+        if (GUILayout.Button("Clear Data"))
+        {
+            _script.ClearData();
+        }
+        EditorGUILayout.EndHorizontal();
 
         CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
 

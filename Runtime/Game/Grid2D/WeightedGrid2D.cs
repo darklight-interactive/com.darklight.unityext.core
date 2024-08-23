@@ -8,45 +8,40 @@ using UnityEngine;
 public class WeightedGrid2D : GenericMonoBehaviourGrid2D<
     WeightedGrid2D.WeightedCell, WeightedGrid2D.WeightedCell.WeightedData>
 {
-    public class WeightedGrid : GenericGrid2D<WeightedCell, WeightedCell.WeightedData>
-    {
-        public WeightedGrid(Config config) : base(config) { }
-    }
-
+    #region -- << INTERNAL CLASS >> : WEIGHTEDCELL ------------------------------------ >>
     [System.Serializable]
     public class WeightedCell : Cell<WeightedCell.WeightedData>
     {
         [System.Serializable]
-        public class WeightedData : Cell.Data
+        public class WeightedData : Cell2D.Data
         {
             [SerializeField, ShowOnly] int _weight;
             public int weight { get => _weight; set => _weight = value; }
 
-            public WeightedData() { }
+            public WeightedData() : base() { }
             public WeightedData(Vector2Int key) : base(key) { }
+            public WeightedData(AbstractCellData data)
+            {
+                CopyFrom(data);
+            }
+
+            public override void CopyFrom(AbstractCellData data)
+            {
+                base.CopyFrom(data);
+                if (data is WeightedData)
+                {
+                    _weight = (data as WeightedData).weight;
+                }
+            }
         }
 
         // =========================== [[ CONSTRUCTORS ]] =========================== >>
-        public WeightedCell() { }
-        public WeightedCell(WeightedData data) : base(data) { }
-        public WeightedCell(Vector2Int key) : base(key) { }
+        public WeightedCell() : base() { }
         public WeightedCell(Vector2Int key, AbstractGrid2D.Config config) : base(key, config) { }
-
-
-        // =========================== [[ OVERRIDES ]] =========================== >>
-        public WeightedData weightedData { get => data as WeightedData; protected set => data = value; }
-
-        protected override void Initialize(WeightedCell.Data data)
-        {
-            if (data is WeightedData)
-                weightedData = data as WeightedData;
-            else
-                weightedData = new WeightedData(data.key);
-        }
 
         protected override void GetGizmoColor(out Color color)
         {
-            color = Color.Lerp(Color.black, Color.white, weightedData.weight / 100f);
+            color = Color.Lerp(Color.black, Color.white, data.weight / 100f);
         }
 
         protected override void OnEditToggle()
@@ -56,40 +51,51 @@ public class WeightedGrid2D : GenericMonoBehaviourGrid2D<
 
         void ToggleWeight()
         {
-            if (weightedData.weight >= 100)
+            if (data.weight >= 100)
             {
-                weightedData.weight = 0;
-                weightedData.SetDisabled(true);
+                data.weight = 0;
+                data.SetDisabled(true);
             }
             else
             {
-                weightedData.weight += 10;
-                weightedData.SetDisabled(false);
+                data.weight += 10;
+                data.SetDisabled(false);
             }
         }
 
         public override void DrawGizmos(bool editMode)
         {
+            if (data == null) return;
+
             base.DrawGizmos(editMode);
-            DrawLabel($"WeightedCell {weightedData.key}\n{weightedData.weight}");
+            DrawLabel($"WeightedCell {data.key}\n{data.weight}");
         }
 
         protected override void DrawLabel(string label)
         {
             GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
 
-            Handles.Label(position, $"{weightedData.key}\n{weightedData.weight}", new GUIStyle()
+            Handles.Label(position, $"{data.key}\n{data.weight}", new GUIStyle()
             {
                 normal = new GUIStyleState() { textColor = color },
                 alignment = TextAnchor.MiddleCenter
             });
         }
     }
+    #endregion
 
-    public class DataObject : Grid2D_DataObject<WeightedCell, WeightedCell.WeightedData> { }
+    #region -- << INTERNAL CLASS >> : WEIGHTEDGRID2D_DATAOBJECT ------------------------------------ >>
+    public class WeightedGrid2D_DataObject : Grid2D_GenericDataObject<WeightedCell, WeightedCell.WeightedData> { }
+    #endregion
+
+    protected new WeightedGrid2D_DataObject dataObj
+    {
+        get => base.dataObj as WeightedGrid2D_DataObject;
+        set => base.dataObj = value;
+    }
     protected override void GenerateDataObj()
     {
-        dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<DataObject>(DATA_PATH, name);
+        dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<WeightedGrid2D_DataObject>(DATA_PATH, name);
     }
 }
 
