@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
+    [System.Serializable]
     public abstract class BaseGridMap
     {
         #region (( Static Methods )) --------- >>
@@ -64,7 +65,7 @@ namespace Darklight.UnityExt.Game.Grid
         where TData : BaseCellData
     {
         protected Dictionary<Vector2Int, TCell> cellMap = new Dictionary<Vector2Int, TCell>();
-        protected List<TData> dataList = new List<TData>();
+        [SerializeField] List<TData> dataList = new List<TData>();
 
         // Indexer to access cells by their key
         public TCell this[Vector2Int key]

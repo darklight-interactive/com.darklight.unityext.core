@@ -80,6 +80,7 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << CLASS >> : CellData ------------------------------------ >>
+    [System.Serializable]
     public class CellData : BaseCellData
     {
         public CellData() : base(Vector2Int.zero) { }
@@ -221,6 +222,7 @@ namespace Darklight.UnityExt.Game.Grid
 
     #region -- << CLASS >> : Cell ------------------------------------ >>
 
+    [System.Serializable]
     public class Cell : Cell<CellData>
     {
         public Cell() : base(Vector2Int.zero, null) { }

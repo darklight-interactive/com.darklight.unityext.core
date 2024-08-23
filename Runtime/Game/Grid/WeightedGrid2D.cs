@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
     [ExecuteAlways]
-    public class WeightedGrid2D : GenericMonoBehaviourGrid2D<
+    public class WeightedGrid2D : GenericMonoBehaviourGrid<
         WeightedGrid2D.WeightedCell, WeightedGrid2D.WeightedCell.WeightedData>
     {
         #region -- << INTERNAL CLASS >> : WEIGHTEDCELL ------------------------------------ >>

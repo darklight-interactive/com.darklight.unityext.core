@@ -17,8 +17,8 @@ namespace Darklight.UnityExt.Game.Grid
     public abstract class BaseGrid
     {
         // ===================== >> PROTECTED DATA << ===================== //
-        [SerializeField] protected GridConfig config;
-        [SerializeField] protected BaseGridMap map;
+        protected GridConfig config;
+        protected BaseGridMap map;
         public GridConfig Config => config;
         public BaseGridMap Map => map;
 
@@ -40,13 +40,10 @@ namespace Darklight.UnityExt.Game.Grid
         where TData : BaseCellData
     {
 
+        public int test = 1;
+
         // (( Override GridMap )) ------------------------------ >>
-        protected new GenericGridMap<TCell, TData> map
-        {
-            get => base.map as GenericGridMap<TCell, TData>;
-            set => base.map = value;
-        }
-        public new GenericGridMap<TCell, TData> Map => map;
+        public new GenericGridMap<TCell, TData> map;
 
         // -- Constructor ---- >>
         public GenericGrid(GridConfig config)
@@ -70,12 +67,14 @@ namespace Darklight.UnityExt.Game.Grid
             this.config = config;
 
             // ( Update the cell map )
+            if (map == null) return;
             map.ApplyConfigToMap(config);
         }
 
         public override void DrawGizmos(bool editMode)
         {
             if (!config.showGizmos) return;
+            if (map == null) return;
             map.MapFunction(cell =>
             {
                 cell.DrawGizmos(editMode);

@@ -15,13 +15,11 @@ namespace Darklight.UnityExt.Game.Grid
 {
 
     #region -- << ABSTRACT CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    public abstract class BaseGrid_MonoBehaviour : MonoBehaviour
+    public abstract class BaseMonoBehaviourGrid : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
         protected const string DATA_PATH = ASSET_PATH + "/Data";
-
-        [SerializeField] protected BaseGrid grid;
 
         [SerializeField, Expandable] protected Grid2D_ConfigObject configObj;
         protected virtual void GenerateConfigObj()
@@ -45,15 +43,11 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    public class GenericMonoBehaviourGrid2D<TCell, TData> : BaseGrid_MonoBehaviour
+    public class GenericMonoBehaviourGrid<TCell, TData> : BaseMonoBehaviourGrid
         where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
-        protected new GenericGrid<TCell, TData> grid
-        {
-            get => base.grid as GenericGrid<TCell, TData>;
-            set => base.grid = value;
-        }
+        [SerializeField] protected GenericGrid<TCell, TData> grid;
 
         // Initialize the grid with the specific types
         public override void InitializeGrid()
@@ -69,6 +63,8 @@ namespace Darklight.UnityExt.Game.Grid
             // Create a new grid from the config object
             grid = new GenericGrid<TCell, TData>(configObj.ToConfig());
             LoadGridData();
+
+            Debug.Log($"MonoBehaviourGrid2D initialized.", this);
         }
 
         public virtual void Update() => UpdateGrid();
@@ -97,7 +93,7 @@ namespace Darklight.UnityExt.Game.Grid
             List<TData> dataList = typedDataObj.GetCellData();
             if (dataList == null || dataList.Count == 0) return;
 
-            grid.Map.ApplyDataList(dataList);
+            grid.map.ApplyDataList(dataList);
 
             Debug.Log($"Loaded {dataList.Count} cells from {dataObj.name}.", this);
         }
@@ -107,7 +103,7 @@ namespace Darklight.UnityExt.Game.Grid
             if (dataObj == null) return;
             dataObj.ClearData();
 
-            grid.Map.Clear();
+            grid.map.Clear();
         }
 
 
@@ -119,18 +115,18 @@ namespace Darklight.UnityExt.Game.Grid
     }
     #endregion
 
-    public class MonoBehaviourGrid2D : GenericMonoBehaviourGrid2D<Cell, CellData> { }
+    public class MonoBehaviourGrid2D : GenericMonoBehaviourGrid<Cell, CellData> { }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(BaseGrid_MonoBehaviour), true)]
+    [CustomEditor(typeof(BaseMonoBehaviourGrid), true)]
     public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
     {
         SerializedObject _serializedObject;
-        BaseGrid_MonoBehaviour _script;
+        BaseMonoBehaviourGrid _script;
         private void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
-            _script = (BaseGrid_MonoBehaviour)target;
+            _script = (BaseMonoBehaviourGrid)target;
             _script.InitializeGrid();
         }
 
