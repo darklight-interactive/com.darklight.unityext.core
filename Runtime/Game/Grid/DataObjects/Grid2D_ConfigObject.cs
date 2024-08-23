@@ -2,7 +2,7 @@ using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Game
+namespace Darklight.UnityExt.Game.Grid
 {
     [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
     public class Grid2D_ConfigObject : ScriptableObject
@@ -54,9 +54,9 @@ namespace Darklight.UnityExt.Game
 
 
 
-        public AbstractGrid2D.Config ToConfig()
+        public GridConfig ToConfig()
         {
-            AbstractGrid2D.Config config = new AbstractGrid2D.Config()
+            GridConfig config = new GridConfig()
             {
                 showGizmos = _showGizmos,
                 dimensions = new Vector2Int(_numColumns, _numRows),

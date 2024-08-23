@@ -2,16 +2,14 @@ using System.Collections.Generic;
 using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Game
+namespace Darklight.UnityExt.Game.Grid
 {
     /// <summary>
     /// Abstract class for a 2D grid data object that inherits from ScriptableObject.
     /// </summary>
     public abstract class Grid2D_AbstractDataObject : ScriptableObject
     {
-
-
-        public abstract void SaveGridData(AbstractGrid2D grid);
+        public abstract void SaveGridData(BaseGrid grid);
         public abstract void ClearData();
     }
 
@@ -21,8 +19,8 @@ namespace Darklight.UnityExt.Game
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
     public class Grid2D_GenericDataObject<TCell, TData> : Grid2D_AbstractDataObject
-        where TCell : Cell2D, new()
-        where TData : AbstractCellData, new()
+        where TCell : BaseCell, new()
+        where TData : BaseCellData, new()
     {
 
         // (( STATIC METHODS )) ------------------------------ >>
@@ -40,12 +38,12 @@ namespace Darklight.UnityExt.Game
 
 
         [SerializeField] protected List<TData> savedData = new List<TData>();
-        public override void SaveGridData(AbstractGrid2D grid)
+        public override void SaveGridData(BaseGrid grid)
         {
             if (grid == null) return;
-            if (grid is not GenericGrid2D<TCell, TData> genericGrid) return;
+            if (grid is not GenericGrid<TCell, TData> genericGrid) return;
 
-            List<TData> data = genericGrid.cellMap.GetCellData();
+            List<TData> data = genericGrid.Map.GetDataList();
             SaveCellData(data);
         }
 
@@ -68,5 +66,5 @@ namespace Darklight.UnityExt.Game
         }
     }
 
-    public class Grid2D_DataObject : Grid2D_GenericDataObject<Cell2D, Cell2D.Data> { }
+    public class Grid2D_DataObject : Grid2D_GenericDataObject<Cell, CellData> { }
 }
