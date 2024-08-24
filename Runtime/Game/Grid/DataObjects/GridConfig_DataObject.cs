@@ -20,17 +20,17 @@ namespace Darklight.UnityExt.Game.Grid
         bool _editor_showTransform => !_lockToTransform;
         #endregion
 
-        [Header("-- Transform ---- >>")]
         [SerializeField] bool _lockToTransform = true;
-
-        // (( Origin )) ------------------------------ >>
-        [Header("-- Origin ---- >>")]
-        [SerializeField] Vector2Int _originOffset = new Vector2Int(0, 0);
+        [SerializeField] GridAlignment _gridAlignment = GridAlignment.Center;
 
         // (( Grid Dimensions )) ------------------------------ >>
-        [Header("-- Dimensions ---- >>")]
+        [Header("-- Grid Dimensions ---- >>")]
         [SerializeField, Range(1, 10)] int _numColumns = 3;
         [SerializeField, Range(1, 10)] int _numRows = 3;
+
+        [Header("-- Cell Bonding ---- >>")]
+        [SerializeField, Range(-1, 1)] float _cellBondingX = 0;
+        [SerializeField, Range(-1, 1)] float _cellBondingY = 0;
 
         // (( Cell Dimensions )) ------------------------------ >>
         [Header("-- Cell Dimensions ---- >>")]
@@ -50,12 +50,17 @@ namespace Darklight.UnityExt.Game.Grid
         public GridMapConfig ToConfig()
         {
             GridMapConfig config = new GridMapConfig();
+
             config.SetGizmos(_showGizmos, _showEditorGizmos);
+
             config.SetLockToTransform(_lockToTransform);
-            config.SetOriginOffset(_originOffset);
+
+            config.SetGridAlignment(_gridAlignment);
             config.SetGridDimensions(new Vector2Int(_numColumns, _numRows));
+
             config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
             config.SetCellSpacing(new Vector2(_cellHorzSpacing, _cellVertSpacing));
+            config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
 
             return config;
         }
