@@ -17,18 +17,20 @@ namespace Darklight.UnityExt.Game.Grid
     public abstract class AbstractGrid
     {
         // ===================== >> PROTECTED DATA << ===================== //
-        protected GridConfig config;
         protected BaseGridMap map;
-        public GridConfig Config => config;
-        public BaseGridMap Map => map;
 
         // ===================== >> INITIALIZATION << ===================== //
         public AbstractGrid() { }
-        public AbstractGrid(GridConfig config) => Initialize(config);
+        public AbstractGrid(GridMapConfig config) => Initialize(config);
 
         // ===================== >> ABSTRACT METHODS << ===================== //
-        public abstract void Initialize(GridConfig config);
-        public abstract void UpdateConfig(GridConfig config);
+        public abstract void Initialize(GridMapConfig config);
+        public abstract void Update();
+
+        public abstract void SetConfig(GridMapConfig config);
+        public abstract void GetData<TData>(out List<TData> data) where TData : BaseCellData;
+        public abstract void SetData<TData>(List<TData> data) where TData : BaseCellData;
+        public abstract void ClearData();
         public abstract void DrawGizmos(bool editMode);
     }
     #endregion
@@ -39,46 +41,53 @@ namespace Darklight.UnityExt.Game.Grid
         where TCell : AbstractCell
         where TData : BaseCellData
     {
-        // (( Override GridMap )) ------------------------------ >>
-        public new GenericGridMap<TCell, TData> map;
+        // -- Protected Data ---- >>
+        [SerializeField] protected new GenericGridMap<TCell, TData> map;
 
         // -- Constructor ---- >>
-        public GenericGrid(GridConfig config)
+        public GenericGrid(GridMapConfig config)
         {
             Initialize(config);
         }
 
-        public override void Initialize(GridConfig config)
+        public override void Initialize(GridMapConfig config)
         {
-            // ( Set the config )
-            this.config = config;
-
-            // ( Rebuild the cell map )
             map = new GenericGridMap<TCell, TData>(config);
-            map.ApplyConfigToMap(config);
         }
 
-        public override void UpdateConfig(GridConfig config)
+        public override void Update()
         {
-            // ( Set the config )
-            this.config = config;
-
-            // ( Update the cell map )
             if (map == null) return;
-            map.ApplyConfigToMap(config);
-            map.RefreshData();
+            map.Update();
         }
 
         public override void DrawGizmos(bool editMode)
         {
-            if (!config.showGizmos) return;
             if (map == null) return;
-            map.MapFunction(cell =>
-            {
-                cell.DrawGizmos(editMode);
-                return cell;
-            });
+            map.DrawGizmos(editMode);
         }
+
+        public override void SetConfig(GridMapConfig config)
+        {
+            if (map == null) return;
+            map.SetConfig(config);
+        }
+
+        public override void GetData<T>(out List<T> data)
+        {
+            data = map.GetData() as List<T>;
+        }
+
+        public override void SetData<T>(List<T> data)
+        {
+            map.SetData(data as List<TData>);
+        }
+
+        public override void ClearData()
+        {
+            map.Clear();
+        }
+
         #endregion
     }
 }

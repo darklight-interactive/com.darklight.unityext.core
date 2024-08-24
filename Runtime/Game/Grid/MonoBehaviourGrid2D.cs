@@ -14,11 +14,14 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     #region -- << ABSTRACT CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
+    [ExecuteAlways]
     public abstract class AbstractMonoBehaviourGrid : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
         protected const string DATA_PATH = ASSET_PATH + "/Data";
+
+        protected string prefix => name;
 
         protected AbstractGrid grid;
         protected abstract void GenerateConfigObj();
@@ -39,7 +42,6 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    [ExecuteAlways]
     public class GenericMonoBehaviourGrid<TCell, TData> : AbstractMonoBehaviourGrid
         where TCell : AbstractCell, new()
         where TData : BaseCellData, new()
@@ -48,10 +50,11 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] protected new GenericGrid<TCell, TData> grid;
 
         [Header("Configuration ScriptableObject")]
-        [SerializeField, Expandable] protected GridConfig_DataObject configObj;
+        [SerializeField, Expandable] protected GridMapConfig_DataObject configObj;
+        protected GridMapConfig config => configObj.ToConfig();
         protected override void GenerateConfigObj()
         {
-            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridConfig_DataObject>(CONFIG_PATH, name);
+            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMapConfig_DataObject>(CONFIG_PATH, name);
         }
 
         [Header("Preset Data ScriptableObject")]
@@ -72,8 +75,9 @@ namespace Darklight.UnityExt.Game.Grid
                 GenerateDataObj();
 
             // Create a new grid from the config object
-            grid = new GenericGrid<TCell, TData>(configObj.ToConfig());
+            grid = new GenericGrid<TCell, TData>(config);
             LoadGridData();
+            //Debug.Log($"{prefix} initialized grid.", this);
         }
 
         public override void UpdateGrid()
@@ -81,16 +85,16 @@ namespace Darklight.UnityExt.Game.Grid
             if (grid == null)
                 InitializeGrid();
 
-            // Apply the config values to the grid
-            grid.UpdateConfig(configObj.ToConfig());
+            grid.SetConfig(config);
+            grid.Update();
+            //Debug.Log($"{prefix} updated grid.", this);
         }
 
         public override void SaveGridData()
         {
             if (dataObj == null) return;
             dataObj.SaveGridData(grid);
-
-            Debug.Log($"Saved grid data to {dataObj.name}.", this);
+            Debug.Log($"{prefix} saved grid data.", this);
         }
 
         public override void LoadGridData()
@@ -101,17 +105,17 @@ namespace Darklight.UnityExt.Game.Grid
             List<TData> dataList = typedDataObj.GetCellData();
             if (dataList == null || dataList.Count == 0) return;
 
-            grid.map.ApplyDataList(dataList);
+            grid.SetData(dataList);
 
-            Debug.Log($"Loaded {dataList.Count} cells from {dataObj.name}.", this);
+            Debug.Log($"{prefix} loaded grid data.", this);
         }
 
         public override void ClearData()
         {
             if (dataObj == null) return;
             dataObj.ClearData();
-
-            grid.map.Clear();
+            grid.ClearData();
+            Debug.Log($"{prefix} cleared grid data.", this);
         }
 
 

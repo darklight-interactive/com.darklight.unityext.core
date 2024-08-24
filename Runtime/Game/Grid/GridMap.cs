@@ -10,7 +10,8 @@ namespace Darklight.UnityExt.Game.Grid
     public abstract class BaseGridMap
     {
         #region (( Static Methods )) --------- >>
-        protected static TCell CreateCell<TCell>(Vector2Int key, GridConfig config) where TCell : AbstractCell
+        protected static TCell CreateCell<TCell>(Vector2Int key, GridMapConfig config)
+            where TCell : AbstractCell
         {
             if (config == null)
             {
@@ -21,96 +22,12 @@ namespace Darklight.UnityExt.Game.Grid
             TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), key);
             return newCell;
         }
-
-        /// <summary>
-        /// Internal method to calculate the world position of the cell based on its key and the grid configuration.
-        /// </summary>
-        /// <returns></returns>
-        public static Vector3 CalculateWorldPositionFromKey(Vector2Int key, GridConfig config)
-        {
-            // Start with the grid's origin position in world space
-            Vector3 basePosition = config.position;
-
-            // Calculate the offset for the grid origin key
-            Vector2 originOffset = (Vector2)config.originOffset * config.cellDimensions * -1;
-
-            // Calculate the offset for the current key position
-            Vector2 keyOffset = (Vector2)key * config.cellDimensions;
-
-            // Calculate the spacing offset && clamp it to avoid overlapping cells
-            Vector2 spacingOffset = config.cellSpacing;
-            spacingOffset.x = Mathf.Clamp(spacingOffset.x, 1, float.MaxValue);
-            spacingOffset.y = Mathf.Clamp(spacingOffset.y, 1, float.MaxValue);
-
-            // Combine origin offset and key offset, then apply spacing
-            Vector2 gridOffset = (originOffset + keyOffset) * spacingOffset;
-
-            // Create a rotation matrix based on the grid's direction
-            Quaternion rotation = Quaternion.LookRotation(config.normal, Vector3.up);
-
-            // Apply the rotation to the grid offset to get the final world offset
-            Vector3 worldOffset = rotation * new Vector3(gridOffset.x, gridOffset.y, 0);
-
-            // Combine the base position with the calculated world offset
-            return basePosition + worldOffset;
-        }
         #endregion
 
         // ===================== >> PROTECTED DATA << ===================== //
-        protected GridConfig config; // Config object for the grid
-    }
-
-    [System.Serializable]
-    public class GenericGridMap<TCell, TData> : BaseGridMap
-        where TCell : AbstractCell
-        where TData : BaseCellData
-    {
-        protected Dictionary<Vector2Int, TCell> cellMap = new Dictionary<Vector2Int, TCell>();
-
-        [SerializeField, ShowOnly] int _cellMapLength = 0;
-        [SerializeField] List<TData> dataList = new List<TData>();
-
-        // Indexer to access cells by their key
-        public TCell this[Vector2Int key]
-        {
-            get => cellMap[key];
-            set => cellMap[key] = value;
-        }
-
-        public GenericGridMap(GridConfig config)
-        {
-            this.config = config;
-            GenerateCells();
-        }
-        void GenerateCells()
-        {
-            cellMap.Clear();
-            dataList.Clear();
-
-            Vector2Int dimensions = config.dimensions;
-            for (int x = 0; x < dimensions.x; x++)
-            {
-                for (int y = 0; y < dimensions.y; y++)
-                {
-                    Vector2Int gridKey = new Vector2Int(x, y);
-                    if (!cellMap.ContainsKey(gridKey))
-                    {
-                        TCell newCell = CreateCell<TCell>(gridKey, config);
-                        cellMap[gridKey] = newCell;
-
-                        dataList.Add(newCell.Data as TData);
-                        if (newCell.Data == null)
-                        {
-                            Debug.LogError("Grid2D: Cell data is null.");
-                        }
-                    }
-                }
-            }
-
-            _cellMapLength = cellMap.Count;
-        }
-
-        public void MapFunction(Func<TCell, TCell> mapFunction)
+        protected GridMapConfig config;
+        protected Dictionary<Vector2Int, AbstractCell> cellMap = new Dictionary<Vector2Int, AbstractCell>();
+        protected void MapFunction<TCell>(Func<TCell, TCell> mapFunction) where TCell : AbstractCell
         {
             if (cellMap == null) return;
 
@@ -121,39 +38,88 @@ namespace Darklight.UnityExt.Game.Grid
                 if (!cellMap.ContainsKey(key)) continue;
 
                 // Apply the map function to the cell
-                TCell cell = cellMap[key];
+                TCell cell = cellMap[key] as TCell;
                 cellMap[key] = mapFunction(cell);
             }
-
-            RefreshData();
         }
 
-        public void ApplyConfigToMap(GridConfig config)
+        public BaseGridMap() => Initialize();
+        public BaseGridMap(GridMapConfig config) => Initialize(config);
+        public abstract void Initialize(GridMapConfig config = null);
+        public abstract void Update();
+        public abstract void Clear();
+        protected abstract void Generate();
+        public abstract void SetConfig(GridMapConfig config);
+    }
+
+    [System.Serializable]
+    public class GenericGridMap<TCell, TData> : BaseGridMap
+        where TCell : AbstractCell
+        where TData : BaseCellData
+    {
+        [SerializeField] List<TData> _dataList = new List<TData>();
+
+        public GenericGridMap() => Initialize();
+        public GenericGridMap(GridMapConfig config) => Initialize(config);
+        public override void Initialize(GridMapConfig config = null)
         {
+            // Create a basic config if none is provided
+            if (config == null)
+                config = new GridMapConfig();
             this.config = config;
-            MapFunction(cell =>
+            Generate();
+        }
+
+        public override void Update()
+        {
+            if (cellMap == null || cellMap.Count == 0) return;
+            MapFunction<TCell>(cell =>
             {
-                cell.Data.SetPosition(CalculateWorldPositionFromKey(cell.Data.Key, config));
-                cell.Data.SetDimensions(config.cellDimensions);
-                cell.Data.SetNormal(config.normal);
+                cell.Update();
+                return cell;
+            });
+
+            _dataList = GetData();
+        }
+
+        protected override void Generate()
+        {
+            cellMap.Clear();
+            Vector2Int dimensions = config.gridDimensions;
+            for (int x = 0; x < dimensions.x; x++)
+            {
+                for (int y = 0; y < dimensions.y; y++)
+                {
+                    Vector2Int gridKey = new Vector2Int(x, y);
+                    if (!cellMap.ContainsKey(gridKey))
+                    {
+                        // Create a new cell and add it to the map
+                        TCell newCell = CreateCell<TCell>(gridKey, config);
+                        cellMap[gridKey] = newCell;
+                    }
+                }
+            }
+        }
+
+        public override void SetConfig(GridMapConfig config)
+        {
+            if (config == null) return;
+            this.config = config;
+            MapFunction<TCell>(cell =>
+            {
+                cell.SetConfig(config);
                 return cell;
             });
         }
 
-        public void RefreshData()
-        {
-            dataList = GetDataList();
-        }
-
-        #region (( Getter Methods )) --------- >>
-        public List<TData> GetDataList()
+        public List<TData> GetData()
         {
             if (cellMap == null || cellMap.Count == 0) return null;
 
             List<TData> data = new List<TData>();
             foreach (TCell cell in cellMap.Values)
             {
-                TData cellData = cell.Data as TData;
+                TData cellData = cell.GetData() as TData;
                 if (cellData != null)
                 {
                     data.Add(cellData);
@@ -161,18 +127,21 @@ namespace Darklight.UnityExt.Game.Grid
             }
             return data;
         }
-        #endregion
 
-        #region (( Setter Methods )) --------- >>
-        public void ApplyDataList(List<TData> dataList)
+        public void SetData(List<TData> dataList)
         {
-            this.dataList = dataList;
+            if (dataList == null) return;
+            _dataList = dataList;
             ApplyDataToMap(dataList);
         }
-        #endregion
+
+        public override void Clear()
+        {
+            cellMap.Clear();
+            _dataList.Clear();
+        }
 
 
-        #region (( Load & Save Methods )) --------- >>
 
         public void ApplyDataToMap(List<TData> dataList)
         {
@@ -182,24 +151,27 @@ namespace Darklight.UnityExt.Game.Grid
             foreach (TData cellData in dataList)
             {
                 // Skip if the cell data is null
-                if (cellData == null || cellData.Key == null) continue;
+                if (cellData == null || cellData.key == null) continue;
 
                 // Check if the key is in the map
-                if (cellMap.ContainsKey(cellData.Key))
+                if (cellMap.ContainsKey(cellData.key))
                 {
-                    TCell cell = cellMap[cellData.Key];
+                    TCell cell = cellMap[cellData.key] as TCell;
                     cell.SetData(cellData);
                 }
             }
-
-            RefreshData();
         }
-        #endregion
 
-        public void Clear()
+        public void DrawGizmos(bool editMode = false)
         {
-            cellMap.Clear();
-            dataList.Clear();
+            if (cellMap == null || cellMap.Count == 0) return;
+            MapFunction<TCell>(cell =>
+            {
+                cell.DrawGizmos(editMode);
+                return cell;
+            });
         }
+
+
     }
 }

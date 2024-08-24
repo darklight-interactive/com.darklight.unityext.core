@@ -12,12 +12,12 @@ namespace Darklight.UnityExt.Game.Grid
     #region -- << INTERFACE >> : ICellData ------------------------------------ >>
     public interface ICellData
     {
-        string Name { get; }
-        Vector2Int Key { get; }
-        Vector2 Dimensions { get; }
-        Vector3 Position { get; }
-        Vector3 Normal { get; }
-        bool IsDisabled { get; }
+        string name { get; }
+        Vector2Int key { get; }
+        Vector2 dimensions { get; }
+        Vector3 position { get; }
+        Vector3 normal { get; }
+        bool disabled { get; }
 
         void Initialize(Vector2Int key);
     }
@@ -34,12 +34,12 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] private Vector3 _normal = Vector3.up;
         [SerializeField, ShowOnly] private bool _isDisabled = false;
 
-        public string Name { get => _name; protected set => _name = value; }
-        public Vector2Int Key { get => _key; protected set => _key = value; }
-        public Vector2 Dimensions { get => _dimensions; protected set => _dimensions = value; }
-        public Vector3 Position { get => _position; protected set => _position = value; }
-        public Vector3 Normal { get => _normal; protected set => _normal = value; }
-        public bool IsDisabled { get => _isDisabled; protected set => _isDisabled = value; }
+        public string name { get => _name; protected set => _name = value; }
+        public Vector2Int key { get => _key; protected set => _key = value; }
+        public Vector2 dimensions { get => _dimensions; protected set => _dimensions = value; }
+        public Vector3 position { get => _position; protected set => _position = value; }
+        public Vector3 normal { get => _normal; protected set => _normal = value; }
+        public bool disabled { get => _isDisabled; protected set => _isDisabled = value; }
 
         public BaseCellData() { }
         public BaseCellData(Vector2Int key) => Initialize(key);
@@ -53,7 +53,6 @@ namespace Darklight.UnityExt.Game.Grid
         public void SetNormal(Vector3 normal) => _normal = normal;
         public void SetDimensions(Vector2 dimensions) => _dimensions = dimensions;
         public void SetDisabled(bool disabled) => _isDisabled = disabled;
-
         public virtual void CopyFrom(BaseCellData data)
         {
             if (data == null)
@@ -62,12 +61,12 @@ namespace Darklight.UnityExt.Game.Grid
                 return;
             }
 
-            _name = data.Name;
-            _key = data.Key;
-            _dimensions = data.Dimensions;
-            _position = data.Position;
-            _normal = data.Normal;
-            _isDisabled = data.IsDisabled;
+            _name = data.name;
+            _key = data.key;
+            _dimensions = data.dimensions;
+            _position = data.position;
+            _normal = data.normal;
+            _isDisabled = data.disabled;
         }
     }
     #endregion
@@ -77,7 +76,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class CellData : BaseCellData
     {
         public CellData() : base(Vector2Int.zero) { }
-        public CellData(Vector2Int key, GridConfig config) : base(key) { }
+        public CellData(Vector2Int key, GridMapConfig config) : base(key) { }
     }
     #endregion
 }

@@ -16,18 +16,58 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public abstract class AbstractCell
     {
-        public abstract BaseCellData Data { get; }
+        protected BaseCellData data;
         public abstract void Update();
+        public abstract BaseCellData GetData();
         public abstract void SetData(BaseCellData data);
+        public abstract void SetConfig(GridMapConfig config);
         public abstract void DrawGizmos(bool editMode);
+
+        #region (( Calculation Methods )) --------- >>
+        /// <summary>
+        /// Method to calculate the world position of the cell 
+        /// based on its key and the grid configuration.
+        /// </summary>
+        /// <param name="originPos">The origin position of the grid.</param>
+        /// <param name="key">The key of the cell in the grid.</param>
+        protected virtual Vector3 CalculateCellPosition(GridMapConfig config, Vector2Int key)
+        {
+            Vector3 originPosition = config.originPosition;
+
+            // << POSITION CALCULATIONS >>
+            // Calculate the offset for the grid origin key
+            Vector2 originOffsetPostition = (Vector2)config.originOffset * config.cellDimensions * -1;
+
+            // Calculate the offset for the input key position
+            Vector2 keyOffsetPosition = (Vector2)key * config.cellDimensions;
+
+            // Calculate the spacing offset && clamp it to avoid overlapping cells
+            Vector2 spacingOffset = config.cellSpacing;
+            spacingOffset.x = Mathf.Clamp(spacingOffset.x, 1, float.MaxValue);
+            spacingOffset.y = Mathf.Clamp(spacingOffset.y, 1, float.MaxValue);
+
+            // Combine origin offset and key offset, then apply spacing
+            Vector2 gridOffset = (originOffsetPostition + keyOffsetPosition) * spacingOffset;
+
+            // << NORMAL CALCULATIONS >>
+            // Create a rotation matrix based on the grid's direction
+            Quaternion rotation = Quaternion.LookRotation(config.gridNormal, Vector3.up);
+
+            // Apply the rotation to the grid offset to get the final world offset
+            Vector3 worldOffset = rotation * new Vector3(gridOffset.x, gridOffset.y, 0);
+
+            // Combine the base position with the calculated world offset
+            return originPosition + worldOffset;
+        }
+        #endregion
     }
 
     [System.Serializable]
-    public class GenericCell<TData> : AbstractCell where TData : BaseCellData, new()
+    public class GenericCell<TData> : AbstractCell
+        where TData : BaseCellData, new()
     {
         // -- Protected Data ---- >>
-        [SerializeField] protected TData data;
-        public override BaseCellData Data => data;
+        [SerializeField] protected new TData data;
 
         // ===================== [[ CONSTRUCTORS ]] ===================== //
         public GenericCell() { }
@@ -48,13 +88,18 @@ namespace Darklight.UnityExt.Game.Grid
         public override void Update() { }
 
         #region (( Getter Methods )) -------- >>
+        public override BaseCellData GetData()
+        {
+            return data;
+        }
+
         /// <summary>
         /// Get the gizmo color of the cell.
         /// </summary>
         /// <param name="color"></param>
         protected virtual void GetGizmoColor(out Color color)
         {
-            color = data.IsDisabled ? Color.grey : Color.white;
+            color = data.disabled ? Color.grey : Color.white;
         }
 
         /// <summary>
@@ -70,9 +115,9 @@ namespace Darklight.UnityExt.Game.Grid
             out Vector3 normal,
             out Color color)
         {
-            position = data.Position;
-            dimensions = data.Dimensions;
-            normal = data.Normal;
+            position = data.position;
+            dimensions = data.dimensions;
+            normal = data.normal;
             GetGizmoColor(out color);
         }
 
@@ -86,9 +131,20 @@ namespace Darklight.UnityExt.Game.Grid
                 this.data = data as TData;
             }
         }
+
+        public override void SetConfig(GridMapConfig config)
+        {
+            if (data == null)
+                return;
+
+            data.SetPosition(CalculateCellPosition(config, data.key));
+            data.SetNormal(config.gridNormal);
+            data.SetDimensions(config.cellDimensions);
+        }
+
         public void ToggleDisabled()
         {
-            data.SetDisabled(!data.IsDisabled);
+            data.SetDisabled(!data.disabled);
         }
 
         #endregion
@@ -101,7 +157,7 @@ namespace Darklight.UnityExt.Game.Grid
                 return;
 
             DrawCell();
-            DrawLabel($"Cell {data.Key}");
+            DrawLabel($"Cell {data.key}");
             if (editMode) DrawCellToggle();
         }
 
@@ -140,8 +196,10 @@ namespace Darklight.UnityExt.Game.Grid
             ToggleDisabled();
         }
 #endif
+        #endregion
+
+
     }
-    #endregion
 
     public class Cell : GenericCell<CellData>
     {

@@ -67,14 +67,14 @@ namespace Darklight.UnityExt.Game.Grid
             if (data == null) return;
 
             base.DrawGizmos(editMode);
-            DrawLabel($"WeightedCell {data.Key}\n{data.Weight}");
+            DrawLabel($"WeightedCell {data.key}\n{data.Weight}");
         }
 
         protected override void DrawLabel(string label)
         {
             GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
 
-            Handles.Label(position, $"{data.Key}\n{data.Weight}", new GUIStyle()
+            Handles.Label(position, $"{data.key}\n{data.Weight}", new GUIStyle()
             {
                 normal = new GUIStyleState() { textColor = color },
                 alignment = TextAnchor.MiddleCenter
