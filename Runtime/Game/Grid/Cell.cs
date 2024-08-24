@@ -14,10 +14,9 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public abstract class AbstractCell
+    public abstract class BaseCell
     {
         protected BaseCellData data;
-        public abstract void Update();
         public abstract BaseCellData GetData();
         public abstract void SetData(BaseCellData data);
         public abstract void SetConfig(GridMapConfig config);
@@ -63,7 +62,7 @@ namespace Darklight.UnityExt.Game.Grid
     }
 
     [System.Serializable]
-    public class GenericCell<TData> : AbstractCell
+    public class GenericCell<TData> : BaseCell
         where TData : BaseCellData, new()
     {
         // -- Protected Data ---- >>
@@ -75,17 +74,8 @@ namespace Darklight.UnityExt.Game.Grid
         {
             TData customData = new TData();
             customData.Initialize(key);
-            Initialize(customData);
+            SetData(customData);
         }
-
-        // ===================== [[ RUNTIME METHODS ]] ===================== //
-        protected virtual void Initialize(TData data)
-        {
-            this.data = data;
-        }
-
-        // Update the cell to reflect any changes to the data object
-        public override void Update() { }
 
         #region (( Getter Methods )) -------- >>
         public override BaseCellData GetData()

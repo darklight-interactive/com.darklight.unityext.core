@@ -43,7 +43,7 @@ namespace Darklight.UnityExt.Game.Grid
 
     #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
     public class GenericMonoBehaviourGrid<TCell, TData> : AbstractMonoBehaviourGrid
-        where TCell : AbstractCell, new()
+        where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
         [Header("Internal Grid Class")]

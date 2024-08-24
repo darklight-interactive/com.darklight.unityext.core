@@ -19,7 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
     public class GenericGrid_DataObject<TCell, TData> : AbstractGrid_DataObject
-        where TCell : AbstractCell, new()
+        where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
 

@@ -38,7 +38,7 @@ namespace Darklight.UnityExt.Game.Grid
     #region -- << GENERIC CLASS >> : GRID2D ------------------------------------ >>
     [System.Serializable]
     public class GenericGrid<TCell, TData> : AbstractGrid
-        where TCell : AbstractCell
+        where TCell : BaseCell
         where TData : BaseCellData
     {
         // -- Protected Data ---- >>

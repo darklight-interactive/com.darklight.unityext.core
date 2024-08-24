@@ -64,6 +64,12 @@ namespace Darklight.UnityExt.Game.Grid
         {
             _cellSpacing = cellSpacing;
         }
+
+        // ======================== [[ GETTERS ]] ======================== //
+        public int GetCellCount()
+        {
+            return _gridDimensions.x * _gridDimensions.y;
+        }
     }
     #endregion
 }
