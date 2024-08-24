@@ -17,7 +17,7 @@ namespace Darklight.UnityExt.Game.Grid
     [ExecuteAlways]
     public abstract class AbstractGridMonoBehaviour : MonoBehaviour
     {
-        protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
+        protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
         protected const string DATA_PATH = ASSET_PATH + "/Data";
 

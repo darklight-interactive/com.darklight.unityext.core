@@ -2,6 +2,10 @@ using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Darklight.UnityExt.Game.Grid
 {
     [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
@@ -48,7 +52,7 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] bool _showEditorGizmos = true;
 
 
-        public GridMapConfig ToConfig()
+        public virtual GridMapConfig ToConfig()
         {
             GridMapConfig config = new GridMapConfig();
 
@@ -65,5 +69,60 @@ namespace Darklight.UnityExt.Game.Grid
 
             return config;
         }
+
+        public virtual void ResetToDefaults()
+        {
+            _lockToTransform = true;
+            _gridAlignment = GridAlignment.Center;
+            _gridNormal = Vector3.up;
+
+            _numColumns = 3;
+            _numRows = 3;
+
+            _cellBondingX = 0;
+            _cellBondingY = 0;
+
+            _cellWidth = 1;
+            _cellHeight = 1;
+
+            _cellHorzSpacing = 0;
+            _cellVertSpacing = 0;
+
+            _showGizmos = true;
+            _showEditorGizmos = true;
+        }
     }
+
+#if UNITY_EDITOR
+    [CustomEditor(typeof(GridMapConfig_DataObject))]
+    public class GridMapConfig_DataObjectCustomEditor : UnityEditor.Editor
+    {
+        GridMapConfig_DataObject _script;
+
+        public void OnEnable()
+        {
+            _script = target as GridMapConfig_DataObject;
+        }
+
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            EditorGUI.BeginChangeCheck();
+
+            if (GUILayout.Button("Reset to Defaults"))
+            {
+                _script.ResetToDefaults();
+            }
+
+            base.OnInspectorGUI();
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedObject.ApplyModifiedProperties();
+            }
+        }
+    }
+#endif
+
 }

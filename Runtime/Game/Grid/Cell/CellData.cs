@@ -104,6 +104,8 @@ namespace Darklight.UnityExt.Game.Grid
             _normal = data.normal;
             _isDisabled = data.disabled;
         }
+
+        public float GetMinDimension() => Mathf.Min(_dimensions.x, _dimensions.y);
     }
     #endregion
 

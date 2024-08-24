@@ -14,14 +14,15 @@ public static class Shape2DGizmos
         {
             Vector3 start = vertices[i];
             Vector3 end = vertices[(i + 1) % vertices.Count];
-            Gizmos.color = color;
-            Gizmos.DrawLine(start, end);
+            Handles.color = color;
+            Handles.DrawLine(start, end);
         }
     }
 
     public static void DrawRadialShape(Vector3 center, float radius, int segments, Vector3 normal, Color color)
     {
         Shape2D shape = new Shape2D(center, radius, segments, normal, color);
+        DrawShape2D(shape, color);
     }
 
     public static void DrawCircle(Vector3 center, float radius, Color color)
