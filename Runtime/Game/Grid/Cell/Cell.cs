@@ -11,114 +11,24 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
+    public interface ICell
+    {
+        BaseCellData GetData();
+        void SetData(BaseCellData data);
+        void SetConfig(GridMapConfig config);
+        void Update();
+        void DrawGizmos(bool editMode);
+    }
+
     [System.Serializable]
-    public abstract class BaseCell
+    public abstract class BaseCell : ICell
     {
         protected BaseCellData data;
         public abstract BaseCellData GetData();
         public abstract void SetData(BaseCellData data);
         public abstract void SetConfig(GridMapConfig config);
+        public abstract void Update();
         public abstract void DrawGizmos(bool editMode);
-
-        #region (( Calculation Methods )) --------- >>
-        /// <summary>
-        /// Method to calculate the world position of the cell 
-        /// based on its key and the grid configuration.
-        /// </summary>
-        /// <param name="config">
-        ///     The grid configuration containing origin, cell dimensions, spacing, etc.
-        /// </param>
-        /// <param name="key">
-        ///     The key of the cell in the grid.
-        /// </param>
-        protected virtual Vector3 CalculateCellPosition(GridMapConfig config, Vector2Int key)
-        {
-            // Get the origin key of the grid
-            Vector2Int originKey = CalculateOriginKey(config);
-
-            // Calculate the spacing offset && clamp it to avoid overlapping cells
-            Vector2 spacingOffsetPos = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
-            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 1, float.MaxValue);
-            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 1, float.MaxValue);
-
-            // Calculate bonding offsets
-            Vector2 bondingOffset = Vector2.zero;
-            if (key.y % 2 == 0)
-                bondingOffset.x = config.cellBonding.x;
-            if (key.x % 2 == 0)
-                bondingOffset.y = config.cellBonding.y;
-
-            // Calculate the offset of the cell from the grid origin
-            Vector2 originOffsetPos = originKey * config.cellDimensions;
-            Vector2 keyOffsetPos = key * config.cellDimensions;
-
-            // Calculate the final position of the cell
-            Vector2 cellPosition = config.gridPosition; // << Start with the grid's position
-            cellPosition += (keyOffsetPos - originOffsetPos); // << Add the grid offset
-            cellPosition *= spacingOffsetPos; // << Multiply the spacing offset
-            cellPosition += bondingOffset; // << Add the bonding offset
-
-            // Create a rotation matrix based on the grid's normal
-            Quaternion rotation = Quaternion.LookRotation(config.gridNormal, Vector3.up);
-
-            // Apply the rotation to the grid offset and return the final world position
-            return rotation * new Vector3(cellPosition.x, cellPosition.y, 0);
-        }
-
-        Vector2Int CalculateOriginKey(GridMapConfig config)
-        {
-            Vector2Int gridDimensions = config.gridDimensions - Vector2Int.one;
-            Vector2Int originKey = Vector2Int.zero;
-
-            switch (config.gridAlignment)
-            {
-                case GridAlignment.TopLeft:
-                    originKey = new Vector2Int(0, 0);
-                    break;
-                case GridAlignment.TopCenter:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
-                    break;
-                case GridAlignment.TopRight:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
-                    break;
-                case GridAlignment.MiddleLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
-                    break;
-                case GridAlignment.Center:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
-                        );
-                    break;
-                case GridAlignment.MiddleRight:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
-                        );
-                    break;
-                case GridAlignment.BottomLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
-                    break;
-                case GridAlignment.BottomCenter:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y)
-                        );
-                    break;
-                case GridAlignment.BottomRight:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y)
-                        );
-                    break;
-            }
-
-            return originKey;
-        }
-
-
-        #endregion
-
     }
 
     [System.Serializable]
@@ -136,6 +46,8 @@ namespace Darklight.UnityExt.Game.Grid
             customData.Initialize(key);
             SetData(customData);
         }
+
+        public override void Update() { }
 
         #region (( Getter Methods )) -------- >>
         public override BaseCellData GetData()
@@ -182,12 +94,21 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
+        public void SetKey(Vector2Int key)
+        {
+            if (data == null)
+                return;
+
+            data.SetKey(key);
+        }
+
         public override void SetConfig(GridMapConfig config)
         {
             if (data == null)
                 return;
 
-            data.SetPosition(CalculateCellPosition(config, data.key));
+            data.SetCoordinate(config.CalculateCoordinateFromKey(data.key));
+            data.SetPosition(config.CalculatePositionFromKey(data.key));
             data.SetNormal(config.gridNormal);
             data.SetDimensions(config.cellDimensions);
         }
@@ -207,7 +128,7 @@ namespace Darklight.UnityExt.Game.Grid
                 return;
 
             DrawCell();
-            DrawLabel($"Cell {data.key}");
+            DrawLabel($"{data.coordinate}");
             if (editMode) DrawCellToggle();
         }
 

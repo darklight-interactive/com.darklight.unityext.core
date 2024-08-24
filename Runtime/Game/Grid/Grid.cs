@@ -15,7 +15,7 @@ namespace Darklight.UnityExt.Game.Grid
         void Update();
 
         void SetConfig(GridMapConfig config);
-        void GetData<TData>(out List<TData> data) where TData : BaseCellData;
+        List<TData> GetData<TData>() where TData : BaseCellData;
         void SetData<TData>(List<TData> data) where TData : BaseCellData;
         void ClearData();
         void DrawGizmos();
@@ -40,7 +40,7 @@ namespace Darklight.UnityExt.Game.Grid
         public abstract void Update();
 
         public abstract void SetConfig(GridMapConfig config);
-        public abstract void GetData<TData>(out List<TData> data) where TData : BaseCellData;
+        public abstract List<TData> GetData<TData>() where TData : BaseCellData;
         public abstract void SetData<TData>(List<TData> data) where TData : BaseCellData;
         public abstract void ClearData();
         public abstract void DrawGizmos();
@@ -85,9 +85,9 @@ namespace Darklight.UnityExt.Game.Grid
             map.SetConfig(config);
         }
 
-        public override void GetData<T>(out List<T> data)
+        public override List<T> GetData<T>()
         {
-            data = map.GetData() as List<T>;
+            return map.GetData() as List<T>;
         }
 
         public override void SetData<T>(List<T> data)

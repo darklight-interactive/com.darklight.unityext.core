@@ -116,4 +116,38 @@ public static class WeightedDataSelector
 
         return selectedItems;
     }
+
+    /// <summary>
+    /// Selects the item with the highest weight.
+    /// </summary>
+    /// <typeparam name="T">The type of the item, which must implement IWeightedData.</typeparam>
+    /// <param name="items">A list of items to choose from.</param>
+    /// <returns>The item with the highest weight.</returns>
+    public static T SelectHighestWeightedItem<T>(IList<T> items)
+        where T : IWeightedData
+    {
+        if (items == null || items.Count == 0)
+        {
+            return default;
+        }
+
+        return items.Aggregate((maxItem, nextItem) => nextItem.weight > maxItem.weight ? nextItem : maxItem);
+    }
+
+    /// <summary>
+    /// Selects the item with the lowest weight.
+    /// </summary>
+    /// <typeparam name="T">The type of the item, which must implement IWeightedData.</typeparam>
+    /// <param name="items">A list of items to choose from.</param>
+    /// <returns>The item with the lowest weight.</returns>
+    public static T SelectLowestWeightedItem<T>(IList<T> items)
+        where T : IWeightedData
+    {
+        if (items == null || items.Count == 0)
+        {
+            return default;
+        }
+
+        return items.Aggregate((minItem, nextItem) => nextItem.weight < minItem.weight ? nextItem : minItem);
+    }
 }

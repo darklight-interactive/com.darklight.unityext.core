@@ -39,8 +39,8 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
 
         [Header("-- Cell Spacing ---- >>")]
-        [SerializeField, Range(0, 10)] float _cellHorzSpacing = 1;
-        [SerializeField, Range(0, 10)] float _cellVertSpacing = 1;
+        [SerializeField, Range(0, 10)] float _cellHorzSpacing = 0;
+        [SerializeField, Range(0, 10)] float _cellVertSpacing = 0;
 
         // (( Gizmos )) ------------------------------ >>
         [Header("-- Gizmos ---- >>")]

@@ -43,7 +43,7 @@ namespace Darklight.UnityExt.Game.Grid
             if (grid == null) return;
             if (grid is not GenericGrid<TCell, TData> genericGrid) return;
 
-            genericGrid.GetData<TData>(out List<TData> data);
+            List<TData> data = genericGrid.GetData<TData>();
             SaveCellData(data);
         }
 

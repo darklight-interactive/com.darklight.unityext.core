@@ -62,5 +62,103 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======================= [[ CONSTRUCTORS ]] ======================= //
         public GridMapConfig() { }
+
+
+        #region (( Calculation Methods )) --------- >>
+        public Vector3 CalculatePositionFromKey(Vector2Int key)
+        {
+            GridMapConfig config = this;
+
+            // Get the origin key of the grid
+            Vector2Int originKey = config.CalculateOriginKey();
+
+            // Calculate the spacing offset && clamp it to avoid overlapping cells
+            Vector2 spacingOffsetPos = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
+            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 1, float.MaxValue);
+            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 1, float.MaxValue);
+
+            // Calculate bonding offsets
+            Vector2 bondingOffset = Vector2.zero;
+            if (key.y % 2 == 0)
+                bondingOffset.x = config.cellBonding.x;
+            if (key.x % 2 == 0)
+                bondingOffset.y = config.cellBonding.y;
+
+            // Calculate the offset of the cell from the grid origin
+            Vector2 originOffsetPos = originKey * config.cellDimensions;
+            Vector2 keyOffsetPos = key * config.cellDimensions;
+
+            // Calculate the final position of the cell
+            Vector2 cellPosition = config.gridPosition; // << Start with the grid's position
+            cellPosition += (keyOffsetPos - originOffsetPos); // << Add the grid offset
+            cellPosition *= spacingOffsetPos; // << Multiply the spacing offset
+            cellPosition += bondingOffset; // << Add the bonding offset
+
+            // Create a rotation matrix based on the grid's normal
+            Quaternion rotation = Quaternion.LookRotation(config.gridNormal, Vector3.up);
+
+            // Apply the rotation to the grid offset and return the final world position
+            return rotation * new Vector3(cellPosition.x, cellPosition.y, 0);
+        }
+        public Vector2Int CalculateCoordinateFromKey(Vector2Int key)
+        {
+            GridMapConfig config = this;
+            Vector2Int originKey = config.CalculateOriginKey();
+            return key - originKey;
+        }
+        Vector2Int CalculateOriginKey()
+        {
+            GridMapConfig config = this;
+            Vector2Int gridDimensions = config.gridDimensions - Vector2Int.one;
+            Vector2Int originKey = Vector2Int.zero;
+
+            switch (config.gridAlignment)
+            {
+                case GridAlignment.TopLeft:
+                    originKey = new Vector2Int(0, 0);
+                    break;
+                case GridAlignment.TopCenter:
+                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
+                    break;
+                case GridAlignment.TopRight:
+                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
+                    break;
+                case GridAlignment.MiddleLeft:
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
+                    break;
+                case GridAlignment.Center:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x / 2),
+                        Mathf.FloorToInt(gridDimensions.y / 2)
+                        );
+                    break;
+                case GridAlignment.MiddleRight:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x),
+                        Mathf.FloorToInt(gridDimensions.y / 2)
+                        );
+                    break;
+                case GridAlignment.BottomLeft:
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
+                    break;
+                case GridAlignment.BottomCenter:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x / 2),
+                        Mathf.FloorToInt(gridDimensions.y)
+                        );
+                    break;
+                case GridAlignment.BottomRight:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x),
+                        Mathf.FloorToInt(gridDimensions.y)
+                        );
+                    break;
+            }
+
+            return originKey;
+        }
+
+
+        #endregion
     }
 }

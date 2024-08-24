@@ -134,14 +134,14 @@ namespace Darklight.UnityExt.Game.Grid
     [CustomEditor(typeof(AbstractGridMonoBehaviour), true)]
     public class GridMonoBehaviourEditor : UnityEditor.Editor
     {
-        SerializedObject _serializedObject;
+        protected SerializedObject _serializedObject;
         AbstractGridMonoBehaviour _script;
 
         SerializedProperty _grid;
         SerializedProperty _configObj;
         SerializedProperty _dataObj;
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
             _script = (AbstractGridMonoBehaviour)target;
@@ -199,7 +199,7 @@ namespace Darklight.UnityExt.Game.Grid
             EditorGUILayout.EndHorizontal();
         }
 
-        private void OnSceneGUI()
+        protected virtual void OnSceneGUI()
         {
             _script.DrawGizmos();
         }

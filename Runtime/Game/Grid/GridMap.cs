@@ -78,7 +78,18 @@ namespace Darklight.UnityExt.Game.Grid
         public override void Update()
         {
             if (cellMap == null || cellMap.Count == 0) return;
+
+            // Resize the grid if the dimensions have changed
             Resize();
+
+            // Update each cell in the map
+            MapFunction<TCell>(cell =>
+            {
+                cell.Update();
+                return cell;
+            });
+
+            // Update the data list
             _dataList = GetData();
         }
 
