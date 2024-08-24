@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
+
 
 using Darklight.UnityExt.Editor;
 
 using UnityEngine;
-using System.Linq;
 
 
 #if UNITY_EDITOR
@@ -35,32 +33,30 @@ namespace Darklight.UnityExt.Game.Grid
         /// </param>
         protected virtual Vector3 CalculateCellPosition(GridMapConfig config, Vector2Int key)
         {
-            // Default cell position is the grid position
-            Vector2 cellPosition = config.gridPosition;
-
             // Get the origin key of the grid
             Vector2Int originKey = CalculateOriginKey(config);
 
-            // Calculate the offset of the cell from the grid origin
-            Vector2 originOffset = originKey * config.cellDimensions;
-            Vector2 keyOffset = key * config.cellDimensions;
-            cellPosition += keyOffset - originOffset;
-
             // Calculate the spacing offset && clamp it to avoid overlapping cells
-            Vector2 spacingOffset = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
-            spacingOffset.x = Mathf.Clamp(spacingOffset.x, 1, float.MaxValue);
-            spacingOffset.y = Mathf.Clamp(spacingOffset.y, 1, float.MaxValue);
+            Vector2 spacingOffsetPos = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
+            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 1, float.MaxValue);
+            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 1, float.MaxValue);
 
-            // Apply the spacing offset to the grid offset
-            cellPosition *= spacingOffset;
-
-            // Apply the bonding offset in a brick-like pattern
-            // -- Offset the rows
+            // Calculate bonding offsets
+            Vector2 bondingOffset = Vector2.zero;
             if (key.y % 2 == 0)
-                cellPosition.x += config.cellBonding.x;
-            // -- Offset the columns
+                bondingOffset.x = config.cellBonding.x;
             if (key.x % 2 == 0)
-                cellPosition.y += config.cellBonding.y;
+                bondingOffset.y = config.cellBonding.y;
+
+            // Calculate the offset of the cell from the grid origin
+            Vector2 originOffsetPos = originKey * config.cellDimensions;
+            Vector2 keyOffsetPos = key * config.cellDimensions;
+
+            // Calculate the final position of the cell
+            Vector2 cellPosition = config.gridPosition; // << Start with the grid's position
+            cellPosition += (keyOffsetPos - originOffsetPos); // << Add the grid offset
+            cellPosition *= spacingOffsetPos; // << Multiply the spacing offset
+            cellPosition += bondingOffset; // << Add the bonding offset
 
             // Create a rotation matrix based on the grid's normal
             Quaternion rotation = Quaternion.LookRotation(config.gridNormal, Vector3.up);

@@ -9,12 +9,15 @@ namespace Darklight.UnityExt.Editor
 {
     public static class CustomGizmos
     {
+        #region -- << LABELS >> ------------------------------------ >>
         public static void DrawLabel(string label, Vector3 position, GUIStyle labelStyle)
         {
             //labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Handles.Label(position, label, labelStyle);
         }
+        #endregion
 
+        #region -- << SHAPES >> ------------------------------------ >>
         public static void DrawWireSquare(Vector3 position, float size, Vector3 direction, Color color)
         {
             if (color == null)
@@ -49,6 +52,7 @@ namespace Darklight.UnityExt.Editor
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), Color.clear, color);
         }
+        #endregion
 
         // Draws a Handles.Button and executes the given action when clicked.
         public static void DrawButtonHandle(Vector3 position, float size, Vector3 direction, Color color, System.Action onClick, Handles.CapFunction capFunction)

@@ -7,7 +7,7 @@ namespace Darklight.UnityExt.Game.Grid
     /// <summary>
     /// Abstract class for a 2D grid data object that inherits from ScriptableObject.
     /// </summary>
-    public abstract class AbstractGrid_DataObject : ScriptableObject
+    public abstract class AbstractGridMap_DataObject : ScriptableObject
     {
         public abstract void SaveGridData(AbstractGrid grid);
         public abstract void ClearData();
@@ -18,7 +18,7 @@ namespace Darklight.UnityExt.Game.Grid
     /// </summary>
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
-    public class GenericGrid_DataObject<TCell, TData> : AbstractGrid_DataObject
+    public class GenericGridMap_DataObject<TCell, TData> : AbstractGridMap_DataObject
         where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
@@ -66,5 +66,5 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class Grid_DataObject : GenericGrid_DataObject<Cell, CellData> { }
+    public class GridMap_DataObject : GenericGridMap_DataObject<Cell, CellData> { }
 }

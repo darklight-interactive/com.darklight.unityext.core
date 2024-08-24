@@ -8,7 +8,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class GridMapConfig_DataObject : ScriptableObject
     {
         #region ---- ( CUSTOM EDITOR DATA ) --------- >>
-        DropdownList<Vector3> _editor_directions = new DropdownList<Vector3>()
+        DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
         {
             { "Up", Vector3.up },
             { "Down", Vector3.down },
@@ -17,11 +17,12 @@ namespace Darklight.UnityExt.Game.Grid
             { "Forward", Vector3.forward },
             { "Back", Vector3.back }
         };
-        bool _editor_showTransform => !_lockToTransform;
+        bool editor_showTransform => !_lockToTransform;
         #endregion
 
         [SerializeField] bool _lockToTransform = true;
         [SerializeField] GridAlignment _gridAlignment = GridAlignment.Center;
+        [SerializeField, Dropdown("editor_directions")] Vector3 _gridNormal = Vector3.up;
 
         // (( Grid Dimensions )) ------------------------------ >>
         [Header("-- Grid Dimensions ---- >>")]
@@ -54,8 +55,8 @@ namespace Darklight.UnityExt.Game.Grid
             config.SetGizmos(_showGizmos, _showEditorGizmos);
 
             config.SetLockToTransform(_lockToTransform);
-
             config.SetGridAlignment(_gridAlignment);
+            config.SetGridNormal(_gridNormal);
             config.SetGridDimensions(new Vector2Int(_numColumns, _numRows));
 
             config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));

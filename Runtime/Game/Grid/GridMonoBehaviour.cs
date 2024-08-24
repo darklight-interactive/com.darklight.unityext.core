@@ -15,7 +15,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
     #region -- << ABSTRACT CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
     [ExecuteAlways]
-    public abstract class AbstractMonoBehaviourGrid : MonoBehaviour
+    public abstract class AbstractGridMonoBehaviour : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
@@ -42,25 +42,21 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    public class GenericMonoBehaviourGrid<TCell, TData> : AbstractMonoBehaviourGrid
+    public class GenericGridMonoBehaviour<TCell, TData> : AbstractGridMonoBehaviour
         where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
-        [Header("Internal Grid Class")]
         [SerializeField] protected new GenericGrid<TCell, TData> grid;
-
-        [Header("Configuration ScriptableObject")]
         [SerializeField, Expandable] protected GridMapConfig_DataObject configObj;
+        [SerializeField, Expandable] protected AbstractGridMap_DataObject dataObj;
+
         protected override void GenerateConfigObj()
         {
             configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMapConfig_DataObject>(CONFIG_PATH, name);
         }
-
-        [Header("Preset Data ScriptableObject")]
-        [SerializeField, Expandable] protected AbstractGrid_DataObject dataObj;
         protected override void GenerateDataObj()
         {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid_DataObject>(DATA_PATH, name);
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMap_DataObject>(DATA_PATH, name);
         }
 
         public override void InitializeGrid()
@@ -105,7 +101,7 @@ namespace Darklight.UnityExt.Game.Grid
         public override void LoadGridData()
         {
             if (dataObj == null) return;
-            if (dataObj is not GenericGrid_DataObject<TCell, TData> typedDataObj) return;
+            if (dataObj is not GenericGridMap_DataObject<TCell, TData> typedDataObj) return;
 
             List<TData> dataList = typedDataObj.GetCellData();
             if (dataList == null || dataList.Count == 0) return;
@@ -132,18 +128,29 @@ namespace Darklight.UnityExt.Game.Grid
     }
     #endregion
 
-    public class MonoBehaviourGrid2D : GenericMonoBehaviourGrid<Cell, CellData> { }
+    public class GridMonoBehaviour : GenericGridMonoBehaviour<Cell, CellData> { }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(AbstractMonoBehaviourGrid), true)]
-    public class MonoBehaviourGrid2DCustomEditor : UnityEditor.Editor
+    [CustomEditor(typeof(AbstractGridMonoBehaviour), true)]
+    public class GridMonoBehaviourEditor : UnityEditor.Editor
     {
         SerializedObject _serializedObject;
-        AbstractMonoBehaviourGrid _script;
+        AbstractGridMonoBehaviour _script;
+
+        SerializedProperty _grid;
+        SerializedProperty _configObj;
+        SerializedProperty _dataObj;
+
         private void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
-            _script = (AbstractMonoBehaviourGrid)target;
+            _script = (AbstractGridMonoBehaviour)target;
+
+            // Cache the serialized properties
+            _grid = _serializedObject.FindProperty("grid");
+            _configObj = _serializedObject.FindProperty("configObj");
+            _dataObj = _serializedObject.FindProperty("dataObj");
+
             _script.InitializeGrid();
         }
 
@@ -152,31 +159,18 @@ namespace Darklight.UnityExt.Game.Grid
             _serializedObject.Update();
 
             EditorGUI.BeginChangeCheck();
+            EditorGUILayout.Space();
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Save Grid Data"))
-            {
-                _script.SaveGridData();
-            }
-            if (GUILayout.Button("Load Grid Data"))
-            {
-                _script.LoadGridData();
-            }
-            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.PropertyField(_grid);
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Update Grid"))
-            {
-                _script.UpdateGrid();
-            }
-            if (GUILayout.Button("Clear Data"))
-            {
-                _script.ClearData();
-            }
-            EditorGUILayout.EndHorizontal();
+            CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
+            EditorGUILayout.PropertyField(_configObj);
 
-            CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+            CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
+            DrawDataManagementButtons();
+            EditorGUILayout.PropertyField(_dataObj);
 
+            // Apply changes if any
             if (EditorGUI.EndChangeCheck())
             {
                 _serializedObject.ApplyModifiedProperties();
@@ -185,6 +179,24 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             _script.UpdateGrid();
+        }
+
+        void DrawDataManagementButtons()
+        {
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Save Data"))
+            {
+                _script.SaveGridData();
+            }
+            if (GUILayout.Button("Load Data"))
+            {
+                _script.LoadGridData();
+            }
+            if (GUILayout.Button("Clear Data"))
+            {
+                _script.ClearData();
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         private void OnSceneGUI()

@@ -82,13 +82,13 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class WeightedGrid2D_DataObject : GenericGrid_DataObject<WeightedCell, WeightedData> { }
+    public class WeightedGrid2D_DataObject : GenericGridMap_DataObject<WeightedCell, WeightedData> { }
 
 
 
 
     [ExecuteAlways]
-    public class WeightedGrid : GenericMonoBehaviourGrid<WeightedCell, WeightedData>
+    public class WeightedGrid : GenericGridMonoBehaviour<WeightedCell, WeightedData>
     {
         protected override void GenerateDataObj()
         {

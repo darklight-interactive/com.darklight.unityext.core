@@ -43,6 +43,15 @@ namespace Darklight.UnityExt.Editor
 			}
 		}
 
+		#region -- << GUI ELEMENTS >> ------------------------------------ >>
+		public static void DrawHorizontalLine(Color color, int thickness = 1, int padding = 10)
+		{
+			Rect rect = EditorGUILayout.GetControlRect(GUILayout.Height(thickness + padding));
+			rect.height = thickness;
+			rect.y += padding / 2;
+			EditorGUI.DrawRect(rect, color);
+		}
+
 		public static void CreateIntegerControl(string title, int currentValue, int minValue, int maxValue, System.Action<int> setValue)
 		{
 			GUIStyle controlBackgroundStyle = new GUIStyle();
@@ -139,6 +148,7 @@ namespace Darklight.UnityExt.Editor
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.EndVertical();
 		}
+		#endregion
 
 		public static Texture2D MakeTex(int width, int height, Color col)
 		{
@@ -153,8 +163,6 @@ namespace Darklight.UnityExt.Editor
 
 			return result;
 		}
-
-
 
 		public static bool IsObjectOrChildSelected(GameObject obj)
 		{
