@@ -47,7 +47,7 @@ namespace Darklight.UnityExt.Game.Grid
             cellPosition += keyOffset - originOffset;
 
             // Calculate the spacing offset && clamp it to avoid overlapping cells
-            Vector2 spacingOffset = config.cellSpacing;
+            Vector2 spacingOffset = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
             spacingOffset.x = Mathf.Clamp(spacingOffset.x, 1, float.MaxValue);
             spacingOffset.y = Mathf.Clamp(spacingOffset.y, 1, float.MaxValue);
 
