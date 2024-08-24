@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Codice.Client.BaseCommands;
+using Darklight.UnityExt.Editor;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
@@ -9,7 +10,7 @@ namespace Darklight.UnityExt.Game.Grid
     public abstract class BaseGridMap
     {
         #region (( Static Methods )) --------- >>
-        protected static TCell CreateCell<TCell>(Vector2Int key, GridConfig config) where TCell : BaseCell
+        protected static TCell CreateCell<TCell>(Vector2Int key, GridConfig config) where TCell : AbstractCell
         {
             if (config == null)
             {
@@ -17,7 +18,7 @@ namespace Darklight.UnityExt.Game.Grid
                 return null;
             }
 
-            TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), key, config);
+            TCell newCell = (TCell)Activator.CreateInstance(typeof(TCell), key);
             return newCell;
         }
 
@@ -61,10 +62,12 @@ namespace Darklight.UnityExt.Game.Grid
 
     [System.Serializable]
     public class GenericGridMap<TCell, TData> : BaseGridMap
-        where TCell : BaseCell
+        where TCell : AbstractCell
         where TData : BaseCellData
     {
         protected Dictionary<Vector2Int, TCell> cellMap = new Dictionary<Vector2Int, TCell>();
+
+        [SerializeField, ShowOnly] int _cellMapLength = 0;
         [SerializeField] List<TData> dataList = new List<TData>();
 
         // Indexer to access cells by their key
@@ -74,7 +77,38 @@ namespace Darklight.UnityExt.Game.Grid
             set => cellMap[key] = value;
         }
 
-        public GenericGridMap(GridConfig config) { }
+        public GenericGridMap(GridConfig config)
+        {
+            this.config = config;
+            GenerateCells();
+        }
+        void GenerateCells()
+        {
+            cellMap.Clear();
+            dataList.Clear();
+
+            Vector2Int dimensions = config.dimensions;
+            for (int x = 0; x < dimensions.x; x++)
+            {
+                for (int y = 0; y < dimensions.y; y++)
+                {
+                    Vector2Int gridKey = new Vector2Int(x, y);
+                    if (!cellMap.ContainsKey(gridKey))
+                    {
+                        TCell newCell = CreateCell<TCell>(gridKey, config);
+                        cellMap[gridKey] = newCell;
+
+                        dataList.Add(newCell.Data as TData);
+                        if (newCell.Data == null)
+                        {
+                            Debug.LogError("Grid2D: Cell data is null.");
+                        }
+                    }
+                }
+            }
+
+            _cellMapLength = cellMap.Count;
+        }
 
         public void MapFunction(Func<TCell, TCell> mapFunction)
         {
@@ -106,26 +140,6 @@ namespace Darklight.UnityExt.Game.Grid
             });
         }
 
-
-        void Generate()
-        {
-            cellMap.Clear();
-            Vector2Int dimensions = config.dimensions;
-            for (int x = 0; x < dimensions.x; x++)
-            {
-                for (int y = 0; y < dimensions.y; y++)
-                {
-                    Vector2Int gridKey = new Vector2Int(x, y);
-                    if (!cellMap.ContainsKey(gridKey))
-                    {
-                        TCell newCell = CreateCell<TCell>(gridKey, config);
-                        cellMap[gridKey] = newCell;
-                    }
-                }
-            }
-            dataList = GetDataList();
-        }
-
         public void RefreshData()
         {
             dataList = GetDataList();
@@ -134,6 +148,8 @@ namespace Darklight.UnityExt.Game.Grid
         #region (( Getter Methods )) --------- >>
         public List<TData> GetDataList()
         {
+            if (cellMap == null || cellMap.Count == 0) return null;
+
             List<TData> data = new List<TData>();
             foreach (TCell cell in cellMap.Values)
             {

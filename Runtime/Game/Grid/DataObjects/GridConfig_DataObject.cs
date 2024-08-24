@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
     [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
-    public class Grid2D_ConfigObject : ScriptableObject
+    public class GridConfig_DataObject : ScriptableObject
     {
         #region ---- ( EDITOR VALUES ) --------- >>
         DropdownList<Vector3> _editor_directions = new DropdownList<Vector3>()

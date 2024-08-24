@@ -7,9 +7,9 @@ namespace Darklight.UnityExt.Game.Grid
     /// <summary>
     /// Abstract class for a 2D grid data object that inherits from ScriptableObject.
     /// </summary>
-    public abstract class Grid2D_AbstractDataObject : ScriptableObject
+    public abstract class AbstractGrid_DataObject : ScriptableObject
     {
-        public abstract void SaveGridData(BaseGrid grid);
+        public abstract void SaveGridData(AbstractGrid grid);
         public abstract void ClearData();
     }
 
@@ -18,8 +18,8 @@ namespace Darklight.UnityExt.Game.Grid
     /// </summary>
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
-    public class Grid2D_GenericDataObject<TCell, TData> : Grid2D_AbstractDataObject
-        where TCell : BaseCell, new()
+    public class GenericGrid_DataObject<TCell, TData> : AbstractGrid_DataObject
+        where TCell : AbstractCell, new()
         where TData : BaseCellData, new()
     {
 
@@ -38,7 +38,7 @@ namespace Darklight.UnityExt.Game.Grid
 
 
         [SerializeField] protected List<TData> savedData = new List<TData>();
-        public override void SaveGridData(BaseGrid grid)
+        public override void SaveGridData(AbstractGrid grid)
         {
             if (grid == null) return;
             if (grid is not GenericGrid<TCell, TData> genericGrid) return;
@@ -66,5 +66,5 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class Grid2D_DataObject : Grid2D_GenericDataObject<Cell, CellData> { }
+    public class Grid_DataObject : GenericGrid_DataObject<Cell, CellData> { }
 }

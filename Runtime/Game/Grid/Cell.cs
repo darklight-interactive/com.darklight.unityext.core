@@ -13,113 +13,39 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-
-    #region [[ CELL DATA ]] ===================================================================== ]]
-
-    #region -- << INTERFACE >> : ICellData ------------------------------------ >>
-    public interface ICellData
-    {
-        string Name { get; }
-        Vector2Int Key { get; }
-        Vector2 Dimensions { get; }
-        Vector3 Position { get; }
-        Vector3 Normal { get; }
-        bool IsDisabled { get; }
-
-        void Initialize(Vector2Int key);
-    }
-    #endregion
-
-    #region -- << ABSTRACT CLASS >> : BaseCellData ------------------------------------ >>
     [System.Serializable]
-    public abstract class BaseCellData : ICellData
+    public abstract class AbstractCell
     {
-        [SerializeField, ShowOnly] private string _name = "BaseCell";
-        [SerializeField, ShowOnly] private Vector2Int _key = Vector2Int.zero;
-        [SerializeField, ShowOnly] private Vector2 _dimensions = Vector2.one;
-        [SerializeField, ShowOnly] private Vector3 _position = Vector3.zero;
-        [SerializeField, ShowOnly] private Vector3 _normal = Vector3.up;
-        [SerializeField, ShowOnly] private bool _isDisabled = false;
-
-        public string Name { get => _name; protected set => _name = value; }
-        public Vector2Int Key { get => _key; protected set => _key = value; }
-        public Vector2 Dimensions { get => _dimensions; protected set => _dimensions = value; }
-        public Vector3 Position { get => _position; protected set => _position = value; }
-        public Vector3 Normal { get => _normal; protected set => _normal = value; }
-        public bool IsDisabled { get => _isDisabled; protected set => _isDisabled = value; }
-
-        public BaseCellData() { }
-        public BaseCellData(Vector2Int key) => Initialize(key);
-        public virtual void Initialize(Vector2Int key)
-        {
-            _key = key;
-            _name = $"Cell2D {key}";
-        }
-
-        public void SetPosition(Vector3 position) => _position = position;
-        public void SetNormal(Vector3 normal) => _normal = normal;
-        public void SetDimensions(Vector2 dimensions) => _dimensions = dimensions;
-        public void SetDisabled(bool disabled) => _isDisabled = disabled;
-
-        public virtual void CopyFrom(BaseCellData data)
-        {
-            if (data == null)
-            {
-                Debug.LogError("Cannot copy data from null object.");
-                return;
-            }
-
-            _name = data.Name;
-            _key = data.Key;
-            _dimensions = data.Dimensions;
-            _position = data.Position;
-            _normal = data.Normal;
-            _isDisabled = data.IsDisabled;
-        }
-    }
-    #endregion
-
-    #region -- << CLASS >> : CellData ------------------------------------ >>
-    [System.Serializable]
-    public class CellData : BaseCellData
-    {
-        public CellData() : base(Vector2Int.zero) { }
-        public CellData(Vector2Int key, GridConfig config) : base(key) { }
-    }
-    #endregion
-    #endregion
-
-    #region [[ CELL ]] ===================================================================== ]]
-
-    public interface ICell
-    {
-        BaseCellData Data { get; }
-        void Update();
-        void DrawGizmos(bool editMode);
+        public abstract BaseCellData Data { get; }
+        public abstract void Update();
+        public abstract void SetData(BaseCellData data);
+        public abstract void DrawGizmos(bool editMode);
     }
 
     [System.Serializable]
-    public abstract class BaseCell
+    public class GenericCell<TData> : AbstractCell where TData : BaseCellData, new()
     {
         // -- Protected Data ---- >>
-        [SerializeField] protected BaseCellData data;
-        public BaseCellData Data { get => data; protected set => data = value; }
+        [SerializeField] protected TData data;
+        public override BaseCellData Data => data;
 
         // ===================== [[ CONSTRUCTORS ]] ===================== //
-        public BaseCell(Vector2Int key, GridConfig config)
+        public GenericCell() { }
+        public GenericCell(Vector2Int key)
         {
-            CellData customData = new CellData(key, config);
+            TData customData = new TData();
+            customData.Initialize(key);
             Initialize(customData);
         }
 
         // ===================== [[ RUNTIME METHODS ]] ===================== //
-        protected virtual void Initialize(BaseCellData data)
+        protected virtual void Initialize(TData data)
         {
             this.data = data;
         }
 
         // Update the cell to reflect any changes to the data object
-        public virtual void Update() { }
+        public override void Update() { }
 
         #region (( Getter Methods )) -------- >>
         /// <summary>
@@ -153,7 +79,13 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
 
         #region (( Setter Methods )) -------- >>
-        public void SetData(BaseCellData data) => this.data = data;
+        public override void SetData(BaseCellData data)
+        {
+            if (data is TData)
+            {
+                this.data = data as TData;
+            }
+        }
         public void ToggleDisabled()
         {
             data.SetDisabled(!data.IsDisabled);
@@ -163,7 +95,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         #region (( Gizmo Methods )) -------- >>
 #if UNITY_EDITOR
-        public virtual void DrawGizmos(bool editMode)
+        public override void DrawGizmos(bool editMode)
         {
             if (data == null)
                 return;
@@ -208,28 +140,12 @@ namespace Darklight.UnityExt.Game.Grid
             ToggleDisabled();
         }
 #endif
-        #endregion
     }
+    #endregion
 
-    #region -- << GENERIC CLASS >> : CELL<> ------------------------------------ >>
-    [System.Serializable]
-    public class Cell<TData> : BaseCell where TData : BaseCellData, new()
+    public class Cell : GenericCell<CellData>
     {
-        public Cell() : base(Vector2Int.zero, null) { }
-        public Cell(Vector2Int key, GridConfig config) : base(key, config) { }
+        public Cell() : base() { }
+        public Cell(Vector2Int key) : base(key) { }
     }
-    #endregion
-
-    #region -- << CLASS >> : Cell ------------------------------------ >>
-
-    [System.Serializable]
-    public class Cell : Cell<CellData>
-    {
-        public Cell() : base(Vector2Int.zero, null) { }
-        public Cell(Vector2Int key, GridConfig config) : base(key, config) { }
-    }
-
-    #endregion
-
-    #endregion
 }

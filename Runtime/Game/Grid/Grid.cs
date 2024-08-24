@@ -14,7 +14,7 @@ namespace Darklight.UnityExt.Game.Grid
     ///     Abstract class for a 2D grid. Creates a Grid2D with Cell2D objects.
     /// </summary>
     [System.Serializable]
-    public abstract class BaseGrid
+    public abstract class AbstractGrid
     {
         // ===================== >> PROTECTED DATA << ===================== //
         protected GridConfig config;
@@ -23,8 +23,8 @@ namespace Darklight.UnityExt.Game.Grid
         public BaseGridMap Map => map;
 
         // ===================== >> INITIALIZATION << ===================== //
-        public BaseGrid() { }
-        public BaseGrid(GridConfig config) => Initialize(config);
+        public AbstractGrid() { }
+        public AbstractGrid(GridConfig config) => Initialize(config);
 
         // ===================== >> ABSTRACT METHODS << ===================== //
         public abstract void Initialize(GridConfig config);
@@ -35,13 +35,10 @@ namespace Darklight.UnityExt.Game.Grid
 
     #region -- << GENERIC CLASS >> : GRID2D ------------------------------------ >>
     [System.Serializable]
-    public class GenericGrid<TCell, TData> : BaseGrid
-        where TCell : BaseCell
+    public class GenericGrid<TCell, TData> : AbstractGrid
+        where TCell : AbstractCell
         where TData : BaseCellData
     {
-
-        public int test = 1;
-
         // (( Override GridMap )) ------------------------------ >>
         public new GenericGridMap<TCell, TData> map;
 
@@ -69,6 +66,7 @@ namespace Darklight.UnityExt.Game.Grid
             // ( Update the cell map )
             if (map == null) return;
             map.ApplyConfigToMap(config);
+            map.RefreshData();
         }
 
         public override void DrawGizmos(bool editMode)
