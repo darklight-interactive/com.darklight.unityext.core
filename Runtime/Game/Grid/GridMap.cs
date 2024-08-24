@@ -10,23 +10,9 @@ namespace Darklight.UnityExt.Game.Grid
     public abstract class BaseGridMap
     {
         // ===================== >> PROTECTED DATA << ===================== //
-        protected GridMapConfig config;
+        [SerializeField] protected GridMapConfig config;
         protected Dictionary<Vector2Int, BaseCell> cellMap = new Dictionary<Vector2Int, BaseCell>();
-        protected void MapFunction<TCell>(Func<TCell, TCell> mapFunction) where TCell : BaseCell
-        {
-            if (cellMap == null) return;
 
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
-            foreach (Vector2Int key in keys)
-            {
-                // Skip if the key is not in the map
-                if (!cellMap.ContainsKey(key)) continue;
-
-                // Apply the map function to the cell
-                TCell cell = cellMap[key] as TCell;
-                cellMap[key] = mapFunction(cell);
-            }
-        }
 
         public BaseGridMap() => Initialize();
         public BaseGridMap(GridMapConfig config) => Initialize(config);
@@ -34,6 +20,7 @@ namespace Darklight.UnityExt.Game.Grid
         public abstract void Update();
         public abstract void Clear();
         protected abstract void Generate();
+        protected abstract void Resize();
         public abstract void SetConfig(GridMapConfig config);
 
         protected virtual TCell CreateCell<TCell>(Vector2Int key) where TCell : BaseCell
@@ -51,6 +38,22 @@ namespace Darklight.UnityExt.Game.Grid
             cell.SetConfig(config);
             cellMap[key] = cell;
             return cell;
+        }
+
+        protected void MapFunction<TCell>(Func<TCell, TCell> mapFunction) where TCell : BaseCell
+        {
+            if (cellMap == null) return;
+
+            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
+            foreach (Vector2Int key in keys)
+            {
+                // Skip if the key is not in the map
+                if (!cellMap.ContainsKey(key)) continue;
+
+                // Apply the map function to the cell
+                TCell cell = cellMap[key] as TCell;
+                cellMap[key] = mapFunction(cell);
+            }
         }
     }
 
@@ -76,13 +79,11 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (cellMap == null || cellMap.Count == 0) return;
             Resize();
-
             _dataList = GetData();
         }
 
         protected override void Generate()
         {
-            cellMap.Clear();
             Vector2Int dimensions = config.gridDimensions;
             for (int x = 0; x < dimensions.x; x++)
             {
@@ -99,7 +100,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        public void Resize()
+        protected override void Resize()
         {
             if (cellMap == null) return;
             Vector2Int newDimensions = config.gridDimensions;
@@ -114,22 +115,8 @@ namespace Darklight.UnityExt.Game.Grid
                     cellMap.Remove(key);
                 }
             }
-
-            // Add new cells if dimensions have increased
-            for (int x = 0; x < newDimensions.x; x++)
-            {
-                for (int y = 0; y < newDimensions.y; y++)
-                {
-                    Vector2Int gridKey = new Vector2Int(x, y);
-                    if (!cellMap.ContainsKey(gridKey))
-                    {
-                        TCell newCell = CreateCell<TCell>(gridKey, config);
-                        cellMap[gridKey] = newCell;
-                    }
-                }
-            }
+            Generate();
         }
-
 
         public override void SetConfig(GridMapConfig config)
         {
@@ -192,12 +179,13 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        public void DrawGizmos(bool editMode = false)
+        public void DrawGizmos()
         {
             if (cellMap == null || cellMap.Count == 0) return;
+            if (config.showGizmos == false) return;
             MapFunction<TCell>(cell =>
             {
-                cell.DrawGizmos(editMode);
+                cell.DrawGizmos(config.showEditorGizmos);
                 return cell;
             });
         }

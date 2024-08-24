@@ -9,12 +9,24 @@ using System.Linq;
 namespace Darklight.UnityExt.Game.Grid
 {
 
+    interface IGrid
+    {
+        void Initialize(GridMapConfig config = null);
+        void Update();
+
+        void SetConfig(GridMapConfig config);
+        void GetData<TData>(out List<TData> data) where TData : BaseCellData;
+        void SetData<TData>(List<TData> data) where TData : BaseCellData;
+        void ClearData();
+        void DrawGizmos();
+    }
+
     #region -- << ABSTRACT CLASS >> : BaseGrid ------------------------------------ >>
     /// <summary>
     ///     Abstract class for a 2D grid. Creates a Grid2D with Cell2D objects.
     /// </summary>
     [System.Serializable]
-    public abstract class AbstractGrid
+    public abstract class AbstractGrid : IGrid
     {
         // ===================== >> PROTECTED DATA << ===================== //
         protected BaseGridMap map;
@@ -31,7 +43,7 @@ namespace Darklight.UnityExt.Game.Grid
         public abstract void GetData<TData>(out List<TData> data) where TData : BaseCellData;
         public abstract void SetData<TData>(List<TData> data) where TData : BaseCellData;
         public abstract void ClearData();
-        public abstract void DrawGizmos(bool editMode);
+        public abstract void DrawGizmos();
     }
     #endregion
 
@@ -61,10 +73,10 @@ namespace Darklight.UnityExt.Game.Grid
             map.Update();
         }
 
-        public override void DrawGizmos(bool editMode)
+        public override void DrawGizmos()
         {
             if (map == null) return;
-            map.DrawGizmos(editMode);
+            map.DrawGizmos();
         }
 
         public override void SetConfig(GridMapConfig config)

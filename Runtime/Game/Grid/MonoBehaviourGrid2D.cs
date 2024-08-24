@@ -37,7 +37,7 @@ namespace Darklight.UnityExt.Game.Grid
         public abstract void LoadGridData();
         public abstract void ClearData();
 
-        public abstract void DrawGizmos(bool editMode = false);
+        public abstract void DrawGizmos();
     }
     #endregion
 
@@ -51,7 +51,6 @@ namespace Darklight.UnityExt.Game.Grid
 
         [Header("Configuration ScriptableObject")]
         [SerializeField, Expandable] protected GridMapConfig_DataObject configObj;
-        protected GridMapConfig config => configObj.ToConfig();
         protected override void GenerateConfigObj()
         {
             configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMapConfig_DataObject>(CONFIG_PATH, name);
@@ -75,6 +74,7 @@ namespace Darklight.UnityExt.Game.Grid
                 GenerateDataObj();
 
             // Create a new grid from the config object
+            GridMapConfig config = configObj.ToConfig();
             grid = new GenericGrid<TCell, TData>(config);
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
@@ -85,7 +85,12 @@ namespace Darklight.UnityExt.Game.Grid
             if (grid == null)
                 InitializeGrid();
 
+            // Assign the grid's config from the config object
+            GridMapConfig config = configObj.ToConfig();
+            if (config.lockToTransform)
+                config.SetOriginPosition(transform.position);
             grid.SetConfig(config);
+
             grid.Update();
             //Debug.Log($"{prefix} updated grid.", this);
         }
@@ -119,10 +124,10 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
 
-        public override void DrawGizmos(bool editMode = false)
+        public override void DrawGizmos()
         {
             if (grid == null) return;
-            grid.DrawGizmos(editMode);
+            grid.DrawGizmos();
         }
     }
     #endregion
@@ -184,7 +189,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         private void OnSceneGUI()
         {
-            _script.DrawGizmos(true);
+            _script.DrawGizmos();
         }
     }
 #endif

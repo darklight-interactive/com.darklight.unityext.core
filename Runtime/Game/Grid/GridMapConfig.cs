@@ -45,6 +45,17 @@ namespace Darklight.UnityExt.Game.Grid
             return _showGizmos;
         }
 
+        public bool SetLockToTransform(bool lockToTransform)
+        {
+            _lockToTransform = lockToTransform;
+            return _lockToTransform;
+        }
+
+        public void SetOriginPosition(Vector3 originPosition)
+        {
+            _originPosition = originPosition;
+        }
+
         public void SetOriginOffset(Vector2Int originOffset)
         {
             _originKeyOffset = originOffset;

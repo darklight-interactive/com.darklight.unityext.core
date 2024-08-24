@@ -51,6 +51,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             GridMapConfig config = new GridMapConfig();
             config.SetGizmos(_showGizmos, _showEditorGizmos);
+            config.SetLockToTransform(_lockToTransform);
             config.SetOriginOffset(_originOffset);
             config.SetGridDimensions(new Vector2Int(_numColumns, _numRows));
             config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));

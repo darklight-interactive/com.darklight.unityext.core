@@ -187,8 +187,6 @@ namespace Darklight.UnityExt.Game.Grid
         }
 #endif
         #endregion
-
-
     }
 
     public class Cell : GenericCell<CellData>
