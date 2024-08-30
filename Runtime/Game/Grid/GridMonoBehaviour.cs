@@ -83,10 +83,10 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Assign the grid's config from the config object
             GridMapConfig config = configObj.ToConfig();
-            if (config.lockToTransform)
-                config.SetGridPosition(transform.position);
-            grid.SetConfig(config);
 
+            config.SetGridPosition(transform.position);
+
+            grid.SetConfig(config);
             grid.Update();
             //Debug.Log($"{prefix} updated grid.", this);
         }

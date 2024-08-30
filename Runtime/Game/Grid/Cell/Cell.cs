@@ -117,7 +117,6 @@ namespace Darklight.UnityExt.Game.Grid
         {
             data.SetDisabled(!data.disabled);
         }
-
         #endregion
 
         #region (( Gizmo Methods )) -------- >>

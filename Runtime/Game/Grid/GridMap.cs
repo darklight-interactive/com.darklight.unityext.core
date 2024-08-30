@@ -85,7 +85,7 @@ namespace Darklight.UnityExt.Game.Grid
             // Update each cell in the map
             MapFunction<TCell>(cell =>
             {
-                cell.Update();
+                //cell.Update();
                 return cell;
             });
 
