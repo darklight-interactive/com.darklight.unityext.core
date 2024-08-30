@@ -4,7 +4,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public interface ICellVisitor
     {
-        void Visit(BaseCell cell);
+        void Visit(AbstractCell cell);
     }
 
     public class CellVisitor

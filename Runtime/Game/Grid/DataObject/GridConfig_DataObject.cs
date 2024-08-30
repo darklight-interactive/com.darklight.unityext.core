@@ -52,9 +52,9 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] bool _showEditorGizmos = true;
 
 
-        public virtual GridMapConfig ToConfig()
+        public virtual AbstractGrid.Config ToConfig()
         {
-            GridMapConfig config = new GridMapConfig();
+            AbstractGrid.Config config = new AbstractGrid.Config();
 
             config.SetGizmos(_showGizmos, _showEditorGizmos);
 

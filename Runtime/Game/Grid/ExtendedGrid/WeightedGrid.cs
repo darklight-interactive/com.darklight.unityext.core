@@ -29,7 +29,7 @@ namespace Darklight.UnityExt.Game.Grid
 
     #region -- << CLASS >> : WEIGHTEDCELL ---------------------------------
     [System.Serializable]
-    public class WeightedCell : GenericCell<WeightedData>
+    public class WeightedCell : BaseCell<WeightedData>
     {
         public new WeightedData data
         {
@@ -40,6 +40,8 @@ namespace Darklight.UnityExt.Game.Grid
         // =========================== [[ CONSTRUCTORS ]] =========================== >>
         public WeightedCell() : base() { }
         public WeightedCell(Vector2Int key) : base(key) { }
+
+        public override void Update() { }
 
         protected override void GetGizmoColor(out Color color)
         {
@@ -86,8 +88,8 @@ namespace Darklight.UnityExt.Game.Grid
     }
     #endregion
 
-    #region -- << CLASS >> : WEIGHTEDGRID_DATAOBJECT -------------------------
-    public class WeightedGrid_DataObject : BaseGridDataObject<WeightedCell, WeightedData> { }
+    #region -- << SCRIPTABLE OBJECT >> : WEIGHTEDGRIDDATAOBJECT ------------    
+    public class WeightedGridDataObject : BaseGridDataObject<WeightedData> { }
     #endregion
 
     #region -- << CLASS >> : WEIGHTEDGRID ------------------------------------
@@ -96,14 +98,14 @@ namespace Darklight.UnityExt.Game.Grid
     {
         protected override void GenerateDataObj()
         {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<WeightedGrid_DataObject>(DATA_PATH, name);
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<WeightedGridDataObject>(DATA_PATH, name);
         }
 
         public WeightedData GetRandomDataByWeight()
         {
             if (grid == null) return null;
 
-            List<WeightedData> dataList = grid.GetData();
+            List<WeightedData> dataList = grid.GetData<WeightedData>();
             WeightedData randData = WeightedDataSelector.SelectRandomWeightedItem(dataList, data => data);
             return randData;
         }
@@ -135,7 +137,8 @@ namespace Darklight.UnityExt.Game.Grid
 
         protected override void OnSceneGUI()
         {
-            _weightedGridScript.DrawGizmos();
+            if (_weightedGridScript)
+                _weightedGridScript.DrawGizmos();
         }
     }
 #endif

@@ -24,7 +24,7 @@ namespace Darklight.UnityExt.Game.Grid
 
     // -- OverlapCell Class --
     [System.Serializable]
-    public class OverlapCell : GenericCell<OverlapCellData>, ICell
+    public class OverlapCell : BaseCell<OverlapCellData>
     {
         public new OverlapCellData data
         {
@@ -60,7 +60,11 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class OverlapGrid_DataObject : BaseGridDataObject<OverlapCell, OverlapCellData> { }
+    public class OverlapGrid_DataObject : BaseGridDataObject<OverlapCellData>
+    {
+        [Header("Overlap Grid Data")]
+        public bool showColliders = true;
+    }
 
     // -- OverlapGrid Class --
     [ExecuteAlways]

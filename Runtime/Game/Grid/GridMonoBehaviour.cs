@@ -42,8 +42,8 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    public class GenericGridMonoBehaviour<TCell, TData> : AbstractGridMonoBehaviour
-        where TCell : BaseCell, new()
+    public abstract class GenericGridMonoBehaviour<TCell, TData> : AbstractGridMonoBehaviour
+        where TCell : AbstractCell, new()
         where TData : BaseCellData, new()
     {
         [SerializeField] protected new BaseGrid<TCell, TData> grid;
@@ -52,11 +52,9 @@ namespace Darklight.UnityExt.Game.Grid
 
         protected override void GenerateConfigObj()
         {
-            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMapConfig_DataObject>(CONFIG_PATH, name);
-        }
-        protected override void GenerateDataObj()
-        {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<AbstractGridDataObject>(DATA_PATH, name);
+            configObj = ScriptableObject.CreateInstance<GridMapConfig_DataObject>();
+            configObj.name = $"{prefix}_Config";
+            Debug.Log($"{prefix} generated config object.", this);
         }
 
         public override void InitializeGrid()
@@ -70,7 +68,7 @@ namespace Darklight.UnityExt.Game.Grid
                 GenerateDataObj();
 
             // Create a new grid from the config object
-            GridMapConfig config = configObj.ToConfig();
+            AbstractGrid.Config config = configObj.ToConfig();
             grid = new BaseGrid<TCell, TData>(config);
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
@@ -82,7 +80,7 @@ namespace Darklight.UnityExt.Game.Grid
                 InitializeGrid();
 
             // Assign the grid's config from the config object
-            GridMapConfig config = configObj.ToConfig();
+            AbstractGrid.Config config = configObj.ToConfig();
 
             config.SetGridPosition(transform.position);
 
@@ -94,16 +92,17 @@ namespace Darklight.UnityExt.Game.Grid
         public override void SaveGridData()
         {
             if (dataObj == null) return;
-            dataObj.SaveData(grid);
+            List<TData> dataList = grid.GetData<TData>();
+            dataObj.SetData(dataList);
             Debug.Log($"{prefix} saved grid data.", this);
         }
 
         public override void LoadGridData()
         {
             if (dataObj == null) return;
-            if (dataObj is not BaseGridDataObject<TCell, TData> typedDataObj) return;
+            //if (dataObj is not GridDataObject typedDataObj) return;
 
-            List<TData> dataList = typedDataObj.GetDataCopy<TData>();
+            List<TData> dataList = dataObj.GetData<TData>();
             if (dataList == null || dataList.Count == 0) return;
 
             grid.SetData(dataList);
@@ -128,7 +127,13 @@ namespace Darklight.UnityExt.Game.Grid
     }
     #endregion
 
-    public class GridMonoBehaviour : GenericGridMonoBehaviour<Cell, BaseCellData> { }
+    public class GridMonoBehaviour : GenericGridMonoBehaviour<BaseCell, BaseCellData>
+    {
+        protected override void GenerateDataObj()
+        {
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridDataObject>(DATA_PATH, name);
+        }
+    }
 
 #if UNITY_EDITOR
     [CustomEditor(typeof(AbstractGridMonoBehaviour), true)]

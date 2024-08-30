@@ -11,43 +11,30 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public interface ICell
-    {
-        BaseCellData GetData();
-        void SetData(BaseCellData data);
-        void SetConfig(GridMapConfig config);
-        void Update();
-        void DrawGizmos(bool editMode);
-    }
-
     [System.Serializable]
-    public abstract class BaseCell : ICell
+    public abstract class AbstractCell
     {
-        protected BaseCellData data;
+        [SerializeField] protected BaseCellData data;
         public abstract BaseCellData GetData();
         public abstract void SetData(BaseCellData data);
-        public abstract void SetConfig(GridMapConfig config);
+        public abstract void SetConfig(AbstractGrid.Config config);
+
         public abstract void Update();
         public abstract void DrawGizmos(bool editMode);
     }
 
     [System.Serializable]
-    public class GenericCell<TData> : BaseCell
+    public abstract class BaseCell<TData> : AbstractCell
         where TData : BaseCellData, new()
     {
-        // -- Protected Data ---- >>
-        [SerializeField] protected new TData data;
-
         // ===================== [[ CONSTRUCTORS ]] ===================== //
-        public GenericCell() { }
-        public GenericCell(Vector2Int key)
+        public BaseCell() { }
+        public BaseCell(Vector2Int key)
         {
             TData customData = new TData();
             customData.Initialize(key);
             SetData(customData);
         }
-
-        public override void Update() { }
 
         #region (( Getter Methods )) -------- >>
         public override BaseCellData GetData()
@@ -102,7 +89,7 @@ namespace Darklight.UnityExt.Game.Grid
             data.SetKey(key);
         }
 
-        public override void SetConfig(GridMapConfig config)
+        public override void SetConfig(AbstractGrid.Config config)
         {
             if (data == null)
                 return;
@@ -169,9 +156,10 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
     }
 
-    public class Cell : GenericCell<BaseCellData>
+    public class BaseCell : BaseCell<BaseCellData>
     {
-        public Cell() : base() { }
-        public Cell(Vector2Int key) : base(key) { }
+        public BaseCell() : base() { }
+        public BaseCell(Vector2Int key) : base(key) { }
+        public override void Update() { }
     }
 }

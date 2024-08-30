@@ -8,35 +8,185 @@ using System.Linq;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    #region -- << INTERFACE >> : IGrid ------------------------------------ >>
+
+    #region -- << ABSRACT CLASS >> : AbstractGrid ------------------------------------ >>
     public abstract class AbstractGrid
     {
-        public abstract void Initialize(GridMapConfig config = null);
+        #region -- << DATA CLASS >> : Config ------------------------------------ >>    
+        [System.Serializable]
+        public class Config
+        {
+            // ======================= [[ SERIALIZED FIELDS ]] ======================= //
+            [SerializeField, ShowOnly] bool _showGizmos = true;
+            [SerializeField, ShowOnly] bool _showEditorGizmos = true;
+            [SerializeField, ShowOnly] bool _lockToTransform = true;
+
+            [SerializeField, ShowOnly] Alignment _gridAlignment = Alignment.Center;
+            [SerializeField, ShowOnly] Vector3 _gridPosition = new Vector3(0, 0, 0);
+            [SerializeField, ShowOnly] Vector3 _gridNormal = Vector3.up;
+            [SerializeField, ShowOnly] Vector2Int _gridDimensions = new Vector2Int(3, 3);
+
+            [SerializeField, ShowOnly] Vector2 _cellDimensions = new Vector2(1, 1);
+            [SerializeField, ShowOnly] Vector2 _cellSpacing = new Vector2(1, 1);
+            [SerializeField, ShowOnly] Vector2 _cellBonding = new Vector2(0, 0);
+
+            // ======================= [[ PUBLIC REFERENCE PROPERTIES ]] ======================= //
+            public bool showGizmos => _showGizmos;
+            public bool showEditorGizmos => _showEditorGizmos;
+            public bool SetGizmos(bool showGizmos, bool showEditorGizmos = false)
+            {
+                _showGizmos = showGizmos;
+                _showEditorGizmos = showEditorGizmos;
+                return _showGizmos;
+            }
+
+            public bool lockToTransform => _lockToTransform;
+            public void SetLockToTransform(bool lockToTransform) => _lockToTransform = lockToTransform;
+
+            public Alignment gridAlignment => _gridAlignment;
+            public void SetGridAlignment(Alignment gridAlignment) => _gridAlignment = gridAlignment;
+
+            public Vector3 gridPosition => _gridPosition;
+            public Vector3 gridNormal => _gridNormal;
+            public Vector2Int gridDimensions => _gridDimensions;
+            public void SetGridPosition(Vector3 originPosition) => _gridPosition = originPosition;
+            public void SetGridNormal(Vector3 gridNormal) => _gridNormal = gridNormal;
+            public void SetGridDimensions(Vector2Int gridDimensions) => _gridDimensions = gridDimensions;
+
+            public Vector2 cellDimensions => _cellDimensions;
+            public Vector2 cellSpacing => _cellSpacing;
+            public Vector2 cellBonding => _cellBonding;
+            public void SetCellDimensions(Vector2 cellDimensions) => _cellDimensions = cellDimensions;
+            public void SetCellSpacing(Vector2 cellSpacing) => _cellSpacing = cellSpacing;
+            public void SetCellBonding(Vector2 cellBonding) => _cellBonding = cellBonding;
+
+
+            // ======================= [[ CONSTRUCTORS ]] ======================= //
+            public Config() { }
+
+
+            #region (( Calculation Methods )) --------- >>
+            public Vector3 CalculatePositionFromKey(Vector2Int key)
+            {
+                Config config = this;
+
+                // Get the origin key of the grid
+                Vector2Int originKey = config.CalculateOriginKey();
+
+                // Calculate the spacing offset && clamp it to avoid overlapping cells
+                Vector2 spacingOffsetPos = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
+                spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 1, float.MaxValue);
+                spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 1, float.MaxValue);
+
+                // Calculate bonding offsets
+                Vector2 bondingOffset = Vector2.zero;
+                if (key.y % 2 == 0)
+                    bondingOffset.x = config.cellBonding.x;
+                if (key.x % 2 == 0)
+                    bondingOffset.y = config.cellBonding.y;
+
+                // Calculate the offset of the cell from the grid origin
+                Vector2 originOffsetPos = originKey * config.cellDimensions;
+                Vector2 keyOffsetPos = key * config.cellDimensions;
+
+                // Calculate the final position of the cell
+                Vector2 cellPosition = (keyOffsetPos - originOffsetPos); // << Calculate the position offset
+                cellPosition *= spacingOffsetPos; // << Multiply the spacing offset
+                cellPosition += bondingOffset; // << Add the bonding offset
+
+                // Create a rotation matrix based on the grid's normal
+                Quaternion rotation = Quaternion.LookRotation(config.gridNormal, Vector3.forward);
+
+                // Apply the rotation to the grid offset and return the final world position
+                return gridPosition + (rotation * new Vector3(cellPosition.x, cellPosition.y, 0));
+            }
+
+            public Vector2Int CalculateCoordinateFromKey(Vector2Int key)
+            {
+                Config config = this;
+                Vector2Int originKey = config.CalculateOriginKey();
+                return key - originKey;
+            }
+            Vector2Int CalculateOriginKey()
+            {
+                Config config = this;
+                Vector2Int gridDimensions = config.gridDimensions - Vector2Int.one;
+                Vector2Int originKey = Vector2Int.zero;
+
+                switch (config.gridAlignment)
+                {
+                    case Alignment.TopLeft:
+                        originKey = new Vector2Int(0, 0);
+                        break;
+                    case Alignment.TopCenter:
+                        originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
+                        break;
+                    case Alignment.TopRight:
+                        originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
+                        break;
+                    case Alignment.MiddleLeft:
+                        originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
+                        break;
+                    case Alignment.Center:
+                        originKey = new Vector2Int(
+                            Mathf.FloorToInt(gridDimensions.x / 2),
+                            Mathf.FloorToInt(gridDimensions.y / 2)
+                            );
+                        break;
+                    case Alignment.MiddleRight:
+                        originKey = new Vector2Int(
+                            Mathf.FloorToInt(gridDimensions.x),
+                            Mathf.FloorToInt(gridDimensions.y / 2)
+                            );
+                        break;
+                    case Alignment.BottomLeft:
+                        originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
+                        break;
+                    case Alignment.BottomCenter:
+                        originKey = new Vector2Int(
+                            Mathf.FloorToInt(gridDimensions.x / 2),
+                            Mathf.FloorToInt(gridDimensions.y)
+                            );
+                        break;
+                    case Alignment.BottomRight:
+                        originKey = new Vector2Int(
+                            Mathf.FloorToInt(gridDimensions.x),
+                            Mathf.FloorToInt(gridDimensions.y)
+                            );
+                        break;
+                }
+
+                return originKey;
+            }
+
+
+            #endregion
+        }
+        #endregion
+
+        public abstract void Initialize(Config config = null);
         public abstract void Update();
         public abstract void Clear();
+        public abstract List<TData> GetData<TData>() where TData : BaseCellData;
         public abstract void DrawGizmos();
-
     }
     #endregion
 
-    #region -- << ABSTRACT CLASS >> : BaseGrid ------------------------------------ >>
+    #region -- << BASE CLASS >> : BaseGrid ------------------------------------ >>
     [System.Serializable]
     public class BaseGrid<TCell, TData> : AbstractGrid
-        where TCell : BaseCell
+        where TCell : AbstractCell
         where TData : BaseCellData
     {
         protected Dictionary<Vector2Int, TCell> cellMap = new Dictionary<Vector2Int, TCell>();
 
-
         // ===================== >> SERIALIZED FIELDS << ===================== //
-        [SerializeField] protected GridMapConfig config;
+        [SerializeField] protected Config config;
         [SerializeField] List<TData> _dataList = new List<TData>();
 
         // ===================== >> CONSTRUCTORS << ===================== //
         public BaseGrid() { }
-        public BaseGrid(GridMapConfig config) => Initialize(config);
-
-
+        public BaseGrid(Config config) => Initialize(config);
 
         // ===================== >> PROTECTED METHODS << ===================== //
         protected void Generate()
@@ -104,11 +254,11 @@ namespace Darklight.UnityExt.Game.Grid
         // ===================== >> PUBLIC METHODS << ===================== //
 
         // (( RUNTIME METHODS )) ------------------------------ >>
-        public override void Initialize(GridMapConfig config = null)
+        public override void Initialize(Config config = null)
         {
             // Create a basic config if none is provided
             if (config == null)
-                config = new GridMapConfig();
+                config = new Config();
             this.config = config;
             Generate();
         }
@@ -127,7 +277,7 @@ namespace Darklight.UnityExt.Game.Grid
             });
 
             // Update the data list
-            _dataList = GetData();
+            _dataList = GetData<TData>();
         }
         public override void Clear()
         {
@@ -151,7 +301,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( SETTERS )) ------------------------------ >>
-        public virtual void SetConfig(GridMapConfig config)
+        public virtual void SetConfig(Config config)
         {
             if (config == null) return;
             this.config = config;
@@ -175,21 +325,21 @@ namespace Darklight.UnityExt.Game.Grid
                 // Check if the key is in the map
                 if (cellMap.ContainsKey(cellData.key))
                 {
-                    BaseCell cell = cellMap[cellData.key];
+                    AbstractCell cell = cellMap[cellData.key];
                     cell.SetData(cellData);
                 }
             }
         }
 
         // (( GETTERS )) ------------------------------ >>
-        public List<TData> GetData()
+        public override List<T> GetData<T>()
         {
             if (cellMap == null || cellMap.Count == 0) return null;
 
-            List<TData> data = new List<TData>();
-            foreach (BaseCell cell in cellMap.Values)
+            List<T> data = new List<T>();
+            foreach (AbstractCell cell in cellMap.Values)
             {
-                TData cellData = cell.GetData() as TData;
+                T cellData = cell.GetData() as T;
                 if (cellData != null)
                 {
                     data.Add(cellData);
@@ -197,15 +347,13 @@ namespace Darklight.UnityExt.Game.Grid
             }
             return data;
         }
-
     }
     #endregion
 
-    #region -- << CLASS >> : Grid ------------------------------------ >>
-    public class Grid : BaseGrid<BaseCell, BaseCellData>
+    public enum Alignment
     {
-        public Grid() { }
-        public Grid(GridMapConfig config) : base(config) { }
+        TopLeft, TopCenter, TopRight,
+        MiddleLeft, Center, MiddleRight,
+        BottomLeft, BottomCenter, BottomRight
     }
-    #endregion
 }

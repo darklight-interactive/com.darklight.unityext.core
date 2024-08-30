@@ -36,12 +36,14 @@ namespace Darklight.UnityExt.Game.Grid
         public void SetDimensions(Vector2 dimensions) => _dimensions = dimensions;
         public void SetDisabled(bool disabled) => _isDisabled = disabled;
 
+
+        public AbstractCellData() => Initialize(Vector2Int.zero);
+        public AbstractCellData(Vector2Int key) => Initialize(key);
         public virtual void Initialize(Vector2Int key)
         {
             _key = key;
             _name = $"Cell2D {key}";
         }
-
 
         public virtual void CopyFrom(BaseCellData data)
         {

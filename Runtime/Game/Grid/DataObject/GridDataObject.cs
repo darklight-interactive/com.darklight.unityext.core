@@ -6,44 +6,11 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public abstract class AbstractGridDataObject : ScriptableObject
     {
-        [SerializeField] protected List<BaseCellData> savedData = new List<BaseCellData>();
+        public abstract List<TData> GetData<TData>() where TData : BaseCellData, new();
+        public abstract void SetData<TData>(List<TData> data) where TData : BaseCellData, new();
+        public abstract void ClearData();
 
 
-        public void SaveData(AbstractGrid grid)
-        {
-            if (grid == null) return;
-
-            List<BaseCellData> data = GetDataCopy<BaseCellData>();
-            SaveCellData(data);
-        }
-
-        public void SaveCellData(List<BaseCellData> data)
-        {
-            savedData.Clear();
-            savedData = GetDataCopy<BaseCellData>();
-
-            Debug.Log($"Saved {savedData.Count} cells.", this);
-        }
-
-        public void ClearData()
-        {
-            savedData.Clear();
-        }
-
-        // (( STATIC METHODS )) ------------------------------ >>
-        public List<TData> GetDataCopy<TData>() where TData : BaseCellData, new()
-        {
-            if (savedData == null) return new List<TData>();
-
-            List<TData> copy = new List<TData>();
-            foreach (TData d in savedData)
-            {
-                TData newData = new TData();
-                newData.CopyFrom(d);
-                copy.Add(newData);
-            }
-            return copy;
-        }
     }
 
     /// <summary>
@@ -51,19 +18,39 @@ namespace Darklight.UnityExt.Game.Grid
     /// </summary>
     /// <typeparam name="TCell">Type of the cell.</typeparam>
     /// <typeparam name="TData">Type of the data contained within the cell.</typeparam>
-    public class BaseGridDataObject<TCell, TData> : AbstractGridDataObject
-        where TCell : BaseCell, new()
+    public class BaseGridDataObject<TData> : AbstractGridDataObject
         where TData : BaseCellData, new()
     {
-        // (( PROTECTED FIELDS )) ------------------------------ >>
+        [SerializeField] protected List<TData> savedData = new List<TData>();
 
+        public override List<T> GetData<T>()
+        {
+            if (savedData == null) return new List<T>();
 
-        // (( PUBLIC METHODS )) ------------------------------ >>
+            List<T> copy = new List<T>();
+            foreach (TData d in savedData)
+            {
+                T newData = new T();
+                newData.CopyFrom(d);
+                copy.Add(newData);
+            }
+            return copy;
+        }
 
+        public override void SetData<T>(List<T> data)
+        {
+            savedData.Clear();
+            foreach (T newData in data)
+            {
+                savedData.Add(newData as TData);
+            }
+        }
 
-
-
+        public override void ClearData()
+        {
+            savedData.Clear();
+        }
     }
 
-    public class GridDataObject : BaseGridDataObject<Cell, BaseCellData> { }
+    public class GridDataObject : BaseGridDataObject<BaseCellData> { }
 }
