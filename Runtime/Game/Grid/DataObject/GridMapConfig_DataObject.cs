@@ -25,7 +25,7 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
 
         [SerializeField] bool _lockToTransform = true;
-        [SerializeField] GridAlignment _gridAlignment = GridAlignment.Center;
+        [SerializeField] Alignment _gridAlignment = Alignment.Center;
         [SerializeField, Dropdown("editor_directions")] Vector3 _gridNormal = Vector3.up;
 
         // (( Grid Dimensions )) ------------------------------ >>
@@ -73,7 +73,7 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void ResetToDefaults()
         {
             _lockToTransform = true;
-            _gridAlignment = GridAlignment.Center;
+            _gridAlignment = Alignment.Center;
             _gridNormal = Vector3.up;
 
             _numColumns = 3;

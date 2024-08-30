@@ -46,9 +46,9 @@ namespace Darklight.UnityExt.Game.Grid
         where TCell : BaseCell, new()
         where TData : BaseCellData, new()
     {
-        [SerializeField] protected new GenericGrid<TCell, TData> grid;
+        [SerializeField] protected new BaseGrid<TCell, TData> grid;
         [SerializeField, Expandable] protected GridMapConfig_DataObject configObj;
-        [SerializeField, Expandable] protected AbstractGridMap_DataObject dataObj;
+        [SerializeField, Expandable] protected AbstractGridDataObject dataObj;
 
         protected override void GenerateConfigObj()
         {
@@ -56,7 +56,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
         protected override void GenerateDataObj()
         {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridMap_DataObject>(DATA_PATH, name);
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<AbstractGridDataObject>(DATA_PATH, name);
         }
 
         public override void InitializeGrid()
@@ -71,7 +71,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Create a new grid from the config object
             GridMapConfig config = configObj.ToConfig();
-            grid = new GenericGrid<TCell, TData>(config);
+            grid = new BaseGrid<TCell, TData>(config);
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
         }
@@ -94,16 +94,16 @@ namespace Darklight.UnityExt.Game.Grid
         public override void SaveGridData()
         {
             if (dataObj == null) return;
-            dataObj.SaveGridData(grid);
+            dataObj.SaveData(grid);
             Debug.Log($"{prefix} saved grid data.", this);
         }
 
         public override void LoadGridData()
         {
             if (dataObj == null) return;
-            if (dataObj is not GenericGridMap_DataObject<TCell, TData> typedDataObj) return;
+            if (dataObj is not BaseGridDataObject<TCell, TData> typedDataObj) return;
 
-            List<TData> dataList = typedDataObj.GetCellData();
+            List<TData> dataList = typedDataObj.GetDataCopy<TData>();
             if (dataList == null || dataList.Count == 0) return;
 
             grid.SetData(dataList);
@@ -115,7 +115,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (dataObj == null) return;
             dataObj.ClearData();
-            grid.ClearData();
+            grid.Clear();
             Debug.Log($"{prefix} cleared grid data.", this);
         }
 
@@ -128,7 +128,7 @@ namespace Darklight.UnityExt.Game.Grid
     }
     #endregion
 
-    public class GridMonoBehaviour : GenericGridMonoBehaviour<Cell, CellData> { }
+    public class GridMonoBehaviour : GenericGridMonoBehaviour<Cell, BaseCellData> { }
 
 #if UNITY_EDITOR
     [CustomEditor(typeof(AbstractGridMonoBehaviour), true)]

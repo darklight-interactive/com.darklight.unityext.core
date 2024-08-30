@@ -87,7 +87,7 @@ namespace Darklight.UnityExt.Game.Grid
     #endregion
 
     #region -- << CLASS >> : WEIGHTEDGRID_DATAOBJECT -------------------------
-    public class WeightedGrid_DataObject : GenericGridMap_DataObject<WeightedCell, WeightedData> { }
+    public class WeightedGrid_DataObject : BaseGridDataObject<WeightedCell, WeightedData> { }
     #endregion
 
     #region -- << CLASS >> : WEIGHTEDGRID ------------------------------------
@@ -103,7 +103,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (grid == null) return null;
 
-            List<WeightedData> dataList = grid.GetData<WeightedData>();
+            List<WeightedData> dataList = grid.GetData();
             WeightedData randData = WeightedDataSelector.SelectRandomWeightedItem(dataList, data => data);
             return randData;
         }

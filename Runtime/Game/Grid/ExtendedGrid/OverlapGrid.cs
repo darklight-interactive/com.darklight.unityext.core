@@ -60,7 +60,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class OverlapGrid_DataObject : GenericGridMap_DataObject<OverlapCell, OverlapCellData> { }
+    public class OverlapGrid_DataObject : BaseGridDataObject<OverlapCell, OverlapCellData> { }
 
     // -- OverlapGrid Class --
     [ExecuteAlways]

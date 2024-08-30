@@ -169,7 +169,7 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
     }
 
-    public class Cell : GenericCell<CellData>
+    public class Cell : GenericCell<BaseCellData>
     {
         public Cell() : base() { }
         public Cell(Vector2Int key) : base(key) { }

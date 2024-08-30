@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class ShapeData : BaseCellData, ICellData
+    public class ShapeData : BaseCellData
     {
         public Shape2D shape;
         public int segments = 6;
@@ -31,7 +31,10 @@ namespace Darklight.UnityExt.Game.Grid
             base.Update();
 
             GetGizmoColor(out Color color);
-            data.shape = new Shape2D(data.position, data.GetMinDimension() / 2, data.segments, data.normal, color);
+
+            if (data.shape == null)
+                data.shape = new Shape2D(data.position, data.GetMinDimension() / 2, data.segments, data.normal, color);
+            data.shape.radius = data.GetMinDimension() / 2;
         }
 
         public override void DrawGizmos(bool editMode)
@@ -42,7 +45,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class ShapeGrid_DataObject : GenericGridMap_DataObject<ShapeCell, ShapeData>
+    public class ShapeGrid_DataObject : BaseGridDataObject<ShapeCell, ShapeData>
     {
         [Header("Shape Grid Data")]
         [Range(3, 12)] public int segments = 6;
@@ -58,7 +61,7 @@ namespace Darklight.UnityExt.Game.Grid
         public override void UpdateGrid()
         {
             base.UpdateGrid();
-            List<ShapeData> dataList = grid.GetData<ShapeData>();
+            List<ShapeData> dataList = grid.GetData();
             foreach (ShapeData data in dataList)
             {
                 data.segments = (dataObj as ShapeGrid_DataObject).segments;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public enum GridAlignment
+    public enum Alignment
     {
         TopLeft, TopCenter, TopRight,
         MiddleLeft, Center, MiddleRight,
@@ -20,7 +20,7 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] bool _showEditorGizmos = true;
         [SerializeField, ShowOnly] bool _lockToTransform = true;
 
-        [SerializeField, ShowOnly] GridAlignment _gridAlignment = GridAlignment.Center;
+        [SerializeField, ShowOnly] Alignment _gridAlignment = Alignment.Center;
         [SerializeField, ShowOnly] Vector3 _gridPosition = new Vector3(0, 0, 0);
         [SerializeField, ShowOnly] Vector3 _gridNormal = Vector3.up;
         [SerializeField, ShowOnly] Vector2Int _gridDimensions = new Vector2Int(3, 3);
@@ -42,8 +42,8 @@ namespace Darklight.UnityExt.Game.Grid
         public bool lockToTransform => _lockToTransform;
         public void SetLockToTransform(bool lockToTransform) => _lockToTransform = lockToTransform;
 
-        public GridAlignment gridAlignment => _gridAlignment;
-        public void SetGridAlignment(GridAlignment gridAlignment) => _gridAlignment = gridAlignment;
+        public Alignment gridAlignment => _gridAlignment;
+        public void SetGridAlignment(Alignment gridAlignment) => _gridAlignment = gridAlignment;
 
         public Vector3 gridPosition => _gridPosition;
         public Vector3 gridNormal => _gridNormal;
@@ -114,40 +114,40 @@ namespace Darklight.UnityExt.Game.Grid
 
             switch (config.gridAlignment)
             {
-                case GridAlignment.TopLeft:
+                case Alignment.TopLeft:
                     originKey = new Vector2Int(0, 0);
                     break;
-                case GridAlignment.TopCenter:
+                case Alignment.TopCenter:
                     originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
                     break;
-                case GridAlignment.TopRight:
+                case Alignment.TopRight:
                     originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
                     break;
-                case GridAlignment.MiddleLeft:
+                case Alignment.MiddleLeft:
                     originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
                     break;
-                case GridAlignment.Center:
+                case Alignment.Center:
                     originKey = new Vector2Int(
                         Mathf.FloorToInt(gridDimensions.x / 2),
                         Mathf.FloorToInt(gridDimensions.y / 2)
                         );
                     break;
-                case GridAlignment.MiddleRight:
+                case Alignment.MiddleRight:
                     originKey = new Vector2Int(
                         Mathf.FloorToInt(gridDimensions.x),
                         Mathf.FloorToInt(gridDimensions.y / 2)
                         );
                     break;
-                case GridAlignment.BottomLeft:
+                case Alignment.BottomLeft:
                     originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
                     break;
-                case GridAlignment.BottomCenter:
+                case Alignment.BottomCenter:
                     originKey = new Vector2Int(
                         Mathf.FloorToInt(gridDimensions.x / 2),
                         Mathf.FloorToInt(gridDimensions.y)
                         );
                     break;
-                case GridAlignment.BottomRight:
+                case Alignment.BottomRight:
                     originKey = new Vector2Int(
                         Mathf.FloorToInt(gridDimensions.x),
                         Mathf.FloorToInt(gridDimensions.y)
