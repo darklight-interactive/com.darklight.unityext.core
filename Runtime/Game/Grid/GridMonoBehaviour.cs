@@ -47,12 +47,12 @@ namespace Darklight.UnityExt.Game.Grid
         where TData : BaseCellData, new()
     {
         [SerializeField] protected new BaseGrid<TCell, TData> grid;
-        [SerializeField, Expandable] protected GridMapConfig_DataObject configObj;
+        [SerializeField, Expandable] protected GridConfigDataObject configObj;
         [SerializeField, Expandable] protected AbstractGridDataObject dataObj;
 
         protected override void GenerateConfigObj()
         {
-            configObj = ScriptableObject.CreateInstance<GridMapConfig_DataObject>();
+            configObj = ScriptableObject.CreateInstance<GridConfigDataObject>();
             configObj.name = $"{prefix}_Config";
             Debug.Log($"{prefix} generated config object.", this);
         }

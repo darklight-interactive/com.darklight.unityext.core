@@ -9,7 +9,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
-    public class GridMapConfig_DataObject : ScriptableObject
+    public class GridConfigDataObject : ScriptableObject
     {
         #region ---- ( CUSTOM EDITOR DATA ) --------- >>
         DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
@@ -43,8 +43,8 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
 
         [Header("-- Cell Spacing ---- >>")]
-        [SerializeField, Range(0, 10)] float _cellHorzSpacing = 0;
-        [SerializeField, Range(0, 10)] float _cellVertSpacing = 0;
+        [SerializeField, Range(-0.5f, 10)] float _cellHorzSpacing = 0;
+        [SerializeField, Range(-0.5f, 10)] float _cellVertSpacing = 0;
 
         // (( Gizmos )) ------------------------------ >>
         [Header("-- Gizmos ---- >>")]
@@ -92,37 +92,4 @@ namespace Darklight.UnityExt.Game.Grid
             _showEditorGizmos = true;
         }
     }
-
-#if UNITY_EDITOR
-    [CustomEditor(typeof(GridMapConfig_DataObject))]
-    public class GridMapConfig_DataObjectCustomEditor : UnityEditor.Editor
-    {
-        GridMapConfig_DataObject _script;
-
-        public void OnEnable()
-        {
-            _script = target as GridMapConfig_DataObject;
-        }
-
-        public override void OnInspectorGUI()
-        {
-            serializedObject.Update();
-
-            EditorGUI.BeginChangeCheck();
-
-            if (GUILayout.Button("Reset to Defaults"))
-            {
-                _script.ResetToDefaults();
-            }
-
-            base.OnInspectorGUI();
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                serializedObject.ApplyModifiedProperties();
-            }
-        }
-    }
-#endif
-
 }

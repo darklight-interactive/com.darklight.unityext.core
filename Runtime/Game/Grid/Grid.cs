@@ -75,8 +75,8 @@ namespace Darklight.UnityExt.Game.Grid
 
                 // Calculate the spacing offset && clamp it to avoid overlapping cells
                 Vector2 spacingOffsetPos = config.cellSpacing + Vector2.one; // << Add 1 to allow for values of 0
-                spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 1, float.MaxValue);
-                spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 1, float.MaxValue);
+                spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 0.5f, float.MaxValue);
+                spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 0.5f, float.MaxValue);
 
                 // Calculate bonding offsets
                 Vector2 bondingOffset = Vector2.zero;
