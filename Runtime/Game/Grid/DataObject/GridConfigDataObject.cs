@@ -1,6 +1,8 @@
 using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
 using UnityEngine;
+using System.Collections.Generic;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -24,20 +26,15 @@ namespace Darklight.UnityExt.Game.Grid
         public bool editor_showTransform => !_lockToTransform;
         #endregion
 
+        [Header("-- Grid Transform ---- >>")]
         [SerializeField] bool _lockToTransform = true;
-        [SerializeField] Alignment _gridAlignment = Alignment.Center;
+        [SerializeField] Grid.Alignment _gridAlignment = Grid.Alignment.Center;
         [SerializeField, Dropdown("editor_directions")] Vector3 _gridNormal = Vector3.up;
 
-        // (( Grid Dimensions )) ------------------------------ >>
         [Header("-- Grid Dimensions ---- >>")]
         [SerializeField, Range(1, 10)] int _numColumns = 3;
         [SerializeField, Range(1, 10)] int _numRows = 3;
 
-        [Header("-- Cell Bonding ---- >>")]
-        [SerializeField, Range(-1, 1)] float _cellBondingX = 0;
-        [SerializeField, Range(-1, 1)] float _cellBondingY = 0;
-
-        // (( Cell Dimensions )) ------------------------------ >>
         [Header("-- Cell Dimensions ---- >>")]
         [SerializeField, Range(0.1f, 10f)] float _cellWidth = 1;
         [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
@@ -46,15 +43,19 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(-0.5f, 10)] float _cellHorzSpacing = 0;
         [SerializeField, Range(-0.5f, 10)] float _cellVertSpacing = 0;
 
-        // (( Gizmos )) ------------------------------ >>
+        [Header("-- Cell Bonding ---- >>")]
+        [SerializeField, Range(-1, 1)] float _cellBondingX = 0;
+        [SerializeField, Range(-1, 1)] float _cellBondingY = 0;
+
+        [Space(10)]
         [Header("-- Gizmos ---- >>")]
         [SerializeField] bool _showGizmos = true;
         [SerializeField] bool _showEditorGizmos = true;
 
 
-        public virtual AbstractGrid.Config ToConfig()
+        public virtual Grid.Config ToConfig()
         {
-            AbstractGrid.Config config = new AbstractGrid.Config();
+            Grid.Config config = new Grid.Config();
 
             config.SetGizmos(_showGizmos, _showEditorGizmos);
 
@@ -73,7 +74,7 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void ResetToDefaults()
         {
             _lockToTransform = true;
-            _gridAlignment = Alignment.Center;
+            _gridAlignment = Grid.Alignment.Center;
             _gridNormal = Vector3.up;
 
             _numColumns = 3;

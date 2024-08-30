@@ -1,149 +1,100 @@
-
-
+using System.Collections.Generic;
+using System.Linq;
 using Darklight.UnityExt.Editor;
-
+using Unity.Android.Gradle.Manifest;
 using UnityEngine;
-
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Darklight.UnityExt.Game.Grid
 {
-
-    public abstract class AbstractCell
+    interface ICell
     {
-        public abstract void Initialize(Vector2Int key);
-        public abstract void Update();
-        public abstract TData GetData<TData>() where TData : BaseCellData;
-        public abstract void SetData<TData>(TData data) where TData : BaseCellData;
-        public abstract void ApplyConfig<TConfig>(TConfig config) where TConfig : AbstractGrid.Config;
-        public abstract void DrawGizmos(bool editMode);
-        protected abstract void OnEditToggle();
+        string Name { get; }
+        BaseCellData Data { get; }
+        List<ICellComponent> Components { get; }
 
+        void Accept(ICellVisitor visitor);
+        void SetData(BaseCellData data);
 
-
-
+        void AddComponent<TComponent>(TComponent component) where TComponent : ICellComponent;
+        void RemoveComponent<TComponent>(TComponent component) where TComponent : ICellComponent;
     }
 
     [System.Serializable]
-    public abstract class BaseCell<TData> : AbstractCell
-        where TData : BaseCellData, new()
+    public class BaseCell : ICell
     {
-        [SerializeField] TData _data;
-        public TData Data => _data;
+        Dictionary<CellComponentType, ICellComponent> _components = new();
 
-        // ===================== [[ CONSTRUCTORS ]] ===================== //
-        public BaseCell() => Initialize(Vector2Int.zero);
-        public BaseCell(Vector2Int key) => Initialize(key);
-        public override void Initialize(Vector2Int key)
+
+        [SerializeField, ShowOnly] string _name;
+        [SerializeField] BaseCellData _data;
+        [SerializeField, ShowOnly, NonReorderable] List<CellComponentType> _componentTypes = new();
+
+        public string Name => Data.name;
+        public BaseCellData Data { get => _data; private set => _data = value; }
+        public List<ICellComponent> Components { get => _components.Values.ToList(); }
+
+
+        public BaseCell(Vector2Int key)
         {
-            _data = new TData();
-            _data.SetKey(key);
+            Data = new BaseCellData(key);
+            Data.Initialize(key);
+
+            _name = Data.name;
         }
 
-        public override abstract void Update();
-        public override T GetData<T>() => Data as T;
-        public override void SetData<T>(T data) => _data = data as TData;
-        public override void ApplyConfig<TConfig>(TConfig config)
+        public void Accept(ICellVisitor visitor)
         {
-            if (Data == null)
+            visitor.Visit(this);
+        }
+
+        public virtual void SetData(BaseCellData data)
+        {
+            Data = data;
+        }
+
+        public void AddComponent<T>(T component) where T : ICellComponent
+        {
+            if (component == null)
+            {
+                Debug.LogError("Cannot add null component to cell.");
                 return;
+            }
 
-            Data.SetCoordinate(config.CalculateCoordinateFromKey(Data.key));
-            Data.SetPosition(config.CalculatePositionFromKey(Data.key));
-            Data.SetNormal(config.gridNormal);
-            Data.SetDimensions(config.cellDimensions);
+            if (!_components.ContainsKey(component.type))
+            {
+                _components.Add(component.type, component);
+                _componentTypes.Add(component.type);
+            }
         }
 
-        public override void DrawGizmos(bool editMode)
+        public void RemoveComponent<T>(T component) where T : ICellComponent
         {
-            if (Data == null)
+            if (component == null)
+            {
+                Debug.LogError("Cannot remove null component from cell.");
                 return;
+            }
 
-            DrawCell();
-            DrawLabel($"{Data.coordinate}");
-            if (editMode) DrawCellToggle();
+            if (_components.ContainsKey(component.type))
+            {
+                _components.Remove(component.type);
+                _componentTypes.Remove(component.type);
+            }
         }
 
-        protected override void OnEditToggle()
-        {
-            Data.SetDisabled(!Data.disabled);
-        }
-        #region (( Gizmo Methods )) -------- >>
-#if UNITY_EDITOR
-        /// <summary>
-        /// Get the gizmo color of the cell.
-        /// </summary>
-        /// <param name="color"></param>
-        protected virtual void GetGizmoColor(out Color color)
-        {
-            color = Data.disabled ? Color.grey : Color.white;
-        }
+        public float GetMinDimension() => Mathf.Min(Data.dimensions.x, Data.dimensions.y);
 
-        /// <summary>
-        /// Get all applicable gizmo data for the cell.
-        /// </summary>
-        /// <param name="position"></param>
-        /// <param name="dimensions"></param>
-        /// <param name="normal"></param>
-        /// <param name="color"></param>
-        protected virtual void GetGizmoData(
-            out Vector3 position,
-            out Vector2 dimensions,
-            out Vector3 normal,
-            out Color color)
+        public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
         {
             position = Data.position;
-            dimensions = Data.dimensions;
             normal = Data.normal;
-            GetGizmoColor(out color);
+            dimensions = Data.dimensions;
         }
 
-        protected virtual void DrawCell()
+        public void GetTransformData(out Vector3 position, out Vector3 normal, out float radius)
         {
-            GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
-
-            // Draw the cell square
-            CustomGizmos.DrawWireRect(position, dimensions, normal, color);
-        }
-
-        protected virtual void DrawLabel(string label)
-        {
-            GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
-
-            CustomGizmos.DrawLabel(label, position, CustomGUIStyles.CenteredStyle);
-        }
-
-        protected virtual void DrawCellToggle()
-        {
-            GetGizmoData(out Vector3 position, out Vector2 dimensions, out Vector3 normal, out Color color);
-
-            // The size of the button handle is the minimum of the dimensions
-            float size = Mathf.Min(dimensions.x, dimensions.y);
-            size *= 0.75f; // << scale down the size a bit
-
-            // Draw the button handle only if the grid is in edit mode
-            CustomGizmos.DrawButtonHandle(position, size, normal, color, () =>
-            {
-                OnEditToggle();
-            }, Handles.RectangleHandleCap);
-        }
-
-#endif
-        #endregion
-
-    }
-
-    public class BaseCell : BaseCell<BaseCellData>
-    {
-        public BaseCell() : base() { }
-        public BaseCell(Vector2Int key) : base(key) { }
-
-        public override void Update()
-        {
-            // Update the cell data
+            position = Data.position;
+            normal = Data.normal;
+            radius = GetMinDimension() / 2;
         }
     }
 }

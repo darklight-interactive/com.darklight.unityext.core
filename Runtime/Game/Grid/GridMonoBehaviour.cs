@@ -15,153 +15,130 @@ namespace Darklight.UnityExt.Game.Grid
 {
     #region -- << ABSTRACT CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
     [ExecuteAlways]
-    public abstract class AbstractGridMonoBehaviour : MonoBehaviour
+    public class GridMonoBehaviour : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
+        protected const string COMPONENT_PATH = ASSET_PATH + "/Components";
         protected const string DATA_PATH = ASSET_PATH + "/Data";
+        protected string Prefix => name;
 
-        protected string prefix => name;
-
-        protected AbstractGrid grid;
-        protected abstract void GenerateConfigObj();
-        protected abstract void GenerateDataObj();
-
-        public void Awake() => InitializeGrid();
-        public abstract void InitializeGrid();
-
-        public void Update() => UpdateGrid();
-        public abstract void UpdateGrid();
-
-        public abstract void SaveGridData();
-        public abstract void LoadGridData();
-        public abstract void ClearData();
-
-        public abstract void DrawGizmos();
-    }
-    #endregion
-
-    #region -- << GENERIC CLASS >> : MONOBEHAVIOURGRID2D ------------------------------------ >>
-    public abstract class GenericGridMonoBehaviour<TCell, TData> : AbstractGridMonoBehaviour
-        where TCell : AbstractCell, new()
-        where TData : BaseCellData, new()
-    {
-        [SerializeField] protected new BaseGrid<TCell, TData> grid;
+        [SerializeField] protected Grid grid = new Grid();
         [SerializeField, Expandable] protected GridConfigDataObject configObj;
+        [SerializeField, Expandable] protected GridComponentDataObject componentObj;
         [SerializeField, Expandable] protected AbstractGridDataObject dataObj;
 
-        protected override void GenerateConfigObj()
+        protected virtual void GenerateDataObjects()
         {
-            configObj = ScriptableObject.CreateInstance<GridConfigDataObject>();
-            configObj.name = $"{prefix}_Config";
-            Debug.Log($"{prefix} generated config object.", this);
+            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridConfigDataObject>
+                (CONFIG_PATH, $"{Prefix}_Config");
+
+            componentObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridComponentDataObject>
+                (COMPONENT_PATH, $"{Prefix}_Components");
+
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridDataObject>
+                (DATA_PATH, $"{Prefix}_Data");
         }
 
-        protected override void GenerateDataObj()
+        public void Awake() => InitializeGrid();
+        public virtual void InitializeGrid()
         {
-            dataObj = ScriptableObject.CreateInstance<GridDataObject>();
-            dataObj.name = $"{prefix}_Data";
-            Debug.Log($"{prefix} generated data object.", this);
-        }
-
-        public override void InitializeGrid()
-        {
-            GenerateConfigObj();
-            GenerateDataObj();
+            GenerateDataObjects();
 
             // Create a new grid from the config object
-            AbstractGrid.Config config = configObj.ToConfig();
-            grid = new BaseGrid<TCell, TData>(config);
+            Grid.Config config = configObj.ToConfig();
+            grid = new Grid(config);
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
         }
-
-        public override void UpdateGrid()
+        public void Update() => UpdateGrid();
+        public virtual void UpdateGrid()
         {
             if (grid == null)
                 InitializeGrid();
 
             // Assign the grid's config from the config object
-            AbstractGrid.Config config = configObj.ToConfig();
-
+            Grid.Config config = configObj.ToConfig();
             config.SetGridPosition(transform.position);
             grid.SetConfig(config);
+
+            // Add components to the grid
+            grid.MapFunction(cell =>
+            {
+                componentObj.UpdateComponents(cell);
+                return cell;
+            });
+
+            // Update the grid
             grid.Update();
             //Debug.Log($"{prefix} updated grid.", this);
         }
-
-        public override void SaveGridData()
+        public virtual void SaveGridData()
         {
             if (dataObj == null) return;
-            List<TData> dataList = grid.GetData<TData>();
+            List<BaseCellData> dataList = grid.GetData();
             dataObj.SetData(dataList);
-            Debug.Log($"{prefix} saved grid data.", this);
+            Debug.Log($"{Prefix} saved grid data.", this);
         }
 
-        public override void LoadGridData()
+        public virtual void LoadGridData()
         {
             if (dataObj == null) return;
-            //if (dataObj is not GridDataObject typedDataObj) return;
 
-            List<TData> dataList = dataObj.GetData<TData>();
+            List<BaseCellData> dataList = dataObj.GetData<BaseCellData>();
             if (dataList == null || dataList.Count == 0) return;
 
             grid.SetData(dataList);
 
-            Debug.Log($"{prefix} loaded grid data.", this);
+            Debug.Log($"{Prefix} loaded grid data.", this);
         }
 
-        public override void ClearData()
+        public virtual void ClearData()
         {
             if (dataObj == null) return;
             dataObj.ClearData();
             grid.Clear();
-            Debug.Log($"{prefix} cleared grid data.", this);
+            Debug.Log($"{Prefix} cleared grid data.", this);
         }
 
 
-        public override void DrawGizmos()
+        public void OnDrawGizmos()
         {
             if (grid == null) return;
-            grid.DrawGizmos();
+
+            CellGizmoRenderer gizmoRenderer = new CellGizmoRenderer();
+            grid.MapFunction(cell =>
+            {
+                gizmoRenderer.Visit(cell);
+                return cell;
+            });
         }
     }
-
-    public abstract class GenericGridMonoBehaviour<TCell> : GenericGridMonoBehaviour<TCell, BaseCellData>
-        where TCell : AbstractCell, new()
-    {
-    }
-
     #endregion
 
-    public class GridMonoBehaviour : GenericGridMonoBehaviour<BaseCell, BaseCellData>
-    {
-        protected override void GenerateDataObj()
-        {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<GridDataObject>(DATA_PATH, name);
-        }
-    }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(AbstractGridMonoBehaviour), true)]
+    [CustomEditor(typeof(GridMonoBehaviour), true)]
     public class GridMonoBehaviourEditor : UnityEditor.Editor
     {
         protected SerializedObject _serializedObject;
-        AbstractGridMonoBehaviour _script;
+        GridMonoBehaviour _script;
 
-        SerializedProperty _grid;
-        SerializedProperty _configObj;
-        SerializedProperty _dataObj;
+        SerializedProperty _gridProp;
+        SerializedProperty _configObjProp;
+        SerializedProperty _componentObjProp;
+        SerializedProperty _dataObjProp;
 
         protected virtual void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
-            _script = (AbstractGridMonoBehaviour)target;
+            _script = (GridMonoBehaviour)target;
 
             // Cache the serialized properties
-            _grid = _serializedObject.FindProperty("grid");
-            _configObj = _serializedObject.FindProperty("configObj");
-            _dataObj = _serializedObject.FindProperty("dataObj");
+            _gridProp = _serializedObject.FindProperty("grid");
+            _configObjProp = _serializedObject.FindProperty("configObj");
+            _componentObjProp = _serializedObject.FindProperty("componentObj");
+            _dataObjProp = _serializedObject.FindProperty("dataObj");
 
             _script.InitializeGrid();
         }
@@ -169,18 +146,20 @@ namespace Darklight.UnityExt.Game.Grid
         public override void OnInspectorGUI()
         {
             _serializedObject.Update();
-
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.Space();
 
-            EditorGUILayout.PropertyField(_grid);
+            EditorGUILayout.PropertyField(_gridProp);
 
             CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
-            EditorGUILayout.PropertyField(_configObj);
+            EditorGUILayout.PropertyField(_configObjProp);
+
+            CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
+            EditorGUILayout.PropertyField(_componentObjProp);
 
             CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
             DrawDataManagementButtons();
-            EditorGUILayout.PropertyField(_dataObj);
+            EditorGUILayout.PropertyField(_dataObjProp);
 
             // Apply changes if any
             if (EditorGUI.EndChangeCheck())
@@ -209,11 +188,6 @@ namespace Darklight.UnityExt.Game.Grid
                 _script.ClearData();
             }
             EditorGUILayout.EndHorizontal();
-        }
-
-        protected virtual void OnSceneGUI()
-        {
-            _script.DrawGizmos();
         }
     }
 #endif

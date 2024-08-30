@@ -6,12 +6,23 @@ using Darklight.UnityExt.Editor;
 using UnityEngine;
 using System.Linq;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace Darklight.UnityExt.Game.Grid
 {
 
-    #region -- << ABSRACT CLASS >> : AbstractGrid ------------------------------------ >>
-    public abstract class AbstractGrid
+    [System.Serializable]
+    public class Grid
     {
+        public enum Alignment
+        {
+            TopLeft, TopCenter, TopRight,
+            MiddleLeft, Center, MiddleRight,
+            BottomLeft, BottomCenter, BottomRight
+        }
+
         #region -- << DATA CLASS >> : Config ------------------------------------ >>    
         [System.Serializable]
         public class Config
@@ -107,6 +118,7 @@ namespace Darklight.UnityExt.Game.Grid
                 Vector2Int originKey = config.CalculateOriginKey();
                 return key - originKey;
             }
+
             Vector2Int CalculateOriginKey()
             {
                 Config config = this;
@@ -163,55 +175,119 @@ namespace Darklight.UnityExt.Game.Grid
             #endregion
         }
         #endregion
+        Dictionary<Vector2Int, BaseCell> _cellMap = new Dictionary<Vector2Int, BaseCell>();
+        [SerializeField] Config _config;
+        [SerializeField] List<BaseCell> _cells = new List<BaseCell>();
 
-        public abstract void Initialize(Config config = null);
-        public abstract void Update();
-        public abstract void Clear();
-        public abstract List<TData> GetData<TData>() where TData : BaseCellData;
-        public abstract void DrawGizmos();
-    }
-    #endregion
-
-    #region -- << BASE CLASS >> : BaseGrid ------------------------------------ >>
-    [System.Serializable]
-    public class BaseGrid<TCell, TData> : AbstractGrid
-        where TCell : AbstractCell
-        where TData : BaseCellData
-    {
-        protected Dictionary<Vector2Int, TCell> cellMap = new Dictionary<Vector2Int, TCell>();
-
-        // ===================== >> SERIALIZED FIELDS << ===================== //
-        [SerializeField] protected Config config;
-        [SerializeField] List<TCell> _cellList = new List<TCell>();
-        [SerializeField] List<TData> _dataList = new List<TData>();
-
-        // ===================== >> CONSTRUCTORS << ===================== //
-        public BaseGrid() { }
-        public BaseGrid(Config config) => Initialize(config);
-
-        // ===================== >> PROTECTED METHODS << ===================== //
-        protected void Generate()
+        public Grid() => Initialize(null);
+        public Grid(Config config) => Initialize(config);
+        public virtual void Initialize(Config config)
         {
-            // Function to create a new cell
-            bool CreateCell(Vector2Int key)
+            // Create a basic config if none is provided
+            if (config == null)
+                config = new Config();
+            this._config = config;
+            Generate();
+        }
+
+        public virtual void Update()
+        {
+            if (_cellMap == null || _cellMap.Count == 0) return;
+
+            // Resize the grid if the dimensions have changed
+            Resize();
+
+            // Update the cells
+            CellUpdater cellUpdater = new CellUpdater(_config);
+            MapFunction(cell =>
             {
-                if (cellMap.ContainsKey(key))
-                    return false;
+                cell.Accept(cellUpdater);
+                return cell;
+            });
 
-                TCell cell = (TCell)Activator.CreateInstance(typeof(TCell), key);
-                cellMap[key] = cell;
-                cell.ApplyConfig(config);
-                return true;
+            _cells = new List<BaseCell>(_cellMap.Values.ToList());
+        }
+
+        public virtual void Clear()
+        {
+            if (_cellMap == null || _cellMap.Count == 0) return;
+
+            // Clear the cell map
+            _cellMap.Clear();
+        }
+
+        public void SetConfig(Config config)
+        {
+            if (config == null) return;
+            this._config = config;
+        }
+
+        public void MapFunction(Func<BaseCell, BaseCell> mapFunction)
+        {
+            if (_cellMap == null) return;
+
+            List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
+            foreach (Vector2Int key in keys)
+            {
+                // Skip if the key is not in the map
+                if (!_cellMap.ContainsKey(key)) continue;
+
+                // Apply the map function to the cell
+                BaseCell cell = _cellMap[key];
+                _cellMap[key] = mapFunction(cell);
             }
+        }
 
+        public List<BaseCellData> GetData()
+        {
+            List<BaseCellData> dataList = new List<BaseCellData>();
+            List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
+            foreach (Vector2Int key in keys)
+            {
+                if (!_cellMap.ContainsKey(key)) continue;
+                dataList.Add(_cellMap[key].Data);
+            }
+            return dataList;
+        }
+
+        public void SetData(List<BaseCellData> dataList)
+        {
+            if (dataList == null || dataList.Count == 0) return;
+            foreach (Vector2Int key in _cellMap.Keys)
+            {
+                if (!_cellMap.ContainsKey(key)) continue;
+                ICell cell = _cellMap[key];
+
+                // Find the data with the same key
+                BaseCellData data = dataList.Find(d => d.key == key);
+                if (data == null) continue;
+
+                // Set the cell's data
+                cell.SetData(data);
+            }
+        }
+
+        // Function to create a new cell
+        bool CreateCell(Vector2Int key)
+        {
+            if (_cellMap.ContainsKey(key))
+                return false;
+
+            BaseCell cell = (BaseCell)Activator.CreateInstance(typeof(BaseCell), key);
+            _cellMap[key] = cell;
+            return true;
+        }
+
+        void Generate()
+        {
             // Iterate through the grid dimensions and create cells
-            Vector2Int dimensions = config.gridDimensions;
+            Vector2Int dimensions = _config.gridDimensions;
             for (int x = 0; x < dimensions.x; x++)
             {
                 for (int y = 0; y < dimensions.y; y++)
                 {
                     Vector2Int gridKey = new Vector2Int(x, y);
-                    if (!cellMap.ContainsKey(gridKey))
+                    if (!_cellMap.ContainsKey(gridKey))
                     {
                         // Create a new cell and add it to the map
                         CreateCell(gridKey);
@@ -220,146 +296,22 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        protected void Resize()
+        void Resize()
         {
-            if (cellMap == null) return;
-            Vector2Int newDimensions = config.gridDimensions;
+            if (_cellMap == null) return;
+            Vector2Int newDimensions = _config.gridDimensions;
 
             // Remove null cells from the map
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
+            List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
             for (int i = 0; i < keys.Count; i++)
             {
                 Vector2Int key = keys[i];
                 if (key.x >= newDimensions.x || key.y >= newDimensions.y)
                 {
-                    cellMap.Remove(key);
+                    _cellMap.Remove(key);
                 }
             }
             Generate();
         }
-
-
-
-        // ===================== >> PUBLIC METHODS << ===================== //
-
-        // (( RUNTIME METHODS )) ------------------------------ >>
-        public override void Initialize(Config config = null)
-        {
-            // Create a basic config if none is provided
-            if (config == null)
-                config = new Config();
-            this.config = config;
-            Generate();
-        }
-        public override void Update()
-        {
-            if (cellMap == null || cellMap.Count == 0) return;
-
-            // Resize the grid if the dimensions have changed
-            Resize();
-
-            // Update each cell in the map
-            MapFunction(cell =>
-            {
-                cell.Update();
-                return cell;
-            });
-
-            // Update the data list
-            _cellList = new List<TCell>(cellMap.Values);
-            _dataList = GetData<TData>();
-        }
-        public override void Clear()
-        {
-            if (cellMap == null || cellMap.Count == 0) return;
-
-            // Clear the data list
-            _dataList.Clear();
-
-            // Clear the cell map
-            cellMap.Clear();
-        }
-        public override void DrawGizmos()
-        {
-            if (cellMap == null || cellMap.Count == 0) return;
-            if (config.showGizmos == false) return;
-            MapFunction(cell =>
-            {
-                cell.DrawGizmos(config.showEditorGizmos);
-                return cell;
-            });
-        }
-
-        public void MapFunction(Func<TCell, TCell> mapFunction)
-        {
-            if (cellMap == null) return;
-
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
-            foreach (Vector2Int key in keys)
-            {
-                // Skip if the key is not in the map
-                if (!cellMap.ContainsKey(key)) continue;
-
-                // Apply the map function to the cell
-                TCell cell = cellMap[key] as TCell;
-                cellMap[key] = mapFunction(cell);
-            }
-        }
-
-        // (( SETTERS )) ------------------------------ >>
-        public virtual void SetConfig(Config config)
-        {
-            if (config == null) return;
-            this.config = config;
-            MapFunction(cell =>
-            {
-                cell.ApplyConfig(config);
-                return cell;
-            });
-        }
-
-        public void SetData(List<TData> dataList)
-        {
-            if (dataList == null) return;
-            if (cellMap == null || cellMap.Count == 0) return;
-
-            foreach (TData cellData in dataList)
-            {
-                // Skip if the cell data is null
-                if (cellData == null || cellData.key == null) continue;
-
-                // Check if the key is in the map
-                if (cellMap.ContainsKey(cellData.key))
-                {
-                    AbstractCell cell = cellMap[cellData.key];
-                    cell.SetData(cellData);
-                }
-            }
-        }
-
-        // (( GETTERS )) ------------------------------ >>
-        public override List<T> GetData<T>()
-        {
-            if (cellMap == null || cellMap.Count == 0) return null;
-
-            List<T> data = new List<T>();
-            foreach (AbstractCell cell in cellMap.Values)
-            {
-                T cellData = cell.GetData<T>();
-                if (cellData != null)
-                {
-                    data.Add(cellData);
-                }
-            }
-            return data;
-        }
-    }
-    #endregion
-
-    public enum Alignment
-    {
-        TopLeft, TopCenter, TopRight,
-        MiddleLeft, Center, MiddleRight,
-        BottomLeft, BottomCenter, BottomRight
     }
 }

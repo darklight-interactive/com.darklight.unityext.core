@@ -12,7 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
     #region -- << ABSTRACT CLASS >> : AbstractCellData ------------------------------------ >>
     public abstract class AbstractCellData
     {
-        [SerializeField, ShowOnly] private string _name = "BaseCell";
+        private string _name = "BaseCell";
         [SerializeField, ShowOnly] private Vector2Int _key = Vector2Int.zero;
         [SerializeField, ShowOnly] private Vector2Int _coordinate = Vector2Int.zero;
         [SerializeField, ShowOnly] private Vector2 _dimensions = Vector2.one;
@@ -42,7 +42,7 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void Initialize(Vector2Int key)
         {
             _key = key;
-            _name = $"Cell2D {key}";
+            _name = $"BaseCell {key}";
         }
 
         public virtual void CopyFrom(BaseCellData data)
@@ -61,7 +61,7 @@ namespace Darklight.UnityExt.Game.Grid
             _isDisabled = data.disabled;
         }
 
-        public float GetMinDimension() => Mathf.Min(_dimensions.x, _dimensions.y);
+
     }
     #endregion
 

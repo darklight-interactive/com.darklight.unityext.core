@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using System.Collections.Generic;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -10,6 +12,14 @@ namespace Darklight.UnityExt.Editor
 	{
 
 #if UNITY_EDITOR
+		private static Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
+
+		/// <summary>
+		/// Draws the default inspector for a SerializedObject, excluding the m_Script property.
+		/// </summary>
+		/// <param name="obj">
+		/// 		The SerializedObject to draw the inspector for.
+		/// </param>
 		public static bool DrawDefaultInspectorWithoutSelfReference(SerializedObject obj)
 		{
 			EditorGUI.BeginChangeCheck();
@@ -31,6 +41,12 @@ namespace Darklight.UnityExt.Editor
 			return EditorGUI.EndChangeCheck();
 		}
 
+		/// <summary>
+		/// Focuses the Scene view on a specific point in 3D space.
+		/// </summary>
+		/// <param name="focusPoint">
+		/// 		The point in 3D space to focus the Scene view on.
+		/// </param>
 		public static void FocusSceneView(Vector3 focusPoint)
 		{
 			if (SceneView.lastActiveSceneView != null)
@@ -41,6 +57,129 @@ namespace Darklight.UnityExt.Editor
 				// Repaint the scene view to immediately reflect changes
 				SceneView.lastActiveSceneView.Repaint();
 			}
+		}
+
+
+		/// <summary>
+		/// Draws a read-only array or list as a foldout in the Inspector with each element displayed as a label.
+		/// </summary>
+		/// <param name="property">The SerializedProperty representing the array or list.</param>
+		/// <param name="label">The label to display for the foldout.</param>
+		/// <param name="elementNameProvider">A function that takes an index and a SerializedProperty element and returns a custom string for the element name.</param>
+		public static void DrawReadOnlyListFoldout(SerializedProperty property,
+			string label, Func<int, SerializedProperty, string> elementNameProvider = null)
+		{
+			if (property == null || (!property.isArray && property.propertyType != SerializedPropertyType.Generic))
+			{
+				EditorGUILayout.HelpBox("Property is not an array or list", MessageType.Warning);
+				return;
+			}
+
+			// Generate a unique key for foldout state
+			string key = property.propertyPath;
+			if (!foldoutStates.ContainsKey(key))
+			{
+				foldoutStates[key] = false;
+			}
+
+			// Draw the foldout
+			foldoutStates[key] = EditorGUILayout.Foldout(foldoutStates[key], $"{label}", true);
+
+			// If foldout is expanded, draw each element as a label
+			if (foldoutStates[key])
+			{
+				EditorGUI.indentLevel++;
+				for (int i = 0; i < property.arraySize; i++)
+				{
+					SerializedProperty element = property.GetArrayElementAtIndex(i);
+					// Use the custom name provider if available, otherwise default to "Element {i}"
+					string elementName = elementNameProvider != null ? elementNameProvider(i, element) : $"Element {i}";
+					EditorGUILayout.LabelField(elementName, ConvertElementToString(element));
+				}
+				EditorGUI.indentLevel--;
+			}
+		}
+
+		public static void DrawSerializableClass(Rect position, SerializedProperty prop, GUIContent label)
+		{
+			EditorGUI.LabelField(position, label.text, "Class Object");
+			position.y += EditorGUIUtility.singleLineHeight;
+
+			EditorGUI.indentLevel++;
+			SerializedProperty childProp = prop.Copy();
+			bool enterChildren = true;
+
+			while (childProp.NextVisible(enterChildren))
+			{
+				enterChildren = false;
+
+				if (childProp.depth == 0)
+				{
+					break; // Exit when reaching next sibling property
+				}
+
+				Rect propertyPosition = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+				EditorGUI.LabelField(propertyPosition, childProp.displayName, ConvertElementToString(childProp));
+				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+			}
+			EditorGUI.indentLevel--;
+		}
+
+		/// <summary>
+		/// Converts a SerializedProperty element to a string representation based on its type.
+		/// </summary>
+		/// <param name="element">The SerializedProperty element.</param>
+		/// <returns>A string representation of the element.</returns>
+		public static string ConvertElementToString(SerializedProperty element)
+		{
+			switch (element.propertyType)
+			{
+				case SerializedPropertyType.Integer:
+					return element.intValue.ToString();
+				case SerializedPropertyType.Boolean:
+					return element.boolValue.ToString();
+				case SerializedPropertyType.Float:
+					return element.floatValue.ToString("0.00000");
+				case SerializedPropertyType.String:
+					return element.stringValue;
+				case SerializedPropertyType.Enum:
+					return element.enumDisplayNames[element.enumValueIndex];
+				case SerializedPropertyType.ObjectReference:
+					return element.objectReferenceValue != null ? element.objectReferenceValue.name : "None";
+				case SerializedPropertyType.Vector2:
+					return element.vector2Value.ToString();
+				case SerializedPropertyType.Vector3:
+					return element.vector3Value.ToString();
+				case SerializedPropertyType.Vector2Int:
+					return element.vector2IntValue.ToString();
+				case SerializedPropertyType.Vector3Int:
+					return element.vector3IntValue.ToString();
+				case SerializedPropertyType.Quaternion:
+					return element.quaternionValue.eulerAngles.ToString();
+				case SerializedPropertyType.Color:
+					return element.colorValue.ToString();
+				case SerializedPropertyType.Bounds:
+					return element.boundsValue.ToString();
+				case SerializedPropertyType.Rect:
+					return element.rectValue.ToString();
+				default:
+					return "[Unsupported Type]";
+			}
+		}
+
+		public static string GetObjectReferenceString(SerializedProperty prop)
+		{
+			if (prop.objectReferenceValue == null)
+				return "None";
+
+			if (prop.objectReferenceValue is MonoBehaviour monoBehaviour)
+				return $"MonoBehaviour: {monoBehaviour.name}";
+			if (prop.objectReferenceValue is SceneAsset sceneAsset)
+				return $"Scene: {sceneAsset.name}";
+			if (prop.objectReferenceValue is ScriptableObject scriptableObject)
+				return $"ScriptableObject: {scriptableObject.name}";
+
+			return prop.objectReferenceValue.ToString();
 		}
 
 		#region -- << GUI ELEMENTS >> ------------------------------------ >>
