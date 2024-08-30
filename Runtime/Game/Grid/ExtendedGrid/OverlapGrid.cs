@@ -60,7 +60,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
     }
 
-    public class OverlapGrid_DataObject : BaseGridDataObject<OverlapCellData>
+    public class OverlapGridConfig_DataObject : GridConfigDataObject
     {
         [Header("Overlap Grid Data")]
         public bool showColliders = true;
@@ -70,9 +70,9 @@ namespace Darklight.UnityExt.Game.Grid
     [ExecuteAlways]
     public class OverlapGrid : GenericGridMonoBehaviour<OverlapCell, OverlapCellData>
     {
-        protected override void GenerateDataObj()
+        protected override void GenerateConfigObj()
         {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<OverlapGrid_DataObject>(DATA_PATH, name);
+            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<OverlapGridConfig_DataObject>(CONFIG_PATH, name);
         }
     }
 }

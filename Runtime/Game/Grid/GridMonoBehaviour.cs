@@ -57,6 +57,13 @@ namespace Darklight.UnityExt.Game.Grid
             Debug.Log($"{prefix} generated config object.", this);
         }
 
+        protected override void GenerateDataObj()
+        {
+            dataObj = ScriptableObject.CreateInstance<GridDataObject>();
+            dataObj.name = $"{prefix}_Data";
+            Debug.Log($"{prefix} generated data object.", this);
+        }
+
         public override void InitializeGrid()
         {
             // If the config object is null, generate a new one

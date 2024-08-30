@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Game.Grid;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class ShapeData : BaseCellData
     {
         public Shape2D shape;
-        public int segments = 6;
+        [ShowOnly] public int segments = 6;
         public ShapeData() : base() { }
         public ShapeData(Vector2Int key) : base(key) { }
 
@@ -30,30 +31,40 @@ namespace Darklight.UnityExt.Game.Grid
         {
             GetGizmoColor(out Color color);
 
-            if (data.shape == null)
-                data.shape = new Shape2D(data.position, data.GetMinDimension() / 2, data.segments, data.normal, color);
-            data.shape.radius = data.GetMinDimension() / 2;
+            data.shape = new Shape2D(data.position, data.GetMinDimension() / 2, data.segments, data.normal, color);
         }
 
         public override void DrawGizmos(bool editMode)
         {
             if (data.shape == null) return;
-            data.shape.DrawGizmos();
+            data.shape.DrawGizmos(false);
             DrawLabel($"Shape Cell\n{data.coordinate}");
         }
     }
 
-    public class ShapeGrid_DataObject : BaseGridDataObject<ShapeData>
+    public class ShapeGridConfigDataObject : GridConfigDataObject
     {
         [Header("Shape Grid Data")]
         [Range(3, 12)] public int segments = 6;
+
+        public ShapeGridConfigDataObject() : base() { }
+    }
+
+    public class ShapeGridDataObject : BaseGridDataObject<ShapeData>
+    {
+
     }
 
     public class ShapeGrid : GenericGridMonoBehaviour<ShapeCell, ShapeData>
     {
+        protected override void GenerateConfigObj()
+        {
+            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<ShapeGridConfigDataObject>(CONFIG_PATH, name);
+        }
+
         protected override void GenerateDataObj()
         {
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<ShapeGrid_DataObject>(DATA_PATH, name);
+            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<ShapeGridDataObject>(DATA_PATH, name);
         }
 
         public override void UpdateGrid()
@@ -64,7 +75,8 @@ namespace Darklight.UnityExt.Game.Grid
 
             foreach (ShapeData data in dataList)
             {
-                data.segments = (dataObj as ShapeGrid_DataObject).segments;
+                if (data == null) continue;
+                data.segments = (configObj as ShapeGridConfigDataObject).segments;
             }
 
         }
