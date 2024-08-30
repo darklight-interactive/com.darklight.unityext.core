@@ -182,6 +182,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ===================== >> SERIALIZED FIELDS << ===================== //
         [SerializeField] protected Config config;
+        [SerializeField] List<TCell> _cellList = new List<TCell>();
         [SerializeField] List<TData> _dataList = new List<TData>();
 
         // ===================== >> CONSTRUCTORS << ===================== //
@@ -199,7 +200,7 @@ namespace Darklight.UnityExt.Game.Grid
 
                 TCell cell = (TCell)Activator.CreateInstance(typeof(TCell), key);
                 cellMap[key] = cell;
-                cell.SetConfig(config);
+                cell.ApplyConfig(config);
                 return true;
             }
 
@@ -218,6 +219,7 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
         }
+
         protected void Resize()
         {
             if (cellMap == null) return;
@@ -235,21 +237,8 @@ namespace Darklight.UnityExt.Game.Grid
             }
             Generate();
         }
-        protected void MapFunction(Func<TCell, TCell> mapFunction)
-        {
-            if (cellMap == null) return;
 
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
-            foreach (Vector2Int key in keys)
-            {
-                // Skip if the key is not in the map
-                if (!cellMap.ContainsKey(key)) continue;
 
-                // Apply the map function to the cell
-                TCell cell = cellMap[key] as TCell;
-                cellMap[key] = mapFunction(cell);
-            }
-        }
 
         // ===================== >> PUBLIC METHODS << ===================== //
 
@@ -277,6 +266,7 @@ namespace Darklight.UnityExt.Game.Grid
             });
 
             // Update the data list
+            _cellList = new List<TCell>(cellMap.Values);
             _dataList = GetData<TData>();
         }
         public override void Clear()
@@ -300,6 +290,22 @@ namespace Darklight.UnityExt.Game.Grid
             });
         }
 
+        public void MapFunction(Func<TCell, TCell> mapFunction)
+        {
+            if (cellMap == null) return;
+
+            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
+            foreach (Vector2Int key in keys)
+            {
+                // Skip if the key is not in the map
+                if (!cellMap.ContainsKey(key)) continue;
+
+                // Apply the map function to the cell
+                TCell cell = cellMap[key] as TCell;
+                cellMap[key] = mapFunction(cell);
+            }
+        }
+
         // (( SETTERS )) ------------------------------ >>
         public virtual void SetConfig(Config config)
         {
@@ -307,7 +313,7 @@ namespace Darklight.UnityExt.Game.Grid
             this.config = config;
             MapFunction(cell =>
             {
-                cell.SetConfig(config);
+                cell.ApplyConfig(config);
                 return cell;
             });
         }
@@ -339,7 +345,7 @@ namespace Darklight.UnityExt.Game.Grid
             List<T> data = new List<T>();
             foreach (AbstractCell cell in cellMap.Values)
             {
-                T cellData = cell.GetData() as T;
+                T cellData = cell.GetData<T>();
                 if (cellData != null)
                 {
                     data.Add(cellData);

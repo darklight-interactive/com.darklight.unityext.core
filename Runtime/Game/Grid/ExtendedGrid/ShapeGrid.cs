@@ -18,12 +18,6 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class ShapeCell : BaseCell<ShapeData>
     {
-        public new ShapeData data
-        {
-            get => base.data as ShapeData;
-            set => base.data = value;
-        }
-
         public ShapeCell() : base() { }
         public ShapeCell(Vector2Int key) : base(key) { }
 
@@ -31,14 +25,14 @@ namespace Darklight.UnityExt.Game.Grid
         {
             GetGizmoColor(out Color color);
 
-            data.shape = new Shape2D(data.position, data.GetMinDimension() / 2, data.segments, data.normal, color);
+            Data.shape = new Shape2D(Data.position, Data.GetMinDimension() / 2, Data.segments, Data.normal, color);
         }
 
         public override void DrawGizmos(bool editMode)
         {
-            if (data.shape == null) return;
-            data.shape.DrawGizmos(false);
-            DrawLabel($"Shape Cell\n{data.coordinate}");
+            if (Data.shape == null) return;
+            Data.shape.DrawGizmos(false);
+            DrawLabel($"Shape Cell\n{Data.coordinate}");
         }
     }
 

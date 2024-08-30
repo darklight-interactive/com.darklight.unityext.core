@@ -12,7 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class GridConfigDataObject : ScriptableObject
     {
         #region ---- ( CUSTOM EDITOR DATA ) --------- >>
-        DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
+        public DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
         {
             { "Up", Vector3.up },
             { "Down", Vector3.down },
@@ -21,7 +21,7 @@ namespace Darklight.UnityExt.Game.Grid
             { "Forward", Vector3.forward },
             { "Back", Vector3.back }
         };
-        bool editor_showTransform => !_lockToTransform;
+        public bool editor_showTransform => !_lockToTransform;
         #endregion
 
         [SerializeField] bool _lockToTransform = true;

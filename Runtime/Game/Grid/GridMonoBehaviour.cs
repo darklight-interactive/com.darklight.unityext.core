@@ -66,13 +66,8 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void InitializeGrid()
         {
-            // If the config object is null, generate a new one
-            if (configObj == null)
-                GenerateConfigObj();
-
-            // If the data object is null, generate a new one
-            if (dataObj == null)
-                GenerateDataObj();
+            GenerateConfigObj();
+            GenerateDataObj();
 
             // Create a new grid from the config object
             AbstractGrid.Config config = configObj.ToConfig();
@@ -90,7 +85,6 @@ namespace Darklight.UnityExt.Game.Grid
             AbstractGrid.Config config = configObj.ToConfig();
 
             config.SetGridPosition(transform.position);
-
             grid.SetConfig(config);
             grid.Update();
             //Debug.Log($"{prefix} updated grid.", this);
@@ -132,6 +126,12 @@ namespace Darklight.UnityExt.Game.Grid
             grid.DrawGizmos();
         }
     }
+
+    public abstract class GenericGridMonoBehaviour<TCell> : GenericGridMonoBehaviour<TCell, BaseCellData>
+        where TCell : AbstractCell, new()
+    {
+    }
+
     #endregion
 
     public class GridMonoBehaviour : GenericGridMonoBehaviour<BaseCell, BaseCellData>

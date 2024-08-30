@@ -1,49 +1,37 @@
 using System.Collections.Generic;
+using System.Linq;
 using Darklight.UnityExt.Editor;
 using UnityEditor;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    // -- OverlapCellData Class --
-    [System.Serializable]
-    public class OverlapCellData : BaseCellData
-    {
-        [SerializeField, ShowOnly] private List<Collider> _colliders = new List<Collider>();
-
-        public List<Collider> Colliders => _colliders;
-
-        public OverlapCellData() : base() { }
-        public OverlapCellData(Vector2Int key) : base(key) { }
-
-        public void SetColliders(List<Collider> colliders)
-        {
-            _colliders = colliders;
-        }
-    }
-
     // -- OverlapCell Class --
     [System.Serializable]
-    public class OverlapCell : BaseCell<OverlapCellData>
+    public class OverlapCell : BaseCell<BaseCellData>, IOverlap
     {
-        public new OverlapCellData data
-        {
-            get => base.data as OverlapCellData;
-            set => base.data = value;
-        }
+        [SerializeField] LayerMask _layerMask;
+        [SerializeField, ShowOnly] Collider2D[] _colliders;
+
+
+        public List<Collider2D> Colliders { get => _colliders.ToList(); set => _colliders = value.ToArray(); }
+        public LayerMask LayerMask { get => _layerMask; set => _layerMask = value; }
 
         public OverlapCell() : base() { }
         public OverlapCell(Vector2Int key) : base(key) { }
 
         public override void Update()
         {
-            Vector3 cellCenter = data.position;
-            Vector3 halfExtents = new Vector3(data.dimensions.x / 2, 1f, data.dimensions.y / 2);
+            UpdateColliders();
+        }
+
+        public void UpdateColliders()
+        {
+            Vector3 cellCenter = Data.position;
+            Vector3 halfExtents = new Vector3(Data.dimensions.x / 2, 1f, Data.dimensions.y / 2);
 
             // Use Physics.OverlapBox to detect colliders within the cell dimensions
-            Collider[] colliders = Physics.OverlapBox(cellCenter, halfExtents, Quaternion.identity);
-
-            data.SetColliders(new List<Collider>(colliders));
+            _colliders = Physics2D.OverlapBoxAll(cellCenter, halfExtents, 0, LayerMask);
         }
 
         public override void DrawGizmos(bool editMode)
@@ -52,11 +40,11 @@ namespace Darklight.UnityExt.Game.Grid
 
             Handles.color = Color.red;
 
-            if (data.Colliders.Count > 0)
+            if (Colliders.Count > 0)
                 Handles.color = Color.green;
 
-            Vector3 halfExtents = new Vector3(data.dimensions.x / 2, 1f, data.dimensions.y / 2);
-            Handles.DrawWireCube(data.position, halfExtents * 2);
+            Vector3 halfExtents = new Vector3(Data.dimensions.x / 2, Data.GetMinDimension() / 2, Data.dimensions.y / 2);
+            Handles.DrawWireCube(Data.position, halfExtents * 2);
         }
     }
 
@@ -68,7 +56,7 @@ namespace Darklight.UnityExt.Game.Grid
 
     // -- OverlapGrid Class --
     [ExecuteAlways]
-    public class OverlapGrid : GenericGridMonoBehaviour<OverlapCell, OverlapCellData>
+    public class OverlapGrid : GenericGridMonoBehaviour<OverlapCell>
     {
         protected override void GenerateConfigObj()
         {

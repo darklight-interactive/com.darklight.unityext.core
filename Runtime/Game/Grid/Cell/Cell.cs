@@ -11,44 +11,75 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    [System.Serializable]
+
     public abstract class AbstractCell
     {
-        [SerializeField] protected BaseCellData data;
-        public abstract BaseCellData GetData();
-        public abstract void SetData(BaseCellData data);
-        public abstract void SetConfig(AbstractGrid.Config config);
-
+        public abstract void Initialize(Vector2Int key);
         public abstract void Update();
+        public abstract TData GetData<TData>() where TData : BaseCellData;
+        public abstract void SetData<TData>(TData data) where TData : BaseCellData;
+        public abstract void ApplyConfig<TConfig>(TConfig config) where TConfig : AbstractGrid.Config;
         public abstract void DrawGizmos(bool editMode);
+        protected abstract void OnEditToggle();
+
+
+
+
     }
 
     [System.Serializable]
     public abstract class BaseCell<TData> : AbstractCell
         where TData : BaseCellData, new()
     {
+        [SerializeField] TData _data;
+        public TData Data => _data;
+
         // ===================== [[ CONSTRUCTORS ]] ===================== //
-        public BaseCell() { }
-        public BaseCell(Vector2Int key)
+        public BaseCell() => Initialize(Vector2Int.zero);
+        public BaseCell(Vector2Int key) => Initialize(key);
+        public override void Initialize(Vector2Int key)
         {
-            TData customData = new TData();
-            customData.Initialize(key);
-            SetData(customData);
+            _data = new TData();
+            _data.SetKey(key);
         }
 
-        #region (( Getter Methods )) -------- >>
-        public override BaseCellData GetData()
+        public override abstract void Update();
+        public override T GetData<T>() => Data as T;
+        public override void SetData<T>(T data) => _data = data as TData;
+        public override void ApplyConfig<TConfig>(TConfig config)
         {
-            return data;
+            if (Data == null)
+                return;
+
+            Data.SetCoordinate(config.CalculateCoordinateFromKey(Data.key));
+            Data.SetPosition(config.CalculatePositionFromKey(Data.key));
+            Data.SetNormal(config.gridNormal);
+            Data.SetDimensions(config.cellDimensions);
         }
 
+        public override void DrawGizmos(bool editMode)
+        {
+            if (Data == null)
+                return;
+
+            DrawCell();
+            DrawLabel($"{Data.coordinate}");
+            if (editMode) DrawCellToggle();
+        }
+
+        protected override void OnEditToggle()
+        {
+            Data.SetDisabled(!Data.disabled);
+        }
+        #region (( Gizmo Methods )) -------- >>
+#if UNITY_EDITOR
         /// <summary>
         /// Get the gizmo color of the cell.
         /// </summary>
         /// <param name="color"></param>
         protected virtual void GetGizmoColor(out Color color)
         {
-            color = data.disabled ? Color.grey : Color.white;
+            color = Data.disabled ? Color.grey : Color.white;
         }
 
         /// <summary>
@@ -64,58 +95,10 @@ namespace Darklight.UnityExt.Game.Grid
             out Vector3 normal,
             out Color color)
         {
-            position = data.position;
-            dimensions = data.dimensions;
-            normal = data.normal;
+            position = Data.position;
+            dimensions = Data.dimensions;
+            normal = Data.normal;
             GetGizmoColor(out color);
-        }
-
-        #endregion
-
-        #region (( Setter Methods )) -------- >>
-        public override void SetData(BaseCellData data)
-        {
-            if (data is TData)
-            {
-                this.data = data as TData;
-            }
-        }
-
-        public void SetKey(Vector2Int key)
-        {
-            if (data == null)
-                return;
-
-            data.SetKey(key);
-        }
-
-        public override void SetConfig(AbstractGrid.Config config)
-        {
-            if (data == null)
-                return;
-
-            data.SetCoordinate(config.CalculateCoordinateFromKey(data.key));
-            data.SetPosition(config.CalculatePositionFromKey(data.key));
-            data.SetNormal(config.gridNormal);
-            data.SetDimensions(config.cellDimensions);
-        }
-
-        public void ToggleDisabled()
-        {
-            data.SetDisabled(!data.disabled);
-        }
-        #endregion
-
-        #region (( Gizmo Methods )) -------- >>
-#if UNITY_EDITOR
-        public override void DrawGizmos(bool editMode)
-        {
-            if (data == null)
-                return;
-
-            DrawCell();
-            DrawLabel($"{data.coordinate}");
-            if (editMode) DrawCellToggle();
         }
 
         protected virtual void DrawCell()
@@ -148,18 +131,19 @@ namespace Darklight.UnityExt.Game.Grid
             }, Handles.RectangleHandleCap);
         }
 
-        protected virtual void OnEditToggle()
-        {
-            ToggleDisabled();
-        }
 #endif
         #endregion
+
     }
 
     public class BaseCell : BaseCell<BaseCellData>
     {
         public BaseCell() : base() { }
         public BaseCell(Vector2Int key) : base(key) { }
-        public override void Update() { }
+
+        public override void Update()
+        {
+            // Update the cell data
+        }
     }
 }

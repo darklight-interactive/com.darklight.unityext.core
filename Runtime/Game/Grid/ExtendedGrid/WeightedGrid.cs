@@ -31,12 +31,6 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class WeightedCell : BaseCell<WeightedData>
     {
-        public new WeightedData data
-        {
-            get => base.data as WeightedData;
-            set => base.data = value;
-        }
-
         // =========================== [[ CONSTRUCTORS ]] =========================== >>
         public WeightedCell() : base() { }
         public WeightedCell(Vector2Int key) : base(key) { }
@@ -45,7 +39,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         protected override void GetGizmoColor(out Color color)
         {
-            color = Color.Lerp(Color.black, Color.white, data.weight / 100f);
+            color = Color.Lerp(Color.black, Color.white, Data.weight / 100f);
         }
 
         protected override void OnEditToggle()
@@ -55,24 +49,24 @@ namespace Darklight.UnityExt.Game.Grid
 
         void ToggleWeight()
         {
-            if (data.weight >= 100)
+            if (Data.weight >= 100)
             {
-                data.weight = 0;
-                data.SetDisabled(true);
+                Data.weight = 0;
+                Data.SetDisabled(true);
             }
             else
             {
-                data.weight += 10;
-                data.SetDisabled(false);
+                Data.weight += 10;
+                Data.SetDisabled(false);
             }
         }
 
         public override void DrawGizmos(bool editMode)
         {
-            if (data == null) return;
+            if (Data == null) return;
 
             base.DrawGizmos(editMode);
-            DrawLabel($"WeightedCell\n{data.coordinate}\n{data.weight}");
+            DrawLabel($"WeightedCell\n{Data.coordinate}\n{Data.weight}");
         }
 
         protected override void DrawLabel(string label)

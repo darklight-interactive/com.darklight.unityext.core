@@ -62,6 +62,11 @@ public class Shape2D
         _vertices = Shape2DUtility.GenerateRadialPoints(_center, _radius, _segments, _normal);
     }
 
+    public void SetGizmoColor(Color color)
+    {
+        _gizmoColor = color;
+    }
+
     public void DrawGizmos(bool filled)
     {
         Shape2DGizmos.DrawShape2D(this, _gizmoColor, filled);
