@@ -7,10 +7,8 @@ public class Shape2D
 {
     public const int MAX_SEGMENTS = 32;
 
-    // --------- DATA --------- ))
+    // --------- Private Fields --------- ))
     Vector3[] _vertices;
-
-    // --------- Properties --------- ))
     [SerializeField, ShowOnly] Vector3 _center = Vector3.zero;
     [SerializeField, ShowOnly] float _radius = 64;
     [SerializeField, ShowOnly] int _segments = 16;
@@ -32,6 +30,11 @@ public class Shape2D
 
     public Shape2D(Vector3 center, float radius, int segments, Vector3 normal, Color gizmoColor)
     {
+        UpdateShape(center, radius, segments, normal, gizmoColor);
+    }
+
+    public void UpdateShape(Vector3 center, float radius, int segments, Vector3 normal, Color gizmoColor)
+    {
         _center = center;
         _radius = radius;
 
@@ -42,11 +45,6 @@ public class Shape2D
         _gizmoColor = gizmoColor;
 
         _vertices = Shape2DUtility.GenerateRadialPoints(_center, _radius, _segments, _normal);
-    }
-
-    public bool IsPositionWithinRadius(Vector3 position)
-    {
-        return Vector3.Distance(_center, position) <= _radius;
     }
 
     public void SetSegments(int segments)
@@ -70,6 +68,11 @@ public class Shape2D
     public void DrawGizmos(bool filled)
     {
         Shape2DGizmos.DrawShape2D(this, _gizmoColor, filled);
+    }
+
+    public bool IsPositionWithinRadius(Vector3 position)
+    {
+        return Vector3.Distance(_center, position) <= _radius;
     }
 
 }

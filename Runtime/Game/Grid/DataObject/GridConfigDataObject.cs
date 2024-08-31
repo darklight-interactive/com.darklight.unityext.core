@@ -53,6 +53,9 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] bool _showEditorGizmos = true;
 
 
+        public bool showGizmos => _showGizmos;
+        public bool showEditorGizmos => _showEditorGizmos;
+
         public virtual Grid.Config ToConfig()
         {
             Grid.Config config = new Grid.Config();

@@ -105,11 +105,25 @@ namespace Darklight.UnityExt.Game.Grid
         public void OnDrawGizmos()
         {
             if (grid == null) return;
+            if (!configObj.showGizmos) return;
 
             CellGizmoRenderer gizmoRenderer = new CellGizmoRenderer();
             grid.MapFunction(cell =>
             {
-                gizmoRenderer.Visit(cell);
+                cell.Accept(gizmoRenderer);
+                return cell;
+            });
+        }
+
+        public void DrawEditorGizmos()
+        {
+            if (grid == null) return;
+            if (!configObj.showEditorGizmos) return;
+
+            CellEditorGizmoRenderer editorGizmoRenderer = new CellEditorGizmoRenderer();
+            grid.MapFunction(cell =>
+            {
+                cell.Accept(editorGizmoRenderer);
                 return cell;
             });
         }
@@ -188,6 +202,11 @@ namespace Darklight.UnityExt.Game.Grid
                 _script.ClearData();
             }
             EditorGUILayout.EndHorizontal();
+        }
+
+        void OnSceneGUI()
+        {
+            _script.DrawEditorGizmos();
         }
     }
 #endif

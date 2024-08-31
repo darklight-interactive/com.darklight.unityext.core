@@ -259,7 +259,7 @@ namespace Darklight.UnityExt.Game.Grid
                 ICell cell = _cellMap[key];
 
                 // Find the data with the same key
-                BaseCellData data = dataList.Find(d => d.key == key);
+                BaseCellData data = dataList.Find(d => d.Key == key);
                 if (data == null) continue;
 
                 // Set the cell's data

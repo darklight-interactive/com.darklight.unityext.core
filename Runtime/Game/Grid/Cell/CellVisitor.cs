@@ -6,7 +6,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public interface ICellVisitor
     {
-        void Visit(BaseCell cell);
+        void VisitCell(BaseCell cell);
     }
 
     public class CellUpdater : ICellVisitor
@@ -17,10 +17,10 @@ namespace Darklight.UnityExt.Game.Grid
             this.config = config;
         }
 
-        public void Visit(BaseCell cell)
+        public void VisitCell(BaseCell cell)
         {
-            Vector3 position = config.CalculatePositionFromKey(cell.Data.key);
-            Vector2Int coordinate = config.CalculateCoordinateFromKey(cell.Data.key);
+            Vector3 position = config.CalculatePositionFromKey(cell.Data.Key);
+            Vector2Int coordinate = config.CalculateCoordinateFromKey(cell.Data.Key);
             Vector3 normal = config.gridNormal;
             Vector3 dimensions = config.cellDimensions;
 
@@ -38,14 +38,22 @@ namespace Darklight.UnityExt.Game.Grid
 
     public class CellGizmoRenderer : ICellVisitor
     {
-        public void Visit(BaseCell cell)
+        public void VisitCell(BaseCell cell)
         {
-            BaseCellData data = cell.Data;
-            CustomGizmos.DrawWireRect(data.position, data.dimensions, data.normal, Color.grey);
-
             foreach (ICellComponent component in cell.Components)
             {
                 component.DrawGizmos();
+            }
+        }
+    }
+
+    public class CellEditorGizmoRenderer : ICellVisitor
+    {
+        public void VisitCell(BaseCell cell)
+        {
+            foreach (ICellComponent component in cell.Components)
+            {
+                component.DrawEditorGizmos();
             }
         }
     }

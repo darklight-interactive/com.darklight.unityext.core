@@ -14,23 +14,22 @@ namespace Darklight.UnityExt.Game.Grid
         void Accept(ICellVisitor visitor);
         void SetData(BaseCellData data);
 
-        void AddComponent<TComponent>(TComponent component) where TComponent : ICellComponent;
-        void RemoveComponent<TComponent>(TComponent component) where TComponent : ICellComponent;
+        void AssignComponent(ICellComponent component);
+        void RemoveComponent(ICellComponent component);
     }
 
     [System.Serializable]
     public class BaseCell : ICell
     {
-        Dictionary<CellComponentType, ICellComponent> _components = new();
 
 
         [SerializeField, ShowOnly] string _name;
         [SerializeField] BaseCellData _data;
-        [SerializeField, ShowOnly, NonReorderable] List<CellComponentType> _componentTypes = new();
 
-        public string Name => Data.name;
+
+        public string Name => Data.Name;
         public BaseCellData Data { get => _data; private set => _data = value; }
-        public List<ICellComponent> Components { get => _components.Values.ToList(); }
+        public List<ICellComponent> Components { get => _data.Components; }
 
 
         public BaseCell(Vector2Int key)
@@ -38,12 +37,12 @@ namespace Darklight.UnityExt.Game.Grid
             Data = new BaseCellData(key);
             Data.Initialize(key);
 
-            _name = Data.name;
+            _name = Data.Name;
         }
 
         public void Accept(ICellVisitor visitor)
         {
-            visitor.Visit(this);
+            visitor.VisitCell(this);
         }
 
         public virtual void SetData(BaseCellData data)
@@ -51,50 +50,34 @@ namespace Darklight.UnityExt.Game.Grid
             Data = data;
         }
 
-        public void AddComponent<T>(T component) where T : ICellComponent
+        public void AssignComponent(ICellComponent component)
         {
-            if (component == null)
-            {
-                Debug.LogError("Cannot add null component to cell.");
-                return;
-            }
-
-            if (!_components.ContainsKey(component.type))
-            {
-                component.Initialize(this);
-                _components.Add(component.type, component);
-                _componentTypes.Add(component.type);
-            }
+            Data.AddComponent(component);
         }
 
-        public void RemoveComponent<T>(T component) where T : ICellComponent
+        public void RemoveComponent(ICellComponent component)
         {
-            if (component == null)
-            {
-                Debug.LogError("Cannot remove null component from cell.");
-                return;
-            }
-
-            if (_components.ContainsKey(component.type))
-            {
-                _components.Remove(component.type);
-                _componentTypes.Remove(component.type);
-            }
+            Data.RemoveComponent(component);
         }
 
-        public float GetMinDimension() => Mathf.Min(Data.dimensions.x, Data.dimensions.y);
+        public bool HasComponent(CellComponentType type)
+        {
+            return Data.HasComponent(type);
+        }
+
+        public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
 
         public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
         {
-            position = Data.position;
-            normal = Data.normal;
-            dimensions = Data.dimensions;
+            position = Data.Position;
+            normal = Data.Normal;
+            dimensions = Data.Dimensions;
         }
 
         public void GetTransformData(out Vector3 position, out Vector3 normal, out float radius)
         {
-            position = Data.position;
-            normal = Data.normal;
+            position = Data.Position;
+            normal = Data.Normal;
             radius = GetMinDimension() / 2;
         }
     }

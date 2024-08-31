@@ -9,10 +9,21 @@ using System.Linq;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    #region -- << ABSTRACT CLASS >> : AbstractCellData ------------------------------------ >>
-    public abstract class AbstractCellData
+    [System.Serializable]
+    public class BaseCellData
     {
-        private string _name = "BaseCell";
+        public string Name { get => _name; protected set => _name = value; }
+        public Vector2Int Key { get => _key; protected set => _key = value; }
+        public Vector2Int Coordinate { get => _coordinate; protected set => _coordinate = value; }
+        public Vector2 Dimensions { get => _dimensions; protected set => _dimensions = value; }
+        public Vector3 Position { get => _position; protected set => _position = value; }
+        public Vector3 Normal { get => _normal; protected set => _normal = value; }
+        public bool Disabled { get => _isDisabled; protected set => _isDisabled = value; }
+        public List<ICellComponent> Components { get => _components; }
+
+
+
+        string _name = "BaseCell";
         [SerializeField, ShowOnly] private Vector2Int _key = Vector2Int.zero;
         [SerializeField, ShowOnly] private Vector2Int _coordinate = Vector2Int.zero;
         [SerializeField, ShowOnly] private Vector2 _dimensions = Vector2.one;
@@ -20,31 +31,26 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] private Vector3 _normal = Vector3.up;
         [SerializeField, ShowOnly] private bool _isDisabled = false;
 
-        public string name { get => _name; protected set => _name = value; }
-        public Vector2Int key { get => _key; protected set => _key = value; }
-        public Vector2Int coordinate { get => _coordinate; protected set => _coordinate = value; }
-        public Vector2 dimensions { get => _dimensions; protected set => _dimensions = value; }
-        public Vector3 position { get => _position; protected set => _position = value; }
-        public Vector3 normal { get => _normal; protected set => _normal = value; }
-        public bool disabled { get => _isDisabled; protected set => _isDisabled = value; }
+        // (( COMPONENTS )) ------------------ >>
+        Dictionary<CellComponentType, ICellComponent> _componentMap = new();
+        [SerializeField] List<ICellComponent> _components = new();
 
-        public void SetName(string name) => _name = name;
-        public void SetKey(Vector2Int key) => _key = key;
-        public void SetCoordinate(Vector2Int coordinate) => _coordinate = coordinate;
-        public void SetPosition(Vector3 position) => _position = position;
-        public void SetNormal(Vector3 normal) => _normal = normal;
-        public void SetDimensions(Vector2 dimensions) => _dimensions = dimensions;
-        public void SetDisabled(bool disabled) => _isDisabled = disabled;
+        [NonReorderable]
+        [SerializeField, ShowOnly] List<CellComponentType> _componentTypes = new();
 
 
-        public AbstractCellData() => Initialize(Vector2Int.zero);
-        public AbstractCellData(Vector2Int key) => Initialize(key);
+        // ============== (( CONSTRUCTORS )) ============== >>
+
+        public BaseCellData() => Initialize(Vector2Int.zero);
+        public BaseCellData(Vector2Int key) => Initialize(key);
         public virtual void Initialize(Vector2Int key)
         {
             _key = key;
             _name = $"BaseCell {key}";
         }
 
+
+        // ============== (( METHODS )) ============== >>
         public virtual void CopyFrom(BaseCellData data)
         {
             if (data == null)
@@ -53,24 +59,77 @@ namespace Darklight.UnityExt.Game.Grid
                 return;
             }
 
-            _name = data.name;
-            _key = data.key;
-            _dimensions = data.dimensions;
-            _position = data.position;
-            _normal = data.normal;
-            _isDisabled = data.disabled;
+            _name = data.Name;
+            _key = data.Key;
+            _dimensions = data.Dimensions;
+            _position = data.Position;
+            _normal = data.Normal;
+            _isDisabled = data.Disabled;
+
+            _componentMap.Clear();
+            foreach (ICellComponent component in data.Components)
+            {
+                _componentMap.Add(component.Type, component);
+            }
+            Refresh();
         }
 
+        public void SetCoordinate(Vector2Int coordinate) => _coordinate = coordinate;
+        public void SetPosition(Vector3 position) => _position = position;
+        public void SetNormal(Vector3 normal) => _normal = normal;
+        public void SetDimensions(Vector2 dimensions) => _dimensions = dimensions;
+        public void SetDisabled(bool disabled) => _isDisabled = disabled;
+
+        #region ((Component Management)) ------------------ >>
+        public void AddComponent(ICellComponent component)
+        {
+            // If the component is not already in the dictionary, add it.
+            if (!_componentMap.ContainsKey(component.Type))
+            {
+                _componentMap.Add(component.Type, component);
+            }
+            Refresh();
+        }
+
+        public void UpdateComponent(ICellComponent component)
+        {
+            // If the component is in the dictionary, update it.
+            if (_componentMap.ContainsKey(component.Type))
+            {
+                _componentMap[component.Type] = component;
+            }
+            Refresh();
+        }
+
+        public void RemoveComponent(ICellComponent component)
+        {
+            // If the component is in the dictionary, remove it.
+            if (_componentMap.ContainsKey(component.Type))
+            {
+                _componentMap.Remove(component.Type);
+            }
+            Refresh();
+        }
+
+        public bool HasComponent(CellComponentType type)
+        {
+            if (_componentMap.ContainsKey(type))
+            {
+                if (_componentMap[type] != null)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void Refresh()
+        {
+            _components = _componentMap.Values.ToList();
+            _componentTypes = _componentMap.Keys.ToList();
+        }
+        #endregion
+
 
     }
-    #endregion
-
-    #region -- << CLASS >> : BaseCellData ------------------------------------ >>
-    [System.Serializable]
-    public class BaseCellData : AbstractCellData
-    {
-        public BaseCellData() => Initialize(Vector2Int.zero);
-        public BaseCellData(Vector2Int key) => Initialize(key);
-    }
-    #endregion
 }

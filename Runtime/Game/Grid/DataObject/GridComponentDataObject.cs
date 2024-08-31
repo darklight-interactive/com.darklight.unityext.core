@@ -77,25 +77,30 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (shouldHave)
             {
+                if (cell.HasComponent(type))
+                {
+                    return;
+                }
+
                 ICellComponent component = CreateComponent(type);
                 if (type == CellComponentType.Overlap)
                 {
                     Overlap2DComponent overlapComponent = new Overlap2DComponent(cell, overlapComponentTemplate);
-                    AddComponentToCell(cell, overlapComponent);
+                    AssignComponentToCell(cell, overlapComponent);
                 }
                 else if (type == CellComponentType.Shape)
                 {
                     Shape2DComponent shapeComponent = new Shape2DComponent(cell, shapeComponentTemplate);
-                    AddComponentToCell(cell, shapeComponent);
+                    AssignComponentToCell(cell, shapeComponent);
                 }
                 else if (type == CellComponentType.Weight)
                 {
                     WeightComponent weightComponent = new WeightComponent(cell, weightComponentTemplate);
-                    AddComponentToCell(cell, weightComponent);
+                    AssignComponentToCell(cell, weightComponent);
                 }
                 else
                 {
-                    AddComponentToCell(cell, component);
+                    AssignComponentToCell(cell, component);
                 }
             }
             else
@@ -117,15 +122,14 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        private void AddComponentToCell(BaseCell cell, ICellComponent component)
+        private void AssignComponentToCell(BaseCell cell, ICellComponent component)
         {
             if (cell == null || component == null)
             {
                 Debug.LogError("Cannot add component to a null cell.");
                 return;
             }
-
-            cell.AddComponent(component);
+            cell.AssignComponent(component);
         }
 
         private void RemoveComponentFromCell(BaseCell cell, CellComponentType type)
@@ -136,7 +140,7 @@ namespace Darklight.UnityExt.Game.Grid
                 return;
             }
 
-            ICellComponent component = cell.Components.Find(c => c.type == type);
+            ICellComponent component = cell.Components.Find(c => c.Type == type);
             if (component != null)
             {
                 cell.RemoveComponent(component);
