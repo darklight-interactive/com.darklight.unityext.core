@@ -12,7 +12,6 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class Weighted_Cell2DComponent : Abstract_Cell2DComponent, ICell2DComponent
     {
-        [SerializeField, ShowOnly] int _guid = Guid.NewGuid().GetHashCode();
         [SerializeField, Range(0, 100)] int _weight;
         public int Weight { get => _weight; }
 
@@ -22,20 +21,22 @@ namespace Darklight.UnityExt.Game.Grid
             _weight = 0;
             Initialize(cell);
         }
-        public Weighted_Cell2DComponent(Cell2D cell, Weighted_Cell2DComponent template)
-        {
-            _weight = template.Weight;
-            Initialize(cell);
-        }
 
         public override void Initialize(Cell2D cell)
         {
             base.Initialize(cell);
             Name = "WeightComponent";
             Type = ICell2DComponent.TypeKey.Weight;
+
+            Cell2D_Config config = Cell.Config;
+            _weight = config.Weight;
         }
 
-        public void Update() { }
+        public void Update()
+        {
+            Cell2D_Config config = Cell.Config;
+            _weight = config.Weight;
+        }
 
         public void SetWeight(int weight)
         {

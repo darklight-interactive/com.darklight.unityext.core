@@ -60,7 +60,10 @@ namespace Darklight.UnityExt.Game.Grid
         public void UpdateComponents(Cell2D_Config config)
         {
             if (_componentMap == null)
+            {
                 _componentMap = new Dictionary<ComponentType, ICell2DComponent>();
+                Debug.LogError("Component map is null. Creating new map.");
+            }
 
             bool ShouldHaveComponent(ComponentType type)
             {
@@ -82,6 +85,11 @@ namespace Darklight.UnityExt.Game.Grid
                             AddComponent(component);
                         }
                     }
+                    else
+                    {
+                        // If the cell has the component, update it
+                        _componentMap[type].Update();
+                    }
                 }
                 else
                 {
@@ -100,6 +108,7 @@ namespace Darklight.UnityExt.Game.Grid
             if (!_componentMap.ContainsKey(component.Type))
             {
                 _componentMap.Add(component.Type, component);
+                //Debug.Log($"Added component {component.Name} to cell {_cell.Data.Key}");
             }
             Refresh();
         }

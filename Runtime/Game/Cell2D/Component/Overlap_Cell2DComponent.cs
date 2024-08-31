@@ -7,10 +7,11 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class Overlap_Cell2DComponent : Abstract_Cell2DComponent, ICell2DComponent
     {
+        [SerializeField] LayerMask _layerMask;
+        Collider2D[] _colliders;
+
         public LayerMask layerMask { get => _layerMask; set => _layerMask = value; }
 
-        LayerMask _layerMask;
-        Collider2D[] _colliders;
 
         public Overlap_Cell2DComponent() { }
         public Overlap_Cell2DComponent(Cell2D cell)
@@ -23,22 +24,23 @@ namespace Darklight.UnityExt.Game.Grid
             _layerMask = layerMask;
             Initialize(cell);
         }
-        public Overlap_Cell2DComponent(Cell2D cell, Overlap_Cell2DComponent template)
-        {
-            _layerMask = template.layerMask;
-            Initialize(cell);
-        }
 
         public override void Initialize(Cell2D cell)
         {
             base.Initialize(cell);
             Name = "Overlap2DComponent";
             Type = ICell2DComponent.TypeKey.Overlap;
+
+            Cell2D_Config config = Cell.Config;
+            _layerMask = config.LayerMask;
         }
 
         public void Update()
         {
             UpdateColliders(_layerMask);
+
+            Cell2D_Config config = Cell.Config;
+            _layerMask = config.LayerMask;
         }
 
         void UpdateColliders(LayerMask layerMask)

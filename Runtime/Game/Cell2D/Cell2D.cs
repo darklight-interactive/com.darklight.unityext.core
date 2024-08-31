@@ -12,7 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
     {
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField, ShowOnly] string _name = "Cell2D";
-        [SerializeField, HideInInspector] Cell2D_Config _config;
+        [SerializeField] Cell2D_Config _config;
         [SerializeField] Cell2D_Data _data;
         [SerializeField] Cell2D_Composite _composite;
 

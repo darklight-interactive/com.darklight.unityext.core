@@ -17,11 +17,6 @@ namespace Darklight.UnityExt.Game.Grid
         {
             Initialize(cell);
         }
-        public Shape_Cell2DComponent(Cell2D cell, Shape_Cell2DComponent template)
-        {
-            _segments = template._segments;
-            Initialize(cell);
-        }
 
         public override void Initialize(Cell2D cell)
         {
@@ -32,12 +27,18 @@ namespace Darklight.UnityExt.Game.Grid
 
             cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape = new Shape2D(position, radius, _segments, normal, Color.white);
+
+            Cell2D_Config config = Cell.Config;
+            _segments = config.Segments;
         }
 
         public void Update()
         {
             Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape.UpdateShape(position, radius, _segments, normal, Color.white);
+
+            Cell2D_Config config = Cell.Config;
+            _segments = config.Segments;
         }
 
         public void DrawGizmos()

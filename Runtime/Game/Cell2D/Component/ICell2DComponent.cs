@@ -10,6 +10,7 @@ namespace Darklight.UnityExt.Game.Grid
     public interface ICell2DComponent
     {
         string Name { get; }
+        int Guid { get; }
         Cell2D Cell { get; }
         TypeKey Type { get; }
 
