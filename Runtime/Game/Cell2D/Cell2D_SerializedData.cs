@@ -10,7 +10,7 @@ using System.Linq;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class BaseCellData
+    public class Cell2D_SerializedData
     {
         public string Name { get => _name; protected set => _name = value; }
         public Vector2Int Key { get => _key; protected set => _key = value; }
@@ -19,7 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
         public Vector3 Position { get => _position; protected set => _position = value; }
         public Vector3 Normal { get => _normal; protected set => _normal = value; }
         public bool Disabled { get => _isDisabled; protected set => _isDisabled = value; }
-        public List<ICellComponent> Components { get => _components; }
+        public List<ICell2DComponent> Components { get => _components; }
 
 
 
@@ -32,17 +32,13 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] private bool _isDisabled = false;
 
         // (( COMPONENTS )) ------------------ >>
-        Dictionary<CellComponentType, ICellComponent> _componentMap = new();
-        [SerializeField] List<ICellComponent> _components = new();
-
-        [NonReorderable]
-        [SerializeField, ShowOnly] List<CellComponentType> _componentTypes = new();
-
+        Dictionary<ICell2DComponent.TypeKey, ICell2DComponent> _componentMap = new();
+        [SerializeReference, NonReorderable] List<ICell2DComponent> _components = new();
 
         // ============== (( CONSTRUCTORS )) ============== >>
 
-        public BaseCellData() => Initialize(Vector2Int.zero);
-        public BaseCellData(Vector2Int key) => Initialize(key);
+        public Cell2D_SerializedData() => Initialize(Vector2Int.zero);
+        public Cell2D_SerializedData(Vector2Int key) => Initialize(key);
         public virtual void Initialize(Vector2Int key)
         {
             _key = key;
@@ -51,7 +47,7 @@ namespace Darklight.UnityExt.Game.Grid
 
 
         // ============== (( METHODS )) ============== >>
-        public virtual void CopyFrom(BaseCellData data)
+        public virtual void CopyFrom(Cell2D_SerializedData data)
         {
             if (data == null)
             {
@@ -67,7 +63,7 @@ namespace Darklight.UnityExt.Game.Grid
             _isDisabled = data.Disabled;
 
             _componentMap.Clear();
-            foreach (ICellComponent component in data.Components)
+            foreach (ICell2DComponent component in data.Components)
             {
                 _componentMap.Add(component.Type, component);
             }
@@ -81,7 +77,7 @@ namespace Darklight.UnityExt.Game.Grid
         public void SetDisabled(bool disabled) => _isDisabled = disabled;
 
         #region ((Component Management)) ------------------ >>
-        public void AddComponent(ICellComponent component)
+        public void AddComponent(ICell2DComponent component)
         {
             // If the component is not already in the dictionary, add it.
             if (!_componentMap.ContainsKey(component.Type))
@@ -91,7 +87,7 @@ namespace Darklight.UnityExt.Game.Grid
             Refresh();
         }
 
-        public void UpdateComponent(ICellComponent component)
+        public void UpdateComponent(ICell2DComponent component)
         {
             // If the component is in the dictionary, update it.
             if (_componentMap.ContainsKey(component.Type))
@@ -101,7 +97,7 @@ namespace Darklight.UnityExt.Game.Grid
             Refresh();
         }
 
-        public void RemoveComponent(ICellComponent component)
+        public void RemoveComponent(ICell2DComponent component)
         {
             // If the component is in the dictionary, remove it.
             if (_componentMap.ContainsKey(component.Type))
@@ -111,7 +107,7 @@ namespace Darklight.UnityExt.Game.Grid
             Refresh();
         }
 
-        public bool HasComponent(CellComponentType type)
+        public bool HasComponent(ICell2DComponent.TypeKey type)
         {
             if (_componentMap.ContainsKey(type))
             {
@@ -126,7 +122,6 @@ namespace Darklight.UnityExt.Game.Grid
         void Refresh()
         {
             _components = _componentMap.Values.ToList();
-            _componentTypes = _componentMap.Keys.ToList();
         }
         #endregion
 

@@ -11,7 +11,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [CreateAssetMenu(menuName = "Darklight/Grid2D/DataObject")]
-    public class GridConfigDataObject : ScriptableObject
+    public class Grid2D_ConfigDataObject : ScriptableObject
     {
         #region ---- ( CUSTOM EDITOR DATA ) --------- >>
         public DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
@@ -28,13 +28,14 @@ namespace Darklight.UnityExt.Game.Grid
 
         [Header("-- Grid Transform ---- >>")]
         [SerializeField] bool _lockToTransform = true;
-        [SerializeField] Grid.Alignment _gridAlignment = Grid.Alignment.Center;
+        [SerializeField] Grid2D_Config.Alignment _gridAlignment = Grid2D_Config.Alignment.Center;
         [SerializeField, Dropdown("editor_directions")] Vector3 _gridNormal = Vector3.up;
 
         [Header("-- Grid Dimensions ---- >>")]
         [SerializeField, Range(1, 10)] int _numColumns = 3;
         [SerializeField, Range(1, 10)] int _numRows = 3;
 
+        [Space(10)]
         [Header("-- Cell Dimensions ---- >>")]
         [SerializeField, Range(0.1f, 10f)] float _cellWidth = 1;
         [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
@@ -47,6 +48,9 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(-1, 1)] float _cellBondingX = 0;
         [SerializeField, Range(-1, 1)] float _cellBondingY = 0;
 
+        [Header("-- Cell Components ---- >>")]
+        [SerializeField, EnumFlags] ICell2DComponent.TypeKey componentTypes;
+
         [Space(10)]
         [Header("-- Gizmos ---- >>")]
         [SerializeField] bool _showGizmos = true;
@@ -56,9 +60,9 @@ namespace Darklight.UnityExt.Game.Grid
         public bool showGizmos => _showGizmos;
         public bool showEditorGizmos => _showEditorGizmos;
 
-        public virtual Grid.Config ToConfig()
+        public virtual Grid2D_Config ToConfig()
         {
-            Grid.Config config = new Grid.Config();
+            Grid2D_Config config = new Grid2D_Config();
 
             config.SetGizmos(_showGizmos, _showEditorGizmos);
 
@@ -77,7 +81,7 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void ResetToDefaults()
         {
             _lockToTransform = true;
-            _gridAlignment = Grid.Alignment.Center;
+            _gridAlignment = Grid2D_Config.Alignment.Center;
             _gridNormal = Vector3.up;
 
             _numColumns = 3;

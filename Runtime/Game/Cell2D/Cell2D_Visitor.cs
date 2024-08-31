@@ -4,20 +4,20 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public interface ICellVisitor
+    public interface ICell2DVisitor
     {
-        void VisitCell(BaseCell cell);
+        void VisitCell(Cell2D cell);
     }
 
-    public class CellUpdater : ICellVisitor
+    public class Cell2DUpdater : ICell2DVisitor
     {
-        Grid.Config config;
-        public CellUpdater(Grid.Config config)
+        Grid2D_Config config;
+        public Cell2DUpdater(Grid2D_Config config)
         {
             this.config = config;
         }
 
-        public void VisitCell(BaseCell cell)
+        public void VisitCell(Cell2D cell)
         {
             Vector3 position = config.CalculatePositionFromKey(cell.Data.Key);
             Vector2Int coordinate = config.CalculateCoordinateFromKey(cell.Data.Key);
@@ -29,29 +29,29 @@ namespace Darklight.UnityExt.Game.Grid
             cell.Data.SetNormal(normal);
             cell.Data.SetDimensions(dimensions);
 
-            foreach (ICellComponent component in cell.Components)
+            foreach (ICell2DComponent component in cell.Components)
             {
                 component.Update();
             }
         }
     }
 
-    public class CellGizmoRenderer : ICellVisitor
+    public class Cell2D_GizmoRenderer : ICell2DVisitor
     {
-        public void VisitCell(BaseCell cell)
+        public void VisitCell(Cell2D cell)
         {
-            foreach (ICellComponent component in cell.Components)
+            foreach (ICell2DComponent component in cell.Components)
             {
                 component.DrawGizmos();
             }
         }
     }
 
-    public class CellEditorGizmoRenderer : ICellVisitor
+    public class Cell2D_EditorGizmoRenderer : ICell2DVisitor
     {
-        public void VisitCell(BaseCell cell)
+        public void VisitCell(Cell2D cell)
         {
-            foreach (ICellComponent component in cell.Components)
+            foreach (ICell2DComponent component in cell.Components)
             {
                 component.DrawEditorGizmos();
             }

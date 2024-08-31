@@ -8,59 +8,57 @@ namespace Darklight.UnityExt.Game.Grid
     interface ICell
     {
         string Name { get; }
-        BaseCellData Data { get; }
-        List<ICellComponent> Components { get; }
+        Cell2D_SerializedData Data { get; }
+        List<ICell2DComponent> Components { get; }
 
-        void Accept(ICellVisitor visitor);
-        void SetData(BaseCellData data);
+        void Accept(ICell2DVisitor visitor);
+        void SetData(Cell2D_SerializedData data);
 
-        void AssignComponent(ICellComponent component);
-        void RemoveComponent(ICellComponent component);
+        void AssignComponent(ICell2DComponent component);
+        void RemoveComponent(ICell2DComponent component);
     }
 
     [System.Serializable]
-    public class BaseCell : ICell
+    public class Cell2D : ICell
     {
-
-
         [SerializeField, ShowOnly] string _name;
-        [SerializeField] BaseCellData _data;
+        [SerializeField] Cell2D_SerializedData _data;
 
 
         public string Name => Data.Name;
-        public BaseCellData Data { get => _data; private set => _data = value; }
-        public List<ICellComponent> Components { get => _data.Components; }
+        public Cell2D_SerializedData Data { get => _data; private set => _data = value; }
+        public List<ICell2DComponent> Components { get => _data.Components; }
 
 
-        public BaseCell(Vector2Int key)
+        public Cell2D(Vector2Int key)
         {
-            Data = new BaseCellData(key);
+            Data = new Cell2D_SerializedData(key);
             Data.Initialize(key);
 
             _name = Data.Name;
         }
 
-        public void Accept(ICellVisitor visitor)
+        public void Accept(ICell2DVisitor visitor)
         {
             visitor.VisitCell(this);
         }
 
-        public virtual void SetData(BaseCellData data)
+        public virtual void SetData(Cell2D_SerializedData data)
         {
             Data = data;
         }
 
-        public void AssignComponent(ICellComponent component)
+        public void AssignComponent(ICell2DComponent component)
         {
             Data.AddComponent(component);
         }
 
-        public void RemoveComponent(ICellComponent component)
+        public void RemoveComponent(ICell2DComponent component)
         {
             Data.RemoveComponent(component);
         }
 
-        public bool HasComponent(CellComponentType type)
+        public bool HasComponent(ICell2DComponent.TypeKey type)
         {
             return Data.HasComponent(type);
         }
