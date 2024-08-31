@@ -19,7 +19,6 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField] Grid2D_Config _config;
-        [SerializeField] Cell2D_Config _cellConfig;
         [SerializeField] List<Cell2D> _cells = new List<Cell2D>();
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
@@ -85,9 +84,9 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( GETTERS )) -------- )))
-        public List<Cell2D_SerializedData> GetData()
+        public List<Cell2D_Data> GetData()
         {
-            List<Cell2D_SerializedData> dataList = new List<Cell2D_SerializedData>();
+            List<Cell2D_Data> dataList = new List<Cell2D_Data>();
             List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
             foreach (Vector2Int key in keys)
             {
@@ -104,7 +103,7 @@ namespace Darklight.UnityExt.Game.Grid
             this._config = config;
         }
 
-        public void SetData(List<Cell2D_SerializedData> dataList)
+        public void SetData(List<Cell2D_Data> dataList)
         {
             if (dataList == null || dataList.Count == 0) return;
             foreach (Vector2Int key in _cellMap.Keys)
@@ -113,7 +112,7 @@ namespace Darklight.UnityExt.Game.Grid
                 Cell2D cell = _cellMap[key];
 
                 // Find the data with the same key
-                Cell2D_SerializedData data = dataList.Find(d => d.Key == key);
+                Cell2D_Data data = dataList.Find(d => d.Key == key);
                 if (data == null) continue;
 
                 // Set the cell's data

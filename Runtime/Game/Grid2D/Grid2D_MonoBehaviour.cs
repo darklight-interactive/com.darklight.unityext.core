@@ -14,7 +14,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [ExecuteAlways]
-    public class Grid2D_BaseMonoBehaviour : MonoBehaviour
+    public class Grid2D_MonoBehaviour : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
@@ -45,6 +45,7 @@ namespace Darklight.UnityExt.Game.Grid
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
         }
+
         public void Update() => UpdateGrid();
         public virtual void UpdateGrid()
         {
@@ -69,7 +70,7 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void SaveGridData()
         {
             if (dataObj == null) return;
-            List<Cell2D_SerializedData> dataList = grid.GetData();
+            List<Cell2D_Data> dataList = grid.GetData();
             dataObj.SetData(dataList);
         }
 
@@ -77,7 +78,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (dataObj == null) return;
 
-            List<Cell2D_SerializedData> dataList = dataObj.GetData();
+            List<Cell2D_Data> dataList = dataObj.GetData();
             if (dataList == null || dataList.Count == 0) return;
 
             grid.SetData(dataList);
@@ -117,11 +118,11 @@ namespace Darklight.UnityExt.Game.Grid
     }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(Grid2D_BaseMonoBehaviour), true)]
+    [CustomEditor(typeof(Grid2D_MonoBehaviour), true)]
     public class GridMonoBehaviourEditor : UnityEditor.Editor
     {
         protected SerializedObject _serializedObject;
-        Grid2D_BaseMonoBehaviour _script;
+        Grid2D_MonoBehaviour _script;
 
         SerializedProperty _gridProp;
         SerializedProperty _configObjProp;
@@ -130,7 +131,7 @@ namespace Darklight.UnityExt.Game.Grid
         protected virtual void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
-            _script = (Grid2D_BaseMonoBehaviour)target;
+            _script = (Grid2D_MonoBehaviour)target;
 
             // Cache the serialized properties
             _gridProp = _serializedObject.FindProperty("grid");

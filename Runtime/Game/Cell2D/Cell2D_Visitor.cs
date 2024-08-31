@@ -30,6 +30,10 @@ namespace Darklight.UnityExt.Game.Grid
             cell.Data.SetCoordinate(coordinate);
             cell.Data.SetNormal(normal);
             cell.Data.SetDimensions(dimensions);
+            cell.SetConfig(_grid.Config.CellConfig);
+
+            // Update the cell
+            cell.Update();
         }
     }
 

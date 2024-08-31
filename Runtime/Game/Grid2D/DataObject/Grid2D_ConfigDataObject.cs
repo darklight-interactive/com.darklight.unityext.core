@@ -49,8 +49,8 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0.1f, 10)] float _cellHeight = 1;
 
         [Space(10)]
-        [SerializeField, Range(0.1f, 10)] float _cellSpacingX = 1;
-        [SerializeField, Range(0.1f, 10)] float _cellSpacingY = 1;
+        [SerializeField, Range(0f, 10)] float _cellSpacingX = 1;
+        [SerializeField, Range(0f, 10)] float _cellSpacingY = 1;
 
         [Space(10)]
         [SerializeField, Range(0, 10)] float _cellBondingX = 0;
@@ -59,7 +59,7 @@ namespace Darklight.UnityExt.Game.Grid
         // (( CELL2D COMPONENTS )) ---- >>
         [HorizontalLine(4, EColor.Gray)]
         [Header("-- CELL2D COMPONENTS -- >>")]
-        [SerializeField, EnumFlags] ICell2DComponent.TypeKey componentTypes;
+        [SerializeField, EnumFlags] ICell2DComponent.TypeKey componentFlags = ICell2DComponent.TypeKey.Base;
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         public Cell2D_Config CellConfig
@@ -70,6 +70,7 @@ namespace Darklight.UnityExt.Game.Grid
                 config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
                 config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
                 config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
+                config.SetComponentFlags(componentFlags);
                 return config;
             }
         }

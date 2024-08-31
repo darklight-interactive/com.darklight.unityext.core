@@ -24,7 +24,7 @@ namespace Darklight.UnityExt.Game.Grid
         /// </summary>
         public enum TypeKey
         {
-            Null = 0,
+            Base = 0,
             Overlap = 1 << 0,
             Shape = 1 << 1,
             Weight = 1 << 2

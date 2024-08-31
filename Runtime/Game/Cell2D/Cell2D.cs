@@ -5,34 +5,51 @@ using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
+    using ComponentType = ICell2DComponent.TypeKey;
+
     [System.Serializable]
     public class Cell2D
     {
+
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField, ShowOnly] string _name = "Cell2D";
-        [SerializeField] Cell2D_SerializedData _serializedData;
+        [SerializeField, HideInInspector] Cell2D_Config _config;
+        [SerializeField] Cell2D_Data _data;
+        [SerializeField] Cell2D_Composite _composite;
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        public Cell2D_SerializedData Data { get => _serializedData; }
+        public Cell2D_Config Config { get => _config; }
+        public Cell2D_Data Data { get => _data; }
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
-        public Cell2D(Vector2Int key)
+        public Cell2D(Vector2Int key) => Initialize(key, null);
+        public Cell2D(Vector2Int key, Cell2D_Config config) => Initialize(key, config);
+
+        // ======== [[ METHODS ]] ============================================================ >>>>
+        // (( RUNTIME )) -------- )))
+        public void Initialize(Vector2Int key, Cell2D_Config config)
         {
-            _serializedData = new Cell2D_SerializedData(key);
+            // Initialize the configuration
+            if (config == null)
+                config = new Cell2D_Config();
+            _config = config;
+
+            // Create the data
+            _data = new Cell2D_Data(key);
+
+            // Create the composite
+            _composite = new Cell2D_Composite(this);
+
+            // Set the name
             _name = $"Cell2D ({key.x},{key.y})";
         }
 
-        // ======== [[ METHODS ]] ============================================================ >>>>
-
-        // (( RUNTIME )) -------- )))
         public void Update()
         {
-            if (_serializedData == null) return;
-            if (_serializedData.Components == null) return;
+            if (_data == null) return;
+            if (_composite == null) return;
 
-            // Update the components
-            foreach (ICell2DComponent component in _serializedData.Components)
-                component.Update();
+            _composite.UpdateComponents(_config);
         }
 
         // (( VISITOR PATTERN )) -------- ))
@@ -41,8 +58,6 @@ namespace Darklight.UnityExt.Game.Grid
             visitor.VisitCell(this);
         }
 
-        // (( SERIALIZATION )) -------- ))
-        public virtual void SetData(Cell2D_SerializedData data) => _serializedData = data;
 
         // (( GETTERS )) -------- ))
         public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
@@ -62,27 +77,31 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( SETTERS )) -------- ))
+        public void SetData(Cell2D_Data data) => _data = data;
+        public void SetConfig(Cell2D_Config config) => _config = config;
 
         // (( GIZMOS )) -------- ))
         public void DrawGizmos()
         {
-            if (_serializedData == null) return;
+            if (_data == null) return;
 
             GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawWireSquare(position, radius, normal, Color.gray);
 
-            if (_serializedData.Components == null) return;
-            foreach (ICell2DComponent component in _serializedData.Components)
+            _composite.MapFunction(component =>
+            {
                 component.DrawGizmos();
+            });
         }
 
         public void DrawEditorGizmos()
         {
-            if (_serializedData == null) return;
-            if (_serializedData.Components == null) return;
+            if (_data == null) return;
 
-            foreach (ICell2DComponent component in _serializedData.Components)
+            _composite.MapFunction(component =>
+            {
                 component.DrawEditorGizmos();
+            });
         }
     }
 }
