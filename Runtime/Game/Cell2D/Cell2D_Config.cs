@@ -22,6 +22,13 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
         public Cell2D_Config() { }
+        public Cell2D_Config(Cell2D_Config originConfig)
+        {
+            _cellDimensions = originConfig._cellDimensions;
+            _cellSpacing = originConfig._cellSpacing;
+            _cellBonding = originConfig._cellBonding;
+            _componentFlags = originConfig._componentFlags;
+        }
 
         // ======== [[ METHODS ]] ============================================================ >>>>
         public void SetCellDimensions(Vector2 cellDimensions) => _cellDimensions = cellDimensions;

@@ -1,5 +1,7 @@
 using Darklight.UnityExt.Editor;
 using UnityEngine;
+using System;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -10,6 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class Weighted_Cell2DComponent : Abstract_Cell2DComponent, ICell2DComponent
     {
+        [SerializeField, ShowOnly] int _guid = Guid.NewGuid().GetHashCode();
         [SerializeField, Range(0, 100)] int _weight;
         public int Weight { get => _weight; }
 
@@ -42,14 +45,14 @@ namespace Darklight.UnityExt.Game.Grid
         public void DrawGizmos()
         {
             Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
-            CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.BoldCenteredStyle);
+            CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.CenteredStyle);
         }
 
 #if UNITY_EDITOR
         public void DrawEditorGizmos()
         {
             Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
-            CustomGizmos.DrawButtonHandle(position, radius, normal, Color.yellow, () =>
+            CustomGizmos.DrawButtonHandle(position, radius, normal, Color.white, () =>
             {
                 _weight += 5;
                 if (_weight > 100) _weight = 0;
@@ -58,5 +61,17 @@ namespace Darklight.UnityExt.Game.Grid
             }, Handles.RectangleHandleCap);
         }
 #endif
+
+        public void Copy(ICell2DComponent component)
+        {
+            if (!initialized) return;
+
+            if (component is Weighted_Cell2DComponent weightComponent)
+            {
+                Cell = weightComponent.Cell;
+                _weight = weightComponent._weight;
+            }
+        }
+
     }
 }

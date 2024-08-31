@@ -47,5 +47,16 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         public void DrawEditorGizmos() { }
+
+        public void Copy(ICell2DComponent component)
+        {
+            if (!initialized) return;
+
+            if (component is Shape_Cell2DComponent shapeComponent)
+            {
+                Cell = shapeComponent.Cell;
+                _segments = shapeComponent._segments;
+            }
+        }
     }
 }

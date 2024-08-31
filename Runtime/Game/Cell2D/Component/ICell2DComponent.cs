@@ -17,6 +17,7 @@ namespace Darklight.UnityExt.Game.Grid
         void Update();
         void DrawGizmos();
         void DrawEditorGizmos();
+        void Copy(ICell2DComponent component);
 
         /// <summary>
         /// Enum to represent the different types of components that can be attached to a cell.

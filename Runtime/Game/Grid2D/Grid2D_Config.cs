@@ -25,6 +25,15 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
         public Grid2D_Config() { }
+        public Grid2D_Config(Grid2D_Config originConfig)
+        {
+            _lockToTransform = originConfig._lockToTransform;
+            _gridAlignment = originConfig._gridAlignment;
+            _gridPosition = originConfig._gridPosition;
+            _gridNormal = originConfig._gridNormal;
+            _gridDimensions = originConfig._gridDimensions;
+            _cellConfig = new Cell2D_Config(originConfig._cellConfig);
+        }
 
         // ======== [[ METHODS ]] ============================================================ >>>>
         public void SetLockToTransform(bool lockToTransform) => _lockToTransform = lockToTransform;

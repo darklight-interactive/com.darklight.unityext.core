@@ -84,16 +84,9 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( GETTERS )) -------- )))
-        public List<Cell2D_Data> GetData()
+        public List<Cell2D> GetCells()
         {
-            List<Cell2D_Data> dataList = new List<Cell2D_Data>();
-            List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
-            foreach (Vector2Int key in keys)
-            {
-                if (!_cellMap.ContainsKey(key)) continue;
-                dataList.Add(_cellMap[key].Data);
-            }
-            return dataList;
+            return new List<Cell2D>(_cellMap.Values);
         }
 
         // (( SETTERS )) -------- )))
@@ -103,20 +96,16 @@ namespace Darklight.UnityExt.Game.Grid
             this._config = config;
         }
 
-        public void SetData(List<Cell2D_Data> dataList)
+        public void SetCells(List<Cell2D> cells)
         {
-            if (dataList == null || dataList.Count == 0) return;
-            foreach (Vector2Int key in _cellMap.Keys)
+            if (cells == null || cells.Count == 0) return;
+            foreach (Cell2D cell in cells)
             {
-                if (!_cellMap.ContainsKey(key)) continue;
-                Cell2D cell = _cellMap[key];
-
-                // Find the data with the same key
-                Cell2D_Data data = dataList.Find(d => d.Key == key);
-                if (data == null) continue;
-
-                // Set the cell's data
-                cell.SetData(data);
+                if (cell == null) continue;
+                if (_cellMap.ContainsKey(cell.Data.Key))
+                    _cellMap[cell.Data.Key] = cell;
+                else
+                    _cellMap.Add(cell.Data.Key, cell);
             }
         }
 

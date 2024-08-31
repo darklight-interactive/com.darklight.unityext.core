@@ -27,5 +27,10 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (!initialized) return;
         }
+
+        public void Copy(ICell2DComponent component)
+        {
+            if (!initialized) return;
+        }
     }
 }

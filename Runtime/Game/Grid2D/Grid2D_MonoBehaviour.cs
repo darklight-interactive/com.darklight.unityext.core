@@ -70,18 +70,19 @@ namespace Darklight.UnityExt.Game.Grid
         public virtual void SaveGridData()
         {
             if (dataObj == null) return;
-            List<Cell2D_Data> dataList = grid.GetData();
-            dataObj.SetData(dataList);
+            dataObj.SaveCells(grid.GetCells());
+
+            Debug.Log($"{PREFIX} saved {grid.GetCells().Count} cells.", this);
         }
 
         public virtual void LoadGridData()
         {
             if (dataObj == null) return;
+            List<Cell2D> loadedCells = dataObj.LoadCells();
+            if (loadedCells == null || loadedCells.Count == 0) return;
 
-            List<Cell2D_Data> dataList = dataObj.GetData();
-            if (dataList == null || dataList.Count == 0) return;
-
-            grid.SetData(dataList);
+            grid.SetCells(loadedCells);
+            Debug.Log($"{PREFIX} loaded {loadedCells.Count} cells.", this);
         }
 
         public virtual void ClearData()

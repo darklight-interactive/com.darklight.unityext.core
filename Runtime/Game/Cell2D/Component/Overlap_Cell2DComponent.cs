@@ -69,6 +69,15 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         public void DrawEditorGizmos() { }
+
+        public void Copy(ICell2DComponent component)
+        {
+            if (!(component is Overlap_Cell2DComponent)) return;
+            Overlap_Cell2DComponent overlapComponent = component as Overlap_Cell2DComponent;
+
+            Cell = overlapComponent.Cell;
+            _layerMask = overlapComponent.layerMask;
+        }
     }
 
 }

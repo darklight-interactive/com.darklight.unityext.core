@@ -10,7 +10,6 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class Cell2D
     {
-
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField, ShowOnly] string _name = "Cell2D";
         [SerializeField, HideInInspector] Cell2D_Config _config;
@@ -20,6 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         public Cell2D_Config Config { get => _config; }
         public Cell2D_Data Data { get => _data; }
+        public Cell2D_Composite Composite { get => _composite; }
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Cell2D(Vector2Int key) => Initialize(key, null);
@@ -52,6 +52,18 @@ namespace Darklight.UnityExt.Game.Grid
             _composite.UpdateComponents(_config);
         }
 
+        public Cell2D Clone()
+        {
+            Cell2D clone = new Cell2D(Data.Key);
+            Cell2D_Data newData = new Cell2D_Data(Data);
+            Cell2D_Config newConfig = new Cell2D_Config(Config);
+            Cell2D_Composite newComposite = new Cell2D_Composite(Composite);
+            clone.SetData(newData);
+            clone.SetConfig(newConfig);
+            clone.SetComposite(newComposite);
+            return clone;
+        }
+
         // (( VISITOR PATTERN )) -------- ))
         public void Accept(ICell2DVisitor visitor)
         {
@@ -79,6 +91,7 @@ namespace Darklight.UnityExt.Game.Grid
         // (( SETTERS )) -------- ))
         public void SetData(Cell2D_Data data) => _data = data;
         public void SetConfig(Cell2D_Config config) => _config = config;
+        public void SetComposite(Cell2D_Composite composite) => _composite = composite;
 
         // (( GIZMOS )) -------- ))
         public void DrawGizmos()

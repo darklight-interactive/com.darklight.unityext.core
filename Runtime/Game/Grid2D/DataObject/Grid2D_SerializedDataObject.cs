@@ -7,24 +7,33 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public class Grid2D_SerializedDataObject : ScriptableObject
     {
-        [SerializeField] Cell2D_Data[] _savedData;
+        [SerializeField] Cell2D[] savedCells = new Cell2D[0];
 
-        public List<Cell2D_Data> GetData()
+        public List<Cell2D> LoadCells()
         {
-            if (_savedData == null || _savedData.Length == 0)
-                return new List<Cell2D_Data>();
-            return _savedData.ToList();
+            // Return a new list of cells from the saved cells array
+            List<Cell2D> savedCellsList = savedCells.ToList();
+            List<Cell2D> clonedCells = new();
+            foreach (Cell2D cell in savedCellsList)
+            {
+                clonedCells.Add(cell.Clone());
+            }
+            return clonedCells;
         }
 
-        public void SetData(List<Cell2D_Data> data)
+        public void SaveCells(List<Cell2D> cells)
         {
-            List<Cell2D_Data> dataList = new List<Cell2D_Data>(data);
-            _savedData = dataList.ToArray();
-        }
+            // Create a clone of the cells list
+            List<Cell2D> newCells = new List<Cell2D>(cells);
+            List<Cell2D> clonedCells = new();
+            foreach (Cell2D cell in newCells)
+            {
+                clonedCells.Add(cell.Clone());
+            }
 
-        public void ClearData()
-        {
-            _savedData = new Cell2D_Data[0];
+            // Save the cloned cells to the saved cells array
+            savedCells = clonedCells.ToArray();
         }
+        public void ClearData() => savedCells = new Cell2D[0];
     }
 }

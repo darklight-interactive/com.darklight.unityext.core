@@ -23,7 +23,17 @@ namespace Darklight.UnityExt.Game.Grid
         {
             _cell = cell;
             _componentFlags = cell.Config.ComponentFlags;
-            UpdateComponents(cell.Config);
+
+            _componentMap = new Dictionary<ComponentType, ICell2DComponent>();
+            _components = new List<ICell2DComponent>();
+        }
+
+        public Cell2D_Composite(Cell2D_Composite originComposite)
+        {
+            _cell = originComposite._cell;
+            _componentFlags = originComposite._componentFlags;
+
+            LoadComponents(originComposite._components);
         }
 
         // ======== [[ METHODS ]] ============================================================ >>>>
@@ -35,8 +45,23 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
+        public void LoadComponents(List<ICell2DComponent> originComponents)
+        {
+            _componentMap = new Dictionary<ComponentType, ICell2DComponent>();
+            foreach (ICell2DComponent component in originComponents)
+            {
+                ICell2DComponent newComponent = Cell2DComponentFactory.CreateComponent(component.Type, _cell);
+                newComponent.Copy(component);
+                _componentMap.Add(newComponent.Type, newComponent);
+            }
+            Refresh();
+        }
+
         public void UpdateComponents(Cell2D_Config config)
         {
+            if (_componentMap == null)
+                _componentMap = new Dictionary<ComponentType, ICell2DComponent>();
+
             bool ShouldHaveComponent(ComponentType type)
             {
                 return (config.ComponentFlags & type) == type;
