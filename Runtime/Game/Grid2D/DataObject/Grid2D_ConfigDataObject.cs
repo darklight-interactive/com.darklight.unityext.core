@@ -23,81 +23,76 @@ namespace Darklight.UnityExt.Game.Grid
             { "Forward", Vector3.forward },
             { "Back", Vector3.back }
         };
-        public bool editor_showTransform => !_lockToTransform;
+        bool _showTransform => !_lockToTransform;
         #endregion
 
-        [Header("-- Grid Transform ---- >>")]
+        // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
+        // (( GRID2D CONFIG )) ---- >>
+        [Header("-- GRID2D CONFIG -- >>")]
         [SerializeField] bool _lockToTransform = true;
-        [SerializeField] Grid2D_Config.Alignment _gridAlignment = Grid2D_Config.Alignment.Center;
-        [SerializeField, Dropdown("editor_directions")] Vector3 _gridNormal = Vector3.up;
 
-        [Header("-- Grid Dimensions ---- >>")]
-        [SerializeField, Range(1, 10)] int _numColumns = 3;
-        [SerializeField, Range(1, 10)] int _numRows = 3;
+        [ShowIf("_showTransform")]
+        [SerializeField] Vector3 _gridPosition = new Vector3(0, 0, 0);
+
+        [ShowIf("_showTransform"), Dropdown("editor_directions")]
+        [SerializeField] Vector3 _gridNormal = Vector3.forward;
 
         [Space(10)]
-        [Header("-- Cell Dimensions ---- >>")]
-        [SerializeField, Range(0.1f, 10f)] float _cellWidth = 1;
-        [SerializeField, Range(0.1f, 10f)] float _cellHeight = 1;
+        [SerializeField] Grid2D.Alignment _gridAlignment = Grid2D.Alignment.Center;
+        [SerializeField, Range(1, 100)] int _gridColumns = 3;
+        [SerializeField, Range(1, 100)] int _gridRows = 3;
 
-        [Header("-- Cell Spacing ---- >>")]
-        [SerializeField, Range(-0.5f, 10)] float _cellHorzSpacing = 0;
-        [SerializeField, Range(-0.5f, 10)] float _cellVertSpacing = 0;
+        // (( CELL2D CONFIG )) ---- >>
+        [HorizontalLine(4, EColor.Gray)]
+        [Header("-- CELL2D CONFIG -- >>")]
+        [SerializeField, Range(0.1f, 10)] float _cellWidth = 1;
+        [SerializeField, Range(0.1f, 10)] float _cellHeight = 1;
 
-        [Header("-- Cell Bonding ---- >>")]
-        [SerializeField, Range(-1, 1)] float _cellBondingX = 0;
-        [SerializeField, Range(-1, 1)] float _cellBondingY = 0;
+        [Space(10)]
+        [SerializeField, Range(0.1f, 10)] float _cellSpacingX = 1;
+        [SerializeField, Range(0.1f, 10)] float _cellSpacingY = 1;
 
-        [Header("-- Cell Components ---- >>")]
+        [Space(10)]
+        [SerializeField, Range(0, 10)] float _cellBondingX = 0;
+        [SerializeField, Range(0, 10)] float _cellBondingY = 0;
+
+        // (( CELL2D COMPONENTS )) ---- >>
+        [HorizontalLine(4, EColor.Gray)]
+        [Header("-- CELL2D COMPONENTS -- >>")]
         [SerializeField, EnumFlags] ICell2DComponent.TypeKey componentTypes;
 
-        [Space(10)]
-        [Header("-- Gizmos ---- >>")]
-        [SerializeField] bool _showGizmos = true;
-        [SerializeField] bool _showEditorGizmos = true;
-
-
-        public bool showGizmos => _showGizmos;
-        public bool showEditorGizmos => _showEditorGizmos;
-
-        public virtual Grid2D_Config ToConfig()
+        // ======== [[ PROPERTIES ]] ======================================================= >>>>
+        public Cell2D_Config CellConfig
         {
-            Grid2D_Config config = new Grid2D_Config();
-
-            config.SetGizmos(_showGizmos, _showEditorGizmos);
-
-            config.SetLockToTransform(_lockToTransform);
-            config.SetGridAlignment(_gridAlignment);
-            config.SetGridNormal(_gridNormal);
-            config.SetGridDimensions(new Vector2Int(_numColumns, _numRows));
-
-            config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
-            config.SetCellSpacing(new Vector2(_cellHorzSpacing, _cellVertSpacing));
-            config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
-
-            return config;
+            get
+            {
+                Cell2D_Config config = new Cell2D_Config();
+                config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
+                config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
+                config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
+                return config;
+            }
         }
 
-        public virtual void ResetToDefaults()
+        public Grid2D_Config GridConfig
         {
-            _lockToTransform = true;
-            _gridAlignment = Grid2D_Config.Alignment.Center;
-            _gridNormal = Vector3.up;
+            get
+            {
+                Grid2D_Config config = new Grid2D_Config();
+                config.SetLockToTransform(_lockToTransform);
+                config.SetGridAlignment(_gridAlignment);
+                config.SetGridPosition(_gridPosition);
+                config.SetGridNormal(_gridNormal);
+                config.SetGridDimensions(new Vector2Int(_gridColumns, _gridRows));
 
-            _numColumns = 3;
-            _numRows = 3;
+                // Set the cell config from the property
+                config.SetCellConfig(CellConfig);
 
-            _cellBondingX = 0;
-            _cellBondingY = 0;
-
-            _cellWidth = 1;
-            _cellHeight = 1;
-
-            _cellHorzSpacing = 0;
-            _cellVertSpacing = 0;
-
-            _showGizmos = true;
-            _showEditorGizmos = true;
+                return config;
+            }
         }
+
+        // ======== [[ METHODS ]] ======================================================= >>>>
+
     }
 }

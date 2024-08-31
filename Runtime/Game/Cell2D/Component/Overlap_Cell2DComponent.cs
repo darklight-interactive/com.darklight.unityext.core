@@ -43,7 +43,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         void UpdateColliders(LayerMask layerMask)
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             Vector3 halfExtents = Vector3.one * radius;
 
             // Use Physics.OverlapBox to detect colliders within the cell dimensions

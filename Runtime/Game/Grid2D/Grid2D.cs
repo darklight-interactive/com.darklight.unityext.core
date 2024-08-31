@@ -12,19 +12,26 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-
-    [System.Serializable]
+    [Serializable]
     public class Grid2D
     {
-
-
         Dictionary<Vector2Int, Cell2D> _cellMap = new Dictionary<Vector2Int, Cell2D>();
+
+        // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField] Grid2D_Config _config;
+        [SerializeField] Cell2D_Config _cellConfig;
         [SerializeField] List<Cell2D> _cells = new List<Cell2D>();
 
+        // ======== [[ PROPERTIES ]] ======================================================= >>>>
+        public Grid2D_Config Config => _config;
+
+        // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Grid2D() => Initialize(null);
         public Grid2D(Grid2D_Config config) => Initialize(config);
-        public virtual void Initialize(Grid2D_Config config)
+
+        // ======== [[ PUBLIC METHODS ]] ============================================================ >>>>
+        #region (( RUNTIME )) -------- )))
+        public void Initialize(Grid2D_Config config)
         {
             // Create a basic config if none is provided
             if (config == null)
@@ -41,7 +48,7 @@ namespace Darklight.UnityExt.Game.Grid
             Resize();
 
             // Update the cells
-            Cell2DUpdater cellUpdater = new Cell2DUpdater(_config);
+            Cell2DUpdater cellUpdater = new Cell2DUpdater(this);
             MapFunction(cell =>
             {
                 cell.Accept(cellUpdater);
@@ -58,13 +65,9 @@ namespace Darklight.UnityExt.Game.Grid
             // Clear the cell map
             _cellMap.Clear();
         }
+        #endregion
 
-        public void SetConfig(Grid2D_Config config)
-        {
-            if (config == null) return;
-            this._config = config;
-        }
-
+        // (( MAP FUNCTION )) -------- )))
         public void MapFunction(Func<Cell2D, Cell2D> mapFunction)
         {
             if (_cellMap == null) return;
@@ -81,6 +84,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
+        // (( GETTERS )) -------- )))
         public List<Cell2D_SerializedData> GetData()
         {
             List<Cell2D_SerializedData> dataList = new List<Cell2D_SerializedData>();
@@ -93,13 +97,20 @@ namespace Darklight.UnityExt.Game.Grid
             return dataList;
         }
 
+        // (( SETTERS )) -------- )))
+        public void SetConfig(Grid2D_Config config)
+        {
+            if (config == null) return;
+            this._config = config;
+        }
+
         public void SetData(List<Cell2D_SerializedData> dataList)
         {
             if (dataList == null || dataList.Count == 0) return;
             foreach (Vector2Int key in _cellMap.Keys)
             {
                 if (!_cellMap.ContainsKey(key)) continue;
-                ICell cell = _cellMap[key];
+                Cell2D cell = _cellMap[key];
 
                 // Find the data with the same key
                 Cell2D_SerializedData data = dataList.Find(d => d.Key == key);
@@ -110,7 +121,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        // Function to create a new cell
+        // ======== [[ PRIVATE METHODS ]] ======================================================= >>>>
         bool CreateCell(Vector2Int key)
         {
             if (_cellMap.ContainsKey(key))
@@ -124,7 +135,7 @@ namespace Darklight.UnityExt.Game.Grid
         void Generate()
         {
             // Iterate through the grid dimensions and create cells
-            Vector2Int dimensions = _config.gridDimensions;
+            Vector2Int dimensions = _config.GridDimensions;
             for (int x = 0; x < dimensions.x; x++)
             {
                 for (int y = 0; y < dimensions.y; y++)
@@ -142,7 +153,7 @@ namespace Darklight.UnityExt.Game.Grid
         void Resize()
         {
             if (_cellMap == null) return;
-            Vector2Int newDimensions = _config.gridDimensions;
+            Vector2Int newDimensions = _config.GridDimensions;
 
             // Remove null cells from the map
             List<Vector2Int> keys = new List<Vector2Int>(_cellMap.Keys);
@@ -155,6 +166,14 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
             Generate();
+        }
+
+        // ======== [[ NESTED TYPES ]] ======================================================= >>>>
+        public enum Alignment
+        {
+            TopLeft, TopCenter, TopRight,
+            MiddleLeft, Center, MiddleRight,
+            BottomLeft, BottomCenter, BottomRight
         }
     }
 }

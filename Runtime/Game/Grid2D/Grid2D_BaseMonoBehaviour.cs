@@ -40,7 +40,7 @@ namespace Darklight.UnityExt.Game.Grid
             GenerateDataObjects();
 
             // Create a new grid from the config object
-            Grid2D_Config config = configObj.ToConfig();
+            Grid2D_Config config = configObj.GridConfig;
             grid = new Grid2D(config);
             LoadGridData();
             //Debug.Log($"{prefix} initialized grid.", this);
@@ -52,13 +52,17 @@ namespace Darklight.UnityExt.Game.Grid
                 InitializeGrid();
 
             // Assign the grid's config from the config object
-            Grid2D_Config config = configObj.ToConfig();
-            config.SetGridPosition(transform.position);
+            Grid2D_Config config = configObj.GridConfig;
+            if (config.LockToTransform)
+            {
+                // Set the grid's position and normal to the transform's position and forward
+                config.SetGridPosition(transform.position);
+                config.SetGridNormal(transform.forward);
+            }
             grid.SetConfig(config);
 
             // Update the grid
             grid.Update();
-            //Debug.Log($"{prefix} updated grid.", this);
         }
 
         #region (( DATA MANAGEMENT )) ------------------ >>
@@ -90,7 +94,6 @@ namespace Darklight.UnityExt.Game.Grid
         public void OnDrawGizmos()
         {
             if (grid == null) return;
-            if (!configObj.showGizmos) return;
 
             Cell2D_GizmoRenderer gizmoRenderer = new Cell2D_GizmoRenderer();
             grid.MapFunction(cell =>
@@ -103,7 +106,6 @@ namespace Darklight.UnityExt.Game.Grid
         public void DrawEditorGizmos()
         {
             if (grid == null) return;
-            if (!configObj.showEditorGizmos) return;
 
             Cell2D_EditorGizmoRenderer editorGizmoRenderer = new Cell2D_EditorGizmoRenderer();
             grid.MapFunction(cell =>

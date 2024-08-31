@@ -41,14 +41,14 @@ namespace Darklight.UnityExt.Game.Grid
 
         public void DrawGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.BoldCenteredStyle);
         }
 
 #if UNITY_EDITOR
         public void DrawEditorGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawButtonHandle(position, radius, normal, Color.yellow, () =>
             {
                 _weight += 5;

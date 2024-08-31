@@ -5,64 +5,46 @@ using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
-    interface ICell
-    {
-        string Name { get; }
-        Cell2D_SerializedData Data { get; }
-        List<ICell2DComponent> Components { get; }
-
-        void Accept(ICell2DVisitor visitor);
-        void SetData(Cell2D_SerializedData data);
-
-        void AssignComponent(ICell2DComponent component);
-        void RemoveComponent(ICell2DComponent component);
-    }
-
     [System.Serializable]
-    public class Cell2D : ICell
+    public class Cell2D
     {
-        [SerializeField, ShowOnly] string _name;
-        [SerializeField] Cell2D_SerializedData _data;
+        // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
+        [SerializeField, ShowOnly] string _name = "Cell2D";
+        [SerializeField] Cell2D_SerializedData _serializedData;
 
+        // ======== [[ PROPERTIES ]] ======================================================= >>>>
+        public Cell2D_SerializedData Data { get => _serializedData; }
 
-        public string Name => Data.Name;
-        public Cell2D_SerializedData Data { get => _data; private set => _data = value; }
-        public List<ICell2DComponent> Components { get => _data.Components; }
-
-
+        // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Cell2D(Vector2Int key)
         {
-            Data = new Cell2D_SerializedData(key);
-            Data.Initialize(key);
-
-            _name = Data.Name;
+            _serializedData = new Cell2D_SerializedData(key);
+            _name = $"Cell2D ({key.x},{key.y})";
         }
 
+        // ======== [[ METHODS ]] ============================================================ >>>>
+
+        // (( RUNTIME )) -------- )))
+        public void Update()
+        {
+            if (_serializedData == null) return;
+            if (_serializedData.Components == null) return;
+
+            // Update the components
+            foreach (ICell2DComponent component in _serializedData.Components)
+                component.Update();
+        }
+
+        // (( VISITOR PATTERN )) -------- ))
         public void Accept(ICell2DVisitor visitor)
         {
             visitor.VisitCell(this);
         }
 
-        public virtual void SetData(Cell2D_SerializedData data)
-        {
-            Data = data;
-        }
+        // (( SERIALIZATION )) -------- ))
+        public virtual void SetData(Cell2D_SerializedData data) => _serializedData = data;
 
-        public void AssignComponent(ICell2DComponent component)
-        {
-            Data.AddComponent(component);
-        }
-
-        public void RemoveComponent(ICell2DComponent component)
-        {
-            Data.RemoveComponent(component);
-        }
-
-        public bool HasComponent(ICell2DComponent.TypeKey type)
-        {
-            return Data.HasComponent(type);
-        }
-
+        // (( GETTERS )) -------- ))
         public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
 
         public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
@@ -72,11 +54,35 @@ namespace Darklight.UnityExt.Game.Grid
             dimensions = Data.Dimensions;
         }
 
-        public void GetTransformData(out Vector3 position, out Vector3 normal, out float radius)
+        public void GetTransformData(out Vector3 position, out float radius, out Vector3 normal)
         {
             position = Data.Position;
-            normal = Data.Normal;
             radius = GetMinDimension() / 2;
+            normal = Data.Normal;
+        }
+
+        // (( SETTERS )) -------- ))
+
+        // (( GIZMOS )) -------- ))
+        public void DrawGizmos()
+        {
+            if (_serializedData == null) return;
+
+            GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            CustomGizmos.DrawWireSquare(position, radius, normal, Color.gray);
+
+            if (_serializedData.Components == null) return;
+            foreach (ICell2DComponent component in _serializedData.Components)
+                component.DrawGizmos();
+        }
+
+        public void DrawEditorGizmos()
+        {
+            if (_serializedData == null) return;
+            if (_serializedData.Components == null) return;
+
+            foreach (ICell2DComponent component in _serializedData.Components)
+                component.DrawEditorGizmos();
         }
     }
 }

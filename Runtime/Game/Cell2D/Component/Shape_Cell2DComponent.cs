@@ -30,13 +30,13 @@ namespace Darklight.UnityExt.Game.Grid
             Name = "Shape2DComponent";
             Type = ICell2DComponent.TypeKey.Shape;
 
-            cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape = new Shape2D(position, radius, _segments, normal, Color.white);
         }
 
         public void Update()
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape.UpdateShape(position, radius, _segments, normal, Color.white);
         }
 

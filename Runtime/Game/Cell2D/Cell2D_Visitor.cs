@@ -11,28 +11,25 @@ namespace Darklight.UnityExt.Game.Grid
 
     public class Cell2DUpdater : ICell2DVisitor
     {
-        Grid2D_Config config;
-        public Cell2DUpdater(Grid2D_Config config)
+        Grid2D _grid;
+        public Cell2DUpdater(Grid2D grid)
         {
-            this.config = config;
+            _grid = grid;
         }
 
         public void VisitCell(Cell2D cell)
         {
-            Vector3 position = config.CalculatePositionFromKey(cell.Data.Key);
-            Vector2Int coordinate = config.CalculateCoordinateFromKey(cell.Data.Key);
-            Vector3 normal = config.gridNormal;
-            Vector3 dimensions = config.cellDimensions;
+            // Calculate the cell's transform
+            Grid2D_SpatialUtility.CalculateCellTransform(
+                out Vector3 position, out Vector2Int coordinate,
+                out Vector3 normal, out Vector2 dimensions,
+                cell, _grid.Config);
 
+            // Assign the calculated values to the cell
             cell.Data.SetPosition(position);
             cell.Data.SetCoordinate(coordinate);
             cell.Data.SetNormal(normal);
             cell.Data.SetDimensions(dimensions);
-
-            foreach (ICell2DComponent component in cell.Components)
-            {
-                component.Update();
-            }
         }
     }
 
@@ -40,10 +37,7 @@ namespace Darklight.UnityExt.Game.Grid
     {
         public void VisitCell(Cell2D cell)
         {
-            foreach (ICell2DComponent component in cell.Components)
-            {
-                component.DrawGizmos();
-            }
+            cell.DrawGizmos();
         }
     }
 
@@ -51,10 +45,7 @@ namespace Darklight.UnityExt.Game.Grid
     {
         public void VisitCell(Cell2D cell)
         {
-            foreach (ICell2DComponent component in cell.Components)
-            {
-                component.DrawEditorGizmos();
-            }
+            cell.DrawEditorGizmos();
         }
     }
 }
