@@ -61,6 +61,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class Overlap2DComponent : AbstractCellComponent, ICellComponent
     {
         public CellComponentType type { get; protected set; } = CellComponentType.Overlap;
+        public LayerMask layerMask { get => _layerMask; set => _layerMask = value; }
 
         [SerializeField] LayerMask _layerMask;
         Collider2D[] _colliders;
@@ -74,6 +75,11 @@ namespace Darklight.UnityExt.Game.Grid
         public Overlap2DComponent(BaseCell cell, LayerMask layerMask)
         {
             _layerMask = layerMask;
+            Initialize(cell);
+        }
+        public Overlap2DComponent(BaseCell cell, Overlap2DComponent template)
+        {
+            _layerMask = template.layerMask;
             Initialize(cell);
         }
 
@@ -114,6 +120,11 @@ namespace Darklight.UnityExt.Game.Grid
             _shape = null;
             Initialize(cell);
         }
+        public Shape2DComponent(BaseCell cell, Shape2DComponent template)
+        {
+            _shape = template.Shape;
+            Initialize(cell);
+        }
 
         public override void Initialize(BaseCell cell)
         {
@@ -144,13 +155,18 @@ namespace Darklight.UnityExt.Game.Grid
     {
         public CellComponentType type { get; protected set; } = CellComponentType.Weight;
 
-        [SerializeField] int _weight;
+        [SerializeField, Range(0, 100)] int _weight;
         public int Weight { get => _weight; }
 
         public WeightComponent() { }
         public WeightComponent(BaseCell cell)
         {
             _weight = 0;
+            Initialize(cell);
+        }
+        public WeightComponent(BaseCell cell, WeightComponent template)
+        {
+            _weight = template.Weight;
             Initialize(cell);
         }
 
@@ -161,7 +177,11 @@ namespace Darklight.UnityExt.Game.Grid
             _weight = weight;
         }
 
-        public void DrawGizmos() { }
+        public void DrawGizmos()
+        {
+            cell.GetTransformData(out Vector3 position, out Vector3 normal, out float radius);
+            CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.BoldCenteredStyle);
+        }
         public void DrawEditorGizmos() { }
     }
 }

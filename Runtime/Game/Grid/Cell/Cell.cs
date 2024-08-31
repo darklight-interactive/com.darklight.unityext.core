@@ -61,6 +61,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             if (!_components.ContainsKey(component.type))
             {
+                component.Initialize(this);
                 _components.Add(component.type, component);
                 _componentTypes.Add(component.type);
             }

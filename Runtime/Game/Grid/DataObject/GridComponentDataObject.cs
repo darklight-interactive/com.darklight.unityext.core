@@ -12,8 +12,10 @@ namespace Darklight.UnityExt.Game.Grid
     [CreateAssetMenu(menuName = "Darklight/Grid/ComponentDataObject")]
     public class GridComponentDataObject : ScriptableObject
     {
-        [EnumFlags]
-        [SerializeField] CellComponentType componentTypes;
+
+        private bool _hasOverlap;
+        private bool _hasShape;
+        private bool _hasWeight;
 
         // Dictionary to map component types to their creation functions
         private readonly Dictionary<CellComponentType, System.Func<ICellComponent>> componentFactories = new Dictionary<CellComponentType, System.Func<ICellComponent>>()
@@ -23,6 +25,20 @@ namespace Darklight.UnityExt.Game.Grid
             { CellComponentType.Shape, () => new Shape2DComponent() },
             { CellComponentType.Weight, () => new WeightComponent() }
         };
+
+
+        [EnumFlags]
+        [SerializeField] CellComponentType componentTypes;
+
+        [Header("Component Templates")]
+        [SerializeField, ShowIf("_hasOverlap")]
+        Overlap2DComponent overlapComponentTemplate = new Overlap2DComponent();
+
+        [SerializeField, ShowIf("_hasShape")]
+        Shape2DComponent shapeComponentTemplate = new Shape2DComponent();
+
+        [SerializeField, ShowIf("_hasWeight")]
+        WeightComponent weightComponentTemplate = new WeightComponent();
 
         public void UpdateComponents(BaseCell cell)
         {
@@ -38,6 +54,10 @@ namespace Darklight.UnityExt.Game.Grid
                 bool shouldHaveComponent = ShouldHaveComponent(type);
                 UpdateComponentForCell(cell, type, shouldHaveComponent);
             }
+
+            _hasOverlap = ShouldHaveComponent(CellComponentType.Overlap);
+            _hasShape = ShouldHaveComponent(CellComponentType.Shape);
+            _hasWeight = ShouldHaveComponent(CellComponentType.Weight);
 
             /*
             Debug.Log($"{cell.Name} has components: " +
@@ -57,7 +77,26 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (shouldHave)
             {
-                AddComponentToCell(cell, type);
+                ICellComponent component = CreateComponent(type);
+                if (type == CellComponentType.Overlap)
+                {
+                    Overlap2DComponent overlapComponent = new Overlap2DComponent(cell, overlapComponentTemplate);
+                    AddComponentToCell(cell, overlapComponent);
+                }
+                else if (type == CellComponentType.Shape)
+                {
+                    Shape2DComponent shapeComponent = new Shape2DComponent(cell, shapeComponentTemplate);
+                    AddComponentToCell(cell, shapeComponent);
+                }
+                else if (type == CellComponentType.Weight)
+                {
+                    WeightComponent weightComponent = new WeightComponent(cell, weightComponentTemplate);
+                    AddComponentToCell(cell, weightComponent);
+                }
+                else
+                {
+                    AddComponentToCell(cell, component);
+                }
             }
             else
             {
@@ -65,18 +104,28 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 
-        private void AddComponentToCell(BaseCell cell, CellComponentType type)
+        private ICellComponent CreateComponent(CellComponentType type)
         {
             if (componentFactories.TryGetValue(type, out var factory))
             {
-                ICellComponent component = factory.Invoke();
-                component.Initialize(cell);
-                cell.AddComponent(component);
+                return factory.Invoke();
             }
             else
             {
-                Debug.LogError($"Cannot add component of unknown type: {type}");
+                Debug.LogError($"Cannot create component of unknown type: {type}");
+                return null;
             }
+        }
+
+        private void AddComponentToCell(BaseCell cell, ICellComponent component)
+        {
+            if (cell == null || component == null)
+            {
+                Debug.LogError("Cannot add component to a null cell.");
+                return;
+            }
+
+            cell.AddComponent(component);
         }
 
         private void RemoveComponentFromCell(BaseCell cell, CellComponentType type)

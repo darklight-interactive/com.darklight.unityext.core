@@ -49,6 +49,13 @@ namespace Darklight.UnityExt.Editor
             fontStyle = FontStyle.Bold
         };
 
+        public static GUIStyle BoldCenteredStyle => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 12,
+            fontStyle = FontStyle.Bold
+        };
+
         public static GUIStyle SmallTextStyle => new GUIStyle(GUI.skin.label)
         {
             fontSize = 10
