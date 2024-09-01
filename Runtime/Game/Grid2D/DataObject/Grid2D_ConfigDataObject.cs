@@ -57,38 +57,30 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0, 10)] float _cellBondingX = 0;
         [SerializeField, Range(0, 10)] float _cellBondingY = 0;
 
-        // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        public Cell2D.Config CellConfig
-        {
-            get
-            {
-                Cell2D.Config config = new Cell2D.Config();
-                config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
-                config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
-                config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
-                return config;
-            }
-        }
-
-        public Grid2D_Config GridConfig
-        {
-            get
-            {
-                Grid2D_Config config = new Grid2D_Config();
-                config.SetLockToTransform(_lockToTransform);
-                config.SetGridAlignment(_gridAlignment);
-                config.SetGridPosition(_gridPosition);
-                config.SetGridNormal(_gridNormal);
-                config.SetGridDimensions(new Vector2Int(_gridColumns, _gridRows));
-
-                // Set the cell config from the property
-                config.SetCellConfig(CellConfig);
-
-                return config;
-            }
-        }
-
         // ======== [[ METHODS ]] ======================================================= >>>>
+        public Cell2D.Config CreateCellConfig()
+        {
+            Cell2D.Config config = new Cell2D.Config();
+            config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
+            config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
+            config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
+            return config;
+        }
 
+        public Grid2D_Config CreateGridConfig()
+        {
+            Grid2D_Config config = new Grid2D_Config();
+            config.SetLockToTransform(_lockToTransform);
+            config.SetGridAlignment(_gridAlignment);
+            config.SetGridPosition(_gridPosition);
+            config.SetGridNormal(_gridNormal);
+            config.SetGridDimensions(new Vector2Int(_gridColumns, _gridRows));
+
+            // Set the cell config from the property
+            Cell2D.Config cellConfig = CreateCellConfig();
+            config.SetCellConfig(cellConfig);
+
+            return config;
+        }
     }
 }

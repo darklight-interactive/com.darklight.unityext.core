@@ -26,7 +26,7 @@ namespace Darklight.UnityExt.Game.Grid
         public Cell2D(Vector2Int key, Config config) => Initialize(key, config);
 
         // ======== [[ METHODS ]] ============================================================ >>>>
-        // (( RUNTIME )) -------- )))
+        // -- (( RUNTIME )) -------- )))
         public void Initialize(Vector2Int key, Config config)
         {
             // Initialize the configuration
@@ -49,9 +49,10 @@ namespace Darklight.UnityExt.Game.Grid
             if (_data == null) return;
             if (_composite == null) return;
 
-            _composite.UpdateComponents(_config);
+            _composite.UpdateComponents();
         }
 
+        // -- (( HANDLERS )) -------- )))
         public void RecalculateDataFromGrid(Grid2D grid)
         {
             if (_data == null) return;
@@ -68,6 +69,13 @@ namespace Darklight.UnityExt.Game.Grid
             data.SetCoordinate(coordinate);
             data.SetNormal(normal);
             data.SetDimensions(dimensions);
+        }
+
+        public void InitializeComponents(ComponentFlags flags)
+        {
+            if (_composite == null) return;
+
+            _composite.SetComponentFlags(flags);
         }
 
         public Cell2D Clone()

@@ -23,7 +23,7 @@ namespace Darklight.UnityExt.Game.Grid
         [System.Serializable]
         public class Component : ICell2DComponent
         {
-            [SerializeField, ShowOnly] string _name = "Base2DComponent";
+            [SerializeField, ShowOnly] string _name = "BaseComponent";
             [SerializeField, ShowOnly] int _guid = System.Guid.NewGuid().GetHashCode();
             [SerializeField, ShowOnly] bool _initialized = false;
 

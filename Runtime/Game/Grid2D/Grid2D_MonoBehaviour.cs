@@ -16,94 +16,108 @@ namespace Darklight.UnityExt.Game.Grid
     [ExecuteAlways]
     public class Grid2D_MonoBehaviour : MonoBehaviour
     {
+        // ======== [[ CONSTANTS ]] ======================================================= >>>>
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
         protected const string CONFIG_PATH = ASSET_PATH + "/Config";
         protected const string DATA_PATH = ASSET_PATH + "/SerializedData";
         protected const string PREFIX = "[GRID2D_MONO]";
 
-        [SerializeField] protected Grid2D grid = new Grid2D();
-        [SerializeField, Expandable] protected Grid2D_ConfigDataObject configObj;
-        [SerializeField, Expandable] protected Grid2D_SerializedDataObject dataObj;
+        // ======== [[ FIELDS ]] ======================================================= >>>>
+        [SerializeField] Grid2D _grid = new Grid2D();
+        [SerializeField, Expandable] Grid2D_ConfigDataObject _configObj;
+        [SerializeField, Expandable] Grid2D_SerializedDataObject _dataObj;
 
-        protected virtual void GenerateDataObjects()
-        {
-            configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_ConfigDataObject>
-                (CONFIG_PATH, $"{PREFIX}_Config");
+        // ======== [[ PROPERTIES ]] ======================================================= >>>>
+        public Grid2D Grid => _grid;
 
-            dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_SerializedDataObject>
-                (DATA_PATH, $"{PREFIX}_Data");
-        }
 
+        // ======== [[ METHODS ]] ======================================================= >>>>
+
+        #region  -- (( UNITY RUNTIME )) ------------------ >>
         public void Awake() => InitializeGrid();
-        public virtual void InitializeGrid()
-        {
-            GenerateDataObjects();
 
-            // Create a new grid from the config object
-            Grid2D_Config config = configObj.GridConfig;
-            grid = new Grid2D(config);
-            LoadGridData();
-            //Debug.Log($"{prefix} initialized grid.", this);
-        }
-
-        public void Update() => UpdateGrid();
-        public virtual void UpdateGrid()
+        public void Update()
         {
-            if (grid == null)
+            if (_grid == null)
                 InitializeGrid();
 
             // Assign the grid's config from the config object
-            Grid2D_Config config = configObj.GridConfig;
+            Grid2D_Config config = _configObj.CreateGridConfig();
             if (config.LockToTransform)
             {
                 // Set the grid's position and normal to the transform's position and forward
                 config.SetGridPosition(transform.position);
                 config.SetGridNormal(transform.forward);
             }
-            grid.SetConfig(config);
+            _grid.SetConfig(config);
 
             // Update the grid
-            grid.Update();
+            _grid.Update();
         }
 
-        #region (( DATA MANAGEMENT )) ------------------ >>
+        public void OnDrawGizmos()
+        {
+            if (_grid == null) return;
+            _grid.DrawGizmos();
+        }
+
+        public void DrawEditorGizmos()
+        {
+            if (_grid == null) return;
+            _grid.DrawEditor();
+        }
+        #endregion
+
+        #region -- (( PUBLIC METHODS )) ------------------ >>
+        public void InitializeGrid()
+        {
+            GenerateDataObjects();
+
+            // Create a new grid from the config object
+            Grid2D_Config config = _configObj.CreateGridConfig();
+            _grid = new Grid2D(config);
+            LoadGridData();
+            //Debug.Log($"{prefix} initialized grid.", this);
+        }
+
         public virtual void SaveGridData()
         {
-            if (dataObj == null) return;
-            dataObj.SaveCells(grid.GetCells());
+            if (_dataObj == null) return;
+            _dataObj.SaveCells(_grid.GetCells());
 
-            Debug.Log($"{PREFIX} saved {grid.GetCells().Count} cells.", this);
+            Debug.Log($"{PREFIX} saved {_grid.GetCells().Count} cells.", this);
         }
 
         public virtual void LoadGridData()
         {
-            if (dataObj == null) return;
-            List<Cell2D> loadedCells = dataObj.LoadCells();
+            if (_dataObj == null) return;
+            List<Cell2D> loadedCells = _dataObj.LoadCells();
             if (loadedCells == null || loadedCells.Count == 0) return;
 
-            grid.SetCells(loadedCells);
+            _grid.SetCells(loadedCells);
             Debug.Log($"{PREFIX} loaded {loadedCells.Count} cells.", this);
         }
 
         public virtual void ClearData()
         {
-            if (dataObj == null) return;
-            dataObj.ClearData();
-            grid.Clear();
+            if (_dataObj == null) return;
+            _dataObj.ClearData();
+            _grid.Clear();
         }
         #endregion
 
-        public void OnDrawGizmos()
+        // -- (( PRIVATE METHODS )) ------------------ >>
+        void GenerateDataObjects()
         {
-            if (grid == null) return;
-            grid.DrawGizmos();
+            _configObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_ConfigDataObject>
+                (CONFIG_PATH, $"{PREFIX}_Config");
+
+            _dataObj = ScriptableObjectUtility.CreateOrLoadScriptableObject<Grid2D_SerializedDataObject>
+                (DATA_PATH, $"{PREFIX}_Data");
         }
 
-        public void DrawEditorGizmos()
-        {
-            if (grid == null) return;
-            grid.DrawEditor();
-        }
+
+
     }
 
 #if UNITY_EDITOR
@@ -123,9 +137,9 @@ namespace Darklight.UnityExt.Game.Grid
             _script = (Grid2D_MonoBehaviour)target;
 
             // Cache the serialized properties
-            _gridProp = _serializedObject.FindProperty("grid");
-            _configObjProp = _serializedObject.FindProperty("configObj");
-            _dataObjProp = _serializedObject.FindProperty("dataObj");
+            _gridProp = _serializedObject.FindProperty("_grid");
+            _configObjProp = _serializedObject.FindProperty("_configObj");
+            _dataObjProp = _serializedObject.FindProperty("_dataObj");
 
             _script.InitializeGrid();
         }
@@ -153,7 +167,7 @@ namespace Darklight.UnityExt.Game.Grid
                 Repaint();
             }
 
-            _script.UpdateGrid();
+            _script.Update();
         }
 
         void DrawDataManagementButtons()

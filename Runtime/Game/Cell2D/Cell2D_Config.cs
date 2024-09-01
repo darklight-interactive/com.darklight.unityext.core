@@ -14,13 +14,11 @@ namespace Darklight.UnityExt.Game.Grid
             [SerializeField, ShowOnly] Vector2 _cellDimensions = new Vector2(1, 1);
             [SerializeField, ShowOnly] Vector2 _cellSpacing = new Vector2(1, 1);
             [SerializeField, ShowOnly] Vector2 _cellBonding = new Vector2(0, 0);
-            [SerializeField, EnumFlags, ShowOnly] Cell2D.ComponentFlags _componentFlags = 0;
 
             // ======== [[ PROPERTIES ]] ============================================================ >>>>
             public Vector2 CellDimensions => _cellDimensions;
             public Vector2 CellSpacing => _cellSpacing;
             public Vector2 CellBonding => _cellBonding;
-            public ComponentFlags ComponentFlags => _componentFlags;
 
             // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
             public Config() { }
@@ -29,14 +27,12 @@ namespace Darklight.UnityExt.Game.Grid
                 _cellDimensions = originConfig._cellDimensions;
                 _cellSpacing = originConfig._cellSpacing;
                 _cellBonding = originConfig._cellBonding;
-                _componentFlags = originConfig._componentFlags;
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
             public void SetCellDimensions(Vector2 cellDimensions) => _cellDimensions = cellDimensions;
             public void SetCellSpacing(Vector2 cellSpacing) => _cellSpacing = cellSpacing;
             public void SetCellBonding(Vector2 cellBonding) => _cellBonding = cellBonding;
-            public void SetComponentFlags(ComponentFlags componentFlags) => _componentFlags = componentFlags;
         }
     }
 }

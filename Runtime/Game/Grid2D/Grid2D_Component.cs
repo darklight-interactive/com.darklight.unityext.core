@@ -3,20 +3,24 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public interface IGrid2D_Component
+    [ExecuteAlways]
+    [RequireComponent(typeof(Grid2D_MonoBehaviour))]
+    public class Grid2D_Component : MonoBehaviour
     {
-        Grid2D Grid { get; }
-    }
+        Cell2D.Visitor _componentInitializer => new Cell2D.Visitor(cell =>
+        {
+            cell.InitializeComponents(_cellComponentFlags);
+        });
 
-    [System.Serializable]
-    public abstract class Grid2D_AbstractComponent : MonoBehaviour
-    {
-        // (( CELL2D COMPONENTS )) ---- >>
-        [SerializeField, EnumFlags] Cell2D.ComponentFlags _cellComponentFlags = 0;
-    }
+        [SerializeField, EnumFlags] Cell2D.ComponentFlags _cellComponentFlags = Cell2D.ComponentFlags.Shape;
 
-    public class Grid2D_Component : Grid2D_AbstractComponent
-    {
+        protected Grid2D grid => GetComponent<Grid2D_MonoBehaviour>().Grid;
+
+        [Button]
+        public void Initialize()
+        {
+            grid.SendVisitorToAllCells(_componentInitializer);
+        }
 
     }
 }

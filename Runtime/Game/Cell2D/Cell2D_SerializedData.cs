@@ -19,7 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
             [SerializeField, ShowOnly] int _guid = Guid.NewGuid().GetHashCode();
             [SerializeField, ShowOnly] Vector2Int _key = Vector2Int.zero;
             [SerializeField, ShowOnly] Vector2Int _coordinate = Vector2Int.zero;
-            [SerializeField] Vector2 _dimensions = Vector2.one;
+            [SerializeField, ShowOnly] Vector2 _dimensions = Vector2.one;
             [SerializeField, ShowOnly] Vector3 _position = Vector3.zero;
             [SerializeField, ShowOnly] Vector3 _normal = Vector3.up;
             [SerializeField, ShowOnly] bool _isDisabled = false;

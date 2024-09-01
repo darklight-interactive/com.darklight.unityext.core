@@ -15,23 +15,19 @@ namespace Darklight.UnityExt.Game.Grid
     [Serializable]
     public class Grid2D
     {
-        // ======== [[ FIELDS ]] ======================================================= >>>>
-        Dictionary<Vector2Int, Cell2D> _cellMap = new Dictionary<Vector2Int, Cell2D>();
-
-        // ---- (( SERIALIZED FIELDS )) -------- ))
         [SerializeField] Grid2D_Config _config;
+        Dictionary<Vector2Int, Cell2D> _cellMap = new Dictionary<Vector2Int, Cell2D>();
         [SerializeField] List<Cell2D> _cells = new List<Cell2D>();
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         public Grid2D_Config Config => _config;
-
-        protected Cell2D.Visitor cellUpdater => new Cell2D.Visitor(cell =>
+        Cell2D.Visitor cellUpdateVisitor => new Cell2D.Visitor(cell =>
         {
             cell.RecalculateDataFromGrid(this);
             cell.Update();
         });
-        protected Cell2D.Visitor cellGizmoDrawer => new Cell2D.Visitor(cell => cell.DrawGizmos());
-        protected Cell2D.Visitor cellEditorDrawer => new Cell2D.Visitor(cell => cell.DrawEditor());
+        Cell2D.Visitor cellGizmoVisitor => new Cell2D.Visitor(cell => cell.DrawGizmos());
+        Cell2D.Visitor cellEditorVisitor => new Cell2D.Visitor(cell => cell.DrawEditor());
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Grid2D() => Initialize(null);
@@ -56,11 +52,7 @@ namespace Darklight.UnityExt.Game.Grid
             Resize();
 
             // Update the cells
-            MapFunction(cell =>
-            {
-                cell.Accept(cellUpdater);
-                return cell;
-            });
+            SendVisitorToAllCells(cellUpdateVisitor);
 
             _cells = new List<Cell2D>(_cellMap.Values.ToList());
         }
@@ -76,30 +68,18 @@ namespace Darklight.UnityExt.Game.Grid
         public void DrawGizmos()
         {
             if (_cellMap == null || _cellMap.Count == 0) return;
-
-            // Draw the gizmos for each cell
-            MapFunction(cell =>
-            {
-                cell.Accept(cellGizmoDrawer);
-                return cell;
-            });
+            SendVisitorToAllCells(cellGizmoVisitor);
         }
 
         public void DrawEditor()
         {
             if (_cellMap == null || _cellMap.Count == 0) return;
-
-            // Draw the editor gizmos for each cell
-            MapFunction(cell =>
-            {
-                cell.Accept(cellEditorDrawer);
-                return cell;
-            });
+            SendVisitorToAllCells(cellEditorVisitor);
         }
         #endregion
 
         // (( MAP FUNCTION )) -------- )))
-        public void MapFunction(Func<Cell2D, Cell2D> mapFunction)
+        public void SendVisitorToAllCells(Cell2D.Visitor visitor)
         {
             if (_cellMap == null) return;
 
@@ -111,7 +91,7 @@ namespace Darklight.UnityExt.Game.Grid
 
                 // Apply the map function to the cell
                 Cell2D cell = _cellMap[key];
-                _cellMap[key] = mapFunction(cell);
+                cell.Accept(visitor);
             }
         }
 
