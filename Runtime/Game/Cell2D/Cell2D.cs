@@ -88,7 +88,6 @@ namespace Darklight.UnityExt.Game.Grid
             visitor.VisitCell(this);
         }
 
-
         // (( GETTERS )) -------- ))
         public float GetMinDimension() => Mathf.Min(data.Dimensions.x, data.Dimensions.y);
         public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
@@ -105,9 +104,9 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( SETTERS )) -------- ))
-        public void SetData(SerializedData data) => _data = data;
-        public void SetConfig(Config config) => _config = config;
-        public void SetComposite(Composite composite) => _composite = composite;
+        protected void SetData(SerializedData data) => _data = data;
+        protected void SetConfig(Config config) => _config = config;
+        protected void SetComposite(Composite composite) => _composite = composite;
 
 
         // (( GIZMOS )) -------- ))

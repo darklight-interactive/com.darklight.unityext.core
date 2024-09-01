@@ -19,9 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public void VisitCell(Cell2D cell)
         {
-
-
-            cell.SetConfig(_grid.Config.CellConfig);
+            cell.RecalculateDataFromGrid(_grid);
 
             // Update the cell
             cell.Update();

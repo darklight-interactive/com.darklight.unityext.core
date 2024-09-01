@@ -55,6 +55,9 @@ namespace Darklight.UnityExt.Game.Grid
             public virtual void DrawGizmos()
             {
                 if (!initialized) return;
+
+                Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+                CustomGizmos.DrawWireSquare(position, radius, normal, Color.grey);
             }
 
             public virtual void DrawEditorGizmos()
