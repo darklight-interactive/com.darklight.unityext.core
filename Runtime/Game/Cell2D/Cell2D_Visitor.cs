@@ -19,17 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public void VisitCell(Cell2D cell)
         {
-            // Calculate the cell's transform
-            Grid2D_SpatialUtility.CalculateCellTransform(
-                out Vector3 position, out Vector2Int coordinate,
-                out Vector3 normal, out Vector2 dimensions,
-                cell, _grid.Config);
 
-            // Assign the calculated values to the cell
-            cell.Data.SetPosition(position);
-            cell.Data.SetCoordinate(coordinate);
-            cell.Data.SetNormal(normal);
-            cell.Data.SetDimensions(dimensions);
 
             cell.SetConfig(_grid.Config.CellConfig);
 

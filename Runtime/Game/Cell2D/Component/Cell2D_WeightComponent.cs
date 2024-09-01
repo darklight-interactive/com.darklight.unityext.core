@@ -10,13 +10,12 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Weighted_Cell2DComponent : Abstract_Cell2DComponent, ICell2DComponent
+    public class Cell2D_WeightComponent : Cell2D.Component
     {
         [SerializeField, Range(0, 100)] int _weight;
         public int Weight { get => _weight; }
 
-        public Weighted_Cell2DComponent() { }
-        public Weighted_Cell2DComponent(Cell2D cell)
+        public Cell2D_WeightComponent(Cell2D cell) : base(cell)
         {
             _weight = 0;
             Initialize(cell);
@@ -26,16 +25,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             base.Initialize(cell);
             Name = "WeightComponent";
-            Type = ICell2DComponent.TypeKey.Weight;
-
-            Cell2D_Config config = Cell.Config;
-            _weight = config.Weight;
-        }
-
-        public void Update()
-        {
-            Cell2D_Config config = Cell.Config;
-            _weight = config.Weight;
+            Flag = Cell2D.ComponentFlags.Weight;
         }
 
         public void SetWeight(int weight)
@@ -43,14 +33,13 @@ namespace Darklight.UnityExt.Game.Grid
             _weight = weight;
         }
 
-        public void DrawGizmos()
+        public override void DrawGizmos()
         {
             Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.CenteredStyle);
         }
 
-#if UNITY_EDITOR
-        public void DrawEditorGizmos()
+        public override void DrawEditorGizmos()
         {
             Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawButtonHandle(position, radius, normal, Color.white, () =>
@@ -61,18 +50,5 @@ namespace Darklight.UnityExt.Game.Grid
 
             }, Handles.RectangleHandleCap);
         }
-#endif
-
-        public void Copy(ICell2DComponent component)
-        {
-            if (!initialized) return;
-
-            if (component is Weighted_Cell2DComponent weightComponent)
-            {
-                Cell = weightComponent.Cell;
-                _weight = weightComponent._weight;
-            }
-        }
-
     }
 }

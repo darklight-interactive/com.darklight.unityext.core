@@ -7,7 +7,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public class Grid2D_SerializedDataObject : ScriptableObject
     {
-        [SerializeField] Cell2D[] savedCells = new Cell2D[0];
+        [SerializeField] Cell2D[] savedCells;
 
         public List<Cell2D> LoadCells()
         {

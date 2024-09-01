@@ -102,10 +102,10 @@ namespace Darklight.UnityExt.Game.Grid
             foreach (Cell2D cell in cells)
             {
                 if (cell == null) continue;
-                if (_cellMap.ContainsKey(cell.Data.Key))
-                    _cellMap[cell.Data.Key] = cell;
+                if (_cellMap.ContainsKey(cell.Key))
+                    _cellMap[cell.Key] = cell;
                 else
-                    _cellMap.Add(cell.Data.Key, cell);
+                    _cellMap.Add(cell.Key, cell);
             }
         }
 

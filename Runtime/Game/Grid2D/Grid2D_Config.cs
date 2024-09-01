@@ -13,7 +13,7 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] Vector3 _gridPosition = new Vector3(0, 0, 0);
         [SerializeField, ShowOnly] Vector3 _gridNormal = Vector3.up;
         [SerializeField, ShowOnly] Vector2Int _gridDimensions = new Vector2Int(3, 3);
-        [SerializeField] Cell2D_Config _cellConfig;
+        [SerializeField] Cell2D.Config _cellConfig;
 
         // ======== [[ PROPERTIES ]] ============================================================ >>>>
         public bool LockToTransform => _lockToTransform;
@@ -21,7 +21,7 @@ namespace Darklight.UnityExt.Game.Grid
         public Vector3 GridPosition => _gridPosition;
         public Vector3 GridNormal => _gridNormal;
         public Vector2Int GridDimensions => _gridDimensions;
-        public Cell2D_Config CellConfig => _cellConfig;
+        public Cell2D.Config CellConfig => _cellConfig;
 
         // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
         public Grid2D_Config() { }
@@ -32,7 +32,7 @@ namespace Darklight.UnityExt.Game.Grid
             _gridPosition = originConfig._gridPosition;
             _gridNormal = originConfig._gridNormal;
             _gridDimensions = originConfig._gridDimensions;
-            _cellConfig = new Cell2D_Config(originConfig._cellConfig);
+            _cellConfig = new Cell2D.Config(originConfig._cellConfig);
         }
 
         // ======== [[ METHODS ]] ============================================================ >>>>
@@ -41,6 +41,6 @@ namespace Darklight.UnityExt.Game.Grid
         public void SetGridPosition(Vector3 originPosition) => _gridPosition = originPosition;
         public void SetGridNormal(Vector3 gridNormal) => _gridNormal = gridNormal;
         public void SetGridDimensions(Vector2Int gridDimensions) => _gridDimensions = gridDimensions;
-        public void SetCellConfig(Cell2D_Config cellConfig) => _cellConfig = cellConfig;
+        public void SetCellConfig(Cell2D.Config cellConfig) => _cellConfig = cellConfig;
     }
 }

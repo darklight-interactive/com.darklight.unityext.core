@@ -12,15 +12,15 @@ namespace Darklight.UnityExt.Game
             out Vector3 normal, out Vector2 dimensions,
             Cell2D cell, Grid2D_Config config)
         {
-            position = CalculatePositionFromKey(cell.Data.Key, config);
-            coordinate = CalculateCoordinateFromKey(cell.Data.Key, config);
+            position = CalculatePositionFromKey(cell.Key, config);
+            coordinate = CalculateCoordinateFromKey(cell.Key, config);
             normal = config.GridNormal;
             dimensions = config.CellConfig.CellDimensions;
         }
 
         public static Vector3 CalculatePositionFromKey(Vector2Int key, Grid2D_Config config)
         {
-            Cell2D_Config cellConfig = config.CellConfig;
+            Cell2D.Config cellConfig = config.CellConfig;
 
             // Get the origin key of the grid
             Vector2Int originKey = CalculateOriginKey(config);

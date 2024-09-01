@@ -24,9 +24,6 @@ namespace Darklight.UnityExt.Game.Grid
             { "Back", Vector3.back }
         };
         bool _showTransform => !_lockToTransform;
-        bool _hasOverlapComponent => (componentFlags & ICell2DComponent.TypeKey.Overlap) != 0;
-        bool _hasShapeComponent => (componentFlags & ICell2DComponent.TypeKey.Shape) != 0;
-        bool _hasWeightComponent => (componentFlags & ICell2DComponent.TypeKey.Weight) != 0;
 
         #endregion
 
@@ -60,33 +57,15 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0, 10)] float _cellBondingX = 0;
         [SerializeField, Range(0, 10)] float _cellBondingY = 0;
 
-        // (( CELL2D COMPONENTS )) ---- >>
-        [HorizontalLine(4, EColor.Gray)]
-        [Header("-- CELL2D COMPONENTS -- >>")]
-        [SerializeField, EnumFlags] ICell2DComponent.TypeKey componentFlags = ICell2DComponent.TypeKey.Base;
-
-        [ShowIf("_hasOverlapComponent")]
-        [SerializeField] LayerMask _overlapLayerMask = 0;
-
-        [ShowIf("_hasShapeComponent")]
-        [SerializeField] int _segments = 8;
-
-        [ShowIf("_hasWeightComponent")]
-        [SerializeField, Range(0, 100)] float _weight = 1;
-
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        public Cell2D_Config CellConfig
+        public Cell2D.Config CellConfig
         {
             get
             {
-                Cell2D_Config config = new Cell2D_Config();
+                Cell2D.Config config = new Cell2D.Config();
                 config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
                 config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
                 config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
-                config.SetComponentFlags(componentFlags);
-                config.SetLayerMask(_overlapLayerMask);
-                config.SetSegments(_segments);
-                config.SetWeight((int)_weight);
                 return config;
             }
         }
