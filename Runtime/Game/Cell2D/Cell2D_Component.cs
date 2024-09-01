@@ -25,9 +25,10 @@ namespace Darklight.UnityExt.Game.Grid
         {
             [SerializeField, ShowOnly] string _name = "Base2DComponent";
             [SerializeField, ShowOnly] int _guid = System.Guid.NewGuid().GetHashCode();
+            [SerializeField, ShowOnly] bool _initialized = false;
+
             Cell2D _cell;
             ComponentFlags _flags;
-            bool _initialized = false;
 
             public string Name { get => _name; protected set => _name = value; }
             public int Guid { get => _guid; }

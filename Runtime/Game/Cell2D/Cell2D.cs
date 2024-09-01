@@ -83,9 +83,9 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( VISITOR PATTERN )) -------- ))
-        public void Accept(ICell2DVisitor visitor)
+        public void Accept(Visitor visitor)
         {
-            visitor.VisitCell(this);
+            visitor.Visit(this);
         }
 
         // (( GETTERS )) -------- ))
@@ -123,7 +123,7 @@ namespace Darklight.UnityExt.Game.Grid
             });
         }
 
-        public void DrawEditorGizmos()
+        public void DrawEditor()
         {
             if (_data == null) return;
 

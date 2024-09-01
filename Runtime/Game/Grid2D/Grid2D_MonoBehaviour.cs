@@ -96,25 +96,13 @@ namespace Darklight.UnityExt.Game.Grid
         public void OnDrawGizmos()
         {
             if (grid == null) return;
-
-            Cell2D_GizmoRenderer gizmoRenderer = new Cell2D_GizmoRenderer();
-            grid.MapFunction(cell =>
-            {
-                cell.Accept(gizmoRenderer);
-                return cell;
-            });
+            grid.DrawGizmos();
         }
 
         public void DrawEditorGizmos()
         {
             if (grid == null) return;
-
-            Cell2D_EditorGizmoRenderer editorGizmoRenderer = new Cell2D_EditorGizmoRenderer();
-            grid.MapFunction(cell =>
-            {
-                cell.Accept(editorGizmoRenderer);
-                return cell;
-            });
+            grid.DrawEditor();
         }
     }
 

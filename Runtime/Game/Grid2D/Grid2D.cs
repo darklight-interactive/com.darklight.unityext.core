@@ -15,14 +15,23 @@ namespace Darklight.UnityExt.Game.Grid
     [Serializable]
     public class Grid2D
     {
+        // ======== [[ FIELDS ]] ======================================================= >>>>
         Dictionary<Vector2Int, Cell2D> _cellMap = new Dictionary<Vector2Int, Cell2D>();
 
-        // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
+        // ---- (( SERIALIZED FIELDS )) -------- ))
         [SerializeField] Grid2D_Config _config;
         [SerializeField] List<Cell2D> _cells = new List<Cell2D>();
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         public Grid2D_Config Config => _config;
+
+        protected Cell2D.Visitor cellUpdater => new Cell2D.Visitor(cell =>
+        {
+            cell.RecalculateDataFromGrid(this);
+            cell.Update();
+        });
+        protected Cell2D.Visitor cellGizmoDrawer => new Cell2D.Visitor(cell => cell.DrawGizmos());
+        protected Cell2D.Visitor cellEditorDrawer => new Cell2D.Visitor(cell => cell.DrawEditor());
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Grid2D() => Initialize(null);
@@ -47,7 +56,6 @@ namespace Darklight.UnityExt.Game.Grid
             Resize();
 
             // Update the cells
-            Cell2DUpdater cellUpdater = new Cell2DUpdater(this);
             MapFunction(cell =>
             {
                 cell.Accept(cellUpdater);
@@ -63,6 +71,30 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Clear the cell map
             _cellMap.Clear();
+        }
+
+        public void DrawGizmos()
+        {
+            if (_cellMap == null || _cellMap.Count == 0) return;
+
+            // Draw the gizmos for each cell
+            MapFunction(cell =>
+            {
+                cell.Accept(cellGizmoDrawer);
+                return cell;
+            });
+        }
+
+        public void DrawEditor()
+        {
+            if (_cellMap == null || _cellMap.Count == 0) return;
+
+            // Draw the editor gizmos for each cell
+            MapFunction(cell =>
+            {
+                cell.Accept(cellEditorDrawer);
+                return cell;
+            });
         }
         #endregion
 
