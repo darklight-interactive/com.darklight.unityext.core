@@ -71,16 +71,16 @@ namespace Darklight.UnityExt.Game.Grid
             baseGrid.SendVisitorToAllCells(_randomizeVisitor);
         }
 
-        public void AddWeightToCell(Cell2D cell)
+        public void AddWeightToCell(Cell2D cell, int weight)
         {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            weightComponent.AddWeight(50);
+            weightComponent.AddWeight(weight);
         }
 
-        public void RemoveWeightFromCell(Cell2D cell)
+        public void RemoveWeightFromCell(Cell2D cell, int weight)
         {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            weightComponent.SubtractWeight(50);
+            weightComponent.SubtractWeight(weight);
         }
 
 #if UNITY_EDITOR

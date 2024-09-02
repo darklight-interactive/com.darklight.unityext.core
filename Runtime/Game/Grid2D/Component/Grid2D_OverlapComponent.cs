@@ -1,4 +1,5 @@
 using Darklight.UnityExt.Editor;
+using UltEvents;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -38,8 +39,8 @@ namespace Darklight.UnityExt.Game.Grid
         });
 
         // ======== [[ EVENTS ]] ================================== >>>>
-        public UnityEvent<Cell2D> HandleCollisionEnter;
-        public UnityEvent<Cell2D> HandleCollisionExit;
+        public UltEvent<Cell2D> HandleCollisionEnter;
+        public UltEvent<Cell2D> HandleCollisionExit;
 
         // ======== [[ METHODS ]] ================================== >>>>
         public override void InitializeComponent(Grid2D baseObj)
