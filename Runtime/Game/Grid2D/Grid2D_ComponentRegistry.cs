@@ -7,7 +7,6 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public partial class Grid2D
     {
-        [Serializable]
         public class ComponentRegistry
         {
             Grid2D _grid;

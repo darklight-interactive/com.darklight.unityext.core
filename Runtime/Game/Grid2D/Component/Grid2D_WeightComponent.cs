@@ -28,13 +28,6 @@ namespace Darklight.UnityExt.Game.Grid
         {
         }
 
-        public override void DrawEditorGizmos()
-        {
-        }
-
-        public override void DrawGizmos()
-        {
-        }
 
         public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
     }

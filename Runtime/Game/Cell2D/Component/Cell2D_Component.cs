@@ -43,8 +43,8 @@ namespace Darklight.UnityExt.Game.Grid
             {
                 BASE = 0,
                 OVERLAP = 1,
-                SHAPE = 1,
-                WEIGHT = 1
+                SHAPE = 2,
+                WEIGHT = 3,
             }
         }
     }

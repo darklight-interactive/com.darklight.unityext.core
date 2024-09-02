@@ -37,14 +37,6 @@ namespace Darklight.UnityExt.Game.Grid
             baseGrid.SendVisitorToAllCells(_updateVisitor);
         }
 
-        public override void DrawEditorGizmos()
-        {
-        }
-
-        public override void DrawGizmos()
-        {
-        }
-
         public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
     }
 }

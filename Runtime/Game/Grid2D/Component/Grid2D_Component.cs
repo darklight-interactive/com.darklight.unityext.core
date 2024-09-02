@@ -12,6 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
     /// The base MonoBehaviour class for all Grid2D components. <br/>
     /// <para>Grid2D components are used to extend the functionality of a Grid2D object.</para>
     /// </summary>
+    [ExecuteAlways]
     [RequireComponent(typeof(Grid2D))]
     public abstract class Grid2D_Component :
         MonoBehaviour,
@@ -21,6 +22,17 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] protected TypeTag type;
         protected Grid2D baseGrid;
 
+        // (( VISITORS )) -------- )))
+        Cell2D.Visitor _gizmoVisitor => new Cell2D.Visitor((Cell2D cell) =>
+        {
+            cell.ComponentReg.DrawComponentGizmos();
+        });
+
+        Cell2D.Visitor _editorGizmoVisitor => new Cell2D.Visitor((Cell2D cell) =>
+        {
+            cell.ComponentReg.DrawComponentEditorGizmos();
+        });
+
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( UNITY METHODS )) -------- ))
         public void Awake()
@@ -28,6 +40,15 @@ namespace Darklight.UnityExt.Game.Grid
             InitializeComponent(GetComponent<Grid2D>());
         }
 
+        public void Update()
+        {
+            UpdateComponent();
+        }
+
+        public void OnDrawGizmos()
+        {
+            DrawGizmos();
+        }
 
         // -- (( INTERFACE METHODS )) -------- ))
         public virtual void InitializeComponent(Grid2D baseObj)
@@ -38,8 +59,8 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         public abstract void UpdateComponent();
-        public abstract void DrawGizmos();
-        public abstract void DrawEditorGizmos();
+        public virtual void DrawGizmos() => baseGrid.SendVisitorToAllCells(_gizmoVisitor);
+        public virtual void DrawEditorGizmos() => baseGrid.SendVisitorToAllCells(_editorGizmoVisitor);
         public abstract TypeTag GetTypeTag();
 
         // ======== [[ NESTED TYPES ]] ================================== >>>>

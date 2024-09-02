@@ -32,14 +32,6 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
-            public void MapFunction(System.Action<Component> function)
-            {
-                foreach (Component component in _components)
-                {
-                    function(component);
-                }
-            }
-
             public void RegisterComponent(Component.TypeTag type)
             {
                 if (!HasComponent(type))
@@ -102,6 +94,22 @@ namespace Darklight.UnityExt.Game.Grid
                     }
                 }
                 return false;
+            }
+
+            public void DrawComponentGizmos()
+            {
+                foreach (Component component in _components)
+                {
+                    component.DrawGizmos();
+                }
+            }
+
+            public void DrawComponentEditorGizmos()
+            {
+                foreach (Component component in _components)
+                {
+                    component.DrawEditorGizmos();
+                }
             }
 
             void Refresh()

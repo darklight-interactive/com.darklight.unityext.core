@@ -115,24 +115,11 @@ namespace Darklight.UnityExt.Game.Grid
 
             GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawWireSquare(position, radius, normal, Color.gray);
-
-            _componentReg.MapFunction(component =>
-            {
-                component.DrawGizmos();
-            });
         }
 
         public void DrawEditor()
         {
             if (_data == null) return;
-
-            _componentReg.MapFunction(component =>
-            {
-                component.DrawEditorGizmos();
-            });
         }
-
-        // ========= [[ NESTED TYPES ]] ======================================================= >>>>
-
     }
 }
