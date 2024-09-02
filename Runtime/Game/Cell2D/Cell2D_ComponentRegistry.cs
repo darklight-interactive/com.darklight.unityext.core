@@ -132,6 +132,19 @@ namespace Darklight.UnityExt.Game.Grid
                 throw new InvalidEnumArgumentException(
                     $"Component type {typeof(TComponent)} is not registered in the factory.");
             }
+
+            public static Cell2D.ComponentTypeKey GetTypeKey(Cell2D.Component component)
+            {
+                foreach (var pair in _componentTypeMap)
+                {
+                    if (pair.Value == component.GetType())
+                    {
+                        return pair.Key;
+                    }
+                }
+                throw new InvalidEnumArgumentException(
+                    $"Component type {component.GetType()} is not registered in the factory.");
+            }
         }
     }
 }

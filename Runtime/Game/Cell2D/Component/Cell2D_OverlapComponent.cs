@@ -42,6 +42,10 @@ namespace Darklight.UnityExt.Game.Grid
             CustomGizmos.DrawWireRect(position, dimensions, normal, color);
         }
 
+        public void SetLayerMask(LayerMask layerMask)
+        {
+            _layerMask = layerMask;
+        }
 
         void UpdateColliders()
         {
@@ -84,8 +88,6 @@ namespace Darklight.UnityExt.Game.Grid
             // Swap sets: previous becomes current, reuse the set
             (_currentColliders, _previousColliders) = (_previousColliders, _currentColliders);
         }
-
-        public override Cell2D.ComponentTypeKey GetTypeKey() => Cell2D.ComponentTypeKey.OVERLAP;
 
         void GetColor(out Color color)
         {

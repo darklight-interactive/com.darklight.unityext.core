@@ -20,23 +20,31 @@ namespace Darklight.UnityExt.Game.Grid
             // ======== [[ PROPERTIES ]] ================================== >>>>
             public Cell2D Cell => _baseCell;
             public int GUID => _guid;
-            public ComponentTypeKey Type => _type;
+            public ComponentTypeKey Type => GetTypeKey();
             public bool Initialized => _initialized;
 
 
             // ======== [[ CONSTRUCTORS ]] ================================== >>>>
-            public Component(Cell2D baseObj) => Initialize(baseObj);
-
-            // ======== [[ METHODS ]] ================================== >>>>
-            public virtual void Initialize(Cell2D baseObj)
+            public Component(Cell2D baseObj)
             {
                 _guid = System.Guid.NewGuid().GetHashCode();
                 _baseCell = baseObj;
-                _type = Cell2D.ComponentTypeKey.BASE;
+                _type = GetTypeKey();
+            }
+
+            // ======== [[ METHODS ]] ================================== >>>>
+            public virtual void Initialize(Cell2D cell)
+            {
+                _baseCell = cell;
                 _initialized = true;
             }
-            public abstract void Updater();
-            public abstract Cell2D.ComponentTypeKey GetTypeKey();
+
+            public virtual void Updater()
+            {
+
+            }
+
+            public virtual ComponentTypeKey GetTypeKey() => ComponentRegistry.GetTypeKey(this);
             public virtual void DrawGizmos()
             {
                 // Draw the base cell gizmos by default

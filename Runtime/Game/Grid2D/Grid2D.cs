@@ -60,7 +60,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
             set { _map = value; }
         }
-        protected ConsoleGUI internalConsole => _console;
+        protected ConsoleGUI consoleGUI => _console;
 
         // -- (( VISITORS )) ------------------ >>
         protected Cell2D.Visitor cellUpdateVisitor => new Cell2D.Visitor(cell =>
@@ -79,7 +79,7 @@ namespace Darklight.UnityExt.Game.Grid
         public void OnEditorReloaded()
         {
             _console.Clear();
-            Awake();
+            Reset();
         }
 
         #region -- (( UNITY )) -------- )))
@@ -111,11 +111,13 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Invoke the grid preloaded event
             OnGridPreloaded?.Invoke();
-            internalConsole.Log($"Preloaded: {_isLoaded}");
+            consoleGUI.Log($"Preloaded: {_isLoaded}");
         }
 
         void Initialize()
         {
+            if (!_isLoaded) Preload();
+
             // Generate a new grid from the config
             bool mapGenerated = GenerateCellMap();
 
@@ -127,7 +129,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Invoke the grid initialized event
             OnGridInitialized?.Invoke();
-            internalConsole.Log($"Initialized: {_isInitialized}");
+            consoleGUI.Log($"Initialized: {_isInitialized}");
         }
 
         void Refresh()
@@ -157,7 +159,15 @@ namespace Darklight.UnityExt.Game.Grid
             if (map != null)
                 map.Clear(); // << Clear the map
 
-            internalConsole.Log("Cleared");
+            consoleGUI.Log("Cleared");
+        }
+
+        public void Reset()
+        {
+            _isLoaded = false;
+            _isInitialized = false;
+
+            Initialize();
         }
         #endregion
 
@@ -312,8 +322,8 @@ namespace Darklight.UnityExt.Game.Grid
                 _serializedObject = new SerializedObject(target);
                 _script = (Grid2D)target;
 
-                _script.internalConsole.Clear();
-                _script.Awake();
+                _script.consoleGUI.Clear();
+                _script.Reset();
             }
 
             public override void OnInspectorGUI()

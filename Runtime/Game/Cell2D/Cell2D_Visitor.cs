@@ -25,31 +25,19 @@ namespace Darklight.UnityExt.Game.Grid
         public class ComponentVisitor : IVisitor<Cell2D>
         {
             // ======== [[ FIELDS ]] ======================================================= >>>>
-            ComponentTypeKey _type;
-            VisitCellComponentEvent _registerFunc;
-            VisitCellComponentEvent _initFunc;
-            VisitCellComponentEvent _updateComponentFunc;
+            ComponentTypeKey _type; // The type of component to look for
+            VisitCellComponentEvent _initFunc; // The function to initialize the component
+            VisitCellComponentEvent _updateComponentFunc; // The function to update the component
 
             // ======== [[ PROPERTIES ]] ======================================================= >>>>
             #region -- (( EVENT FUNCTIONS )) -------- ))
             /// <summary>
             /// Register the component to the cell.
             /// </summary>
-            public VisitCellComponentEvent RegisterFunc
+            public VisitCellComponentEvent RegisterFunc => (Cell2D cell, ComponentTypeKey type) =>
             {
-                get
-                {
-                    if (_registerFunc == null)
-                    {
-                        _registerFunc = (Cell2D cell, ComponentTypeKey type) =>
-                        {
-                            Component component = cell.ComponentReg.RegisterComponent(type);
-                        };
-                    }
-                    return _registerFunc;
-                }
-                set => _registerFunc = value;
-            }
+                Component component = cell.ComponentReg.RegisterComponent(type);
+            };
 
             /// <summary>
             /// Initialize the component to the cell.
@@ -92,14 +80,22 @@ namespace Darklight.UnityExt.Game.Grid
 
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
             public ComponentVisitor(ComponentTypeKey type) => _type = type;
-            public ComponentVisitor(Cell2D.Component component) => _type = component.GetTypeKey();
+            public ComponentVisitor(ComponentTypeKey type, VisitCellComponentEvent initFunc) : this(type)
+            {
+                InitFunc = initFunc;
+            }
+            public ComponentVisitor(ComponentTypeKey type,
+                VisitCellComponentEvent initFunc, VisitCellComponentEvent updateFunc) : this(type, initFunc)
+            {
+                UpdateComponentFunc = updateFunc;
+            }
 
             // ======== [[ METHODS ]] ======================================================= >>>>
             public void Visit(Cell2D cell)
             {
-                Cell2D.ComponentRegistry componentRegistry = cell.ComponentReg;
+                ComponentRegistry componentRegistry = cell.ComponentReg;
 
-                // Check if the component exists
+                // Check if the stored component type exists in the cell
                 if (componentRegistry.HasComponent(_type))
                 {
                     // Check if the component is initialized
@@ -123,5 +119,47 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
         }
+
+        public static class VisitorFactory
+        {
+            public static Visitor Create(VisitCellEvent visitFunction)
+            {
+                return new Visitor(visitFunction);
+            }
+
+            public static ComponentVisitor Create(ComponentTypeKey type)
+            {
+                return new ComponentVisitor(type);
+            }
+
+            public static ComponentVisitor Create(ComponentTypeKey type, VisitCellComponentEvent initFunc)
+            {
+                return new ComponentVisitor(type, initFunc);
+            }
+
+            public static ComponentVisitor Create(ComponentTypeKey type, VisitCellComponentEvent initFunc, VisitCellComponentEvent updateFunc)
+            {
+                return new ComponentVisitor(type, initFunc, updateFunc);
+            }
+
+            public static ComponentVisitor CreateGizmosVisitor(ComponentTypeKey type)
+            {
+                return new ComponentVisitor(type, null, (Cell2D cell, ComponentTypeKey type) =>
+                {
+                    Component component = cell.ComponentReg.GetComponent(type);
+                    component.DrawGizmos();
+                });
+            }
+
+            public static ComponentVisitor CreateEditorGizmosVisitor(ComponentTypeKey type)
+            {
+                return new ComponentVisitor(type, null, (Cell2D cell, ComponentTypeKey type) =>
+                {
+                    Component component = cell.ComponentReg.GetComponent(type);
+                    component.DrawEditorGizmos();
+                });
+            }
+        }
+
     }
 }

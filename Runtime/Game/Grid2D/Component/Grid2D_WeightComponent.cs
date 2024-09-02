@@ -12,8 +12,11 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
         // -- (( VISITORS )) -------- ))
-        protected override Cell2D.ComponentVisitor CellComponentVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
-
+        protected override Cell2D.ComponentVisitor GizmosVisitor =>
+            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+        protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
+            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+        Cell2D.ComponentVisitor _updateVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         Cell2D.Visitor _randomizeVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
@@ -22,25 +25,19 @@ namespace Darklight.UnityExt.Game.Grid
             weightComponent.SetRandomWeight();
         });
 
-        Cell2D.Visitor _gizmosVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            if (weightComponent == null) return;
 
-            weightComponent.DrawGizmos();
-        });
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( INTERFACE METHODS )) -------- ))
         public override void Updater()
         {
-            BaseGrid.SendVisitorToAllCells(CellComponentVisitor);
+            BaseGrid.SendVisitorToAllCells(_updateVisitor);
         }
 
         public override void DrawGizmos()
         {
             if (!_showGizmos) return;
-            BaseGrid.SendVisitorToAllCells(_gizmosVisitor);
+            BaseGrid.SendVisitorToAllCells(GizmosVisitor);
         }
 
         // -- (( HANDLER METHODS )) -------- ))

@@ -9,7 +9,6 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-
     /// <summary>
     /// The base MonoBehaviour class for all Grid2D components. <br/>
     /// <para>Grid2D components are used to extend the functionality of a Grid2D object.</para>
@@ -18,7 +17,7 @@ namespace Darklight.UnityExt.Game.Grid
     [RequireComponent(typeof(Grid2D))]
     public abstract class Grid2D_Component :
         MonoBehaviour,
-        IComponent<Grid2D, Grid2D.ComponentTypeKey>
+        IComponent<Grid2D>
     {
         // ======== [[ FIELDS ]] ================================== >>>>
         [SerializeField, ShowOnly] int _guid;
@@ -38,8 +37,9 @@ namespace Darklight.UnityExt.Game.Grid
             }
             private set => _baseGrid = value;
         }
-        protected abstract Cell2D.ComponentVisitor CellComponentVisitor { get; }
 
+        protected virtual Cell2D.ComponentVisitor GizmosVisitor => Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
+        protected virtual Cell2D.ComponentVisitor EditorGizmosVisitor => Cell2D.VisitorFactory.CreateEditorGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( UNITY METHODS )) -------- ))
@@ -55,8 +55,14 @@ namespace Darklight.UnityExt.Game.Grid
             BaseGrid = baseObj;
         }
         public virtual void Updater() { }
-        public virtual void DrawGizmos() { }
-        public virtual void DrawEditorGizmos() { }
+        public virtual void DrawGizmos()
+        {
+            BaseGrid.SendVisitorToAllCells(GizmosVisitor);
+        }
+        public virtual void DrawEditorGizmos()
+        {
+            BaseGrid.SendVisitorToAllCells(EditorGizmosVisitor);
+        }
         public virtual Grid2D.ComponentTypeKey GetTypeKey() => Grid2D.ComponentRegistry.GetTypeKey(this);
 
 
@@ -99,11 +105,4 @@ namespace Darklight.UnityExt.Game.Grid
 #endif
     }
 
-    // == < CLASS > : Grid2D_BaseComponent ============================================ >>>>
-    public class Grid2D_BaseComponent : Grid2D_Component
-    {
-        protected override Cell2D.ComponentVisitor CellComponentVisitor
-            => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.BASE);
-
-    }
 }

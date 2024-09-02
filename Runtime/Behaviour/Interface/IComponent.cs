@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 namespace Darklight.UnityExt.Behaviour.Interface
 {
-    public interface IComponent<TBase, TTag>
-        where TTag : Enum
+    public interface IComponent<T>
     {
         /// <summary>
         /// Initialize the component.
@@ -12,10 +12,10 @@ namespace Darklight.UnityExt.Behaviour.Interface
         /// This method should be called when the component is first attached to the base object
         /// or when the component is reset.
         /// </remarks>
-        /// <param name="baseObj">
+        /// <param name="baseComponent">
         ///     The base object that the component is attached to.
         /// </param>
-        void Initialize(TBase baseObj);
+        void Initialize(T baseComponent);
 
         /// <summary>
         /// Update the component.
@@ -31,9 +31,13 @@ namespace Darklight.UnityExt.Behaviour.Interface
         /// Draw editor gizmos for the component.
         /// </summary>
         void DrawEditorGizmos();
+    }
 
+    public interface IComponent<T, TKey> : IComponent<T>
+    {
         /// <summary>
-        /// Get the type key for the component.
-        TTag GetTypeKey();
+        /// Get the type key of the component.
+        /// </summary>
+        TKey GetTypeKey();
     }
 }
