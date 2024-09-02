@@ -18,14 +18,15 @@ namespace Darklight.UnityExt.Game.Grid
         public Cell2D_WeightComponent(Cell2D cell) : base(cell)
         {
             _weight = 0;
-            Initialize(cell);
         }
 
-        public override void Initialize(Cell2D cell)
+        public override void Initialize()
         {
-            base.Initialize(cell);
-            Name = "WeightComponent";
-            Flag = Cell2D.ComponentFlags.Weight;
+            Tag = Type.WEIGHT;
+        }
+
+        public override void Update()
+        {
         }
 
         public void SetWeight(int weight)
@@ -35,13 +36,13 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.CenteredStyle);
         }
 
         public override void DrawEditorGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawButtonHandle(position, radius, normal, Color.white, () =>
             {
                 _weight += 5;

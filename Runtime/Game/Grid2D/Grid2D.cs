@@ -27,7 +27,8 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] bool _isLoaded = false;
         [SerializeField, ShowOnly] bool _isInitialized = false;
         [SerializeField] Config _config;
-        [SerializeField] Dictionary<Vector2Int, Cell2D> _cellMap;
+        [SerializeField] Dictionary<Vector2Int, Cell2D> _map;
+        [SerializeField, ShowOnly] List<Grid2D_Component> _components = new List<Grid2D_Component>();
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         protected Config config
@@ -40,15 +41,15 @@ namespace Darklight.UnityExt.Game.Grid
             }
             set { _config = value; }
         }
-        protected Dictionary<Vector2Int, Cell2D> cellMap
+        protected Dictionary<Vector2Int, Cell2D> map
         {
             get
             {
-                if (_cellMap == null)
-                    _cellMap = new Dictionary<Vector2Int, Cell2D>();
-                return _cellMap;
+                if (_map == null)
+                    _map = new Dictionary<Vector2Int, Cell2D>();
+                return _map;
             }
-            set { _cellMap = value; }
+            set { _map = value; }
         }
         protected ConsoleGUI console => _console;
 
@@ -74,13 +75,13 @@ namespace Darklight.UnityExt.Game.Grid
 
         public void OnDrawGizmos()
         {
-            if (cellMap == null || cellMap.Count == 0) return;
+            if (map == null || map.Count == 0) return;
             SendVisitorToAllCells(cellGizmoVisitor);
         }
 
         public void OnDrawEditor()
         {
-            if (cellMap == null || cellMap.Count == 0) return;
+            if (map == null || map.Count == 0) return;
             SendVisitorToAllCells(cellEditorVisitor);
         }
         #endregion
@@ -88,16 +89,18 @@ namespace Darklight.UnityExt.Game.Grid
         #region -- (( IPreload )) -------- )))
         public virtual void Preload()
         {
-            _isInitialized = false;
+            // Clear the grid of any existing data
+            Clear();
 
+            // Create a new config if none exists
             if (config == null)
                 config = new Config();
-            cellMap = new Dictionary<Vector2Int, Cell2D>();
 
+            // Create a new cell map
+            map = new Dictionary<Vector2Int, Cell2D>();
 
-            // ( Connect the events )
-            OnGridPreloaded += () => console.Log($"Preloaded {_isLoaded}.");
-            OnGridInitialized += () => console.Log($"Initialized {_isInitialized}.");
+            // Get the components that are on this object
+            _components = GetComponents<Grid2D_Component>().ToList();
 
             _isLoaded = true;
             OnGridPreloaded?.Invoke();
@@ -133,10 +136,12 @@ namespace Darklight.UnityExt.Game.Grid
 
         public virtual void Clear()
         {
-            if (cellMap == null || cellMap.Count == 0) return;
+            _isLoaded = false;
+            _isInitialized = false;
 
-            // Clear the cell map
-            cellMap.Clear();
+            _console.Clear(); // << Clear the console
+            if (map != null)
+                map.Clear(); // << Clear the map
 
             _isInitialized = false;
         }
@@ -145,16 +150,16 @@ namespace Darklight.UnityExt.Game.Grid
         // -- (( VISITOR PATTERN )) -------- )))
         public void SendVisitorToAllCells(Cell2D.Visitor visitor)
         {
-            if (cellMap == null) return;
+            if (map == null) return;
 
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
+            List<Vector2Int> keys = new List<Vector2Int>(map.Keys);
             foreach (Vector2Int key in keys)
             {
                 // Skip if the key is not in the map
-                if (!cellMap.ContainsKey(key)) continue;
+                if (!map.ContainsKey(key)) continue;
 
                 // Apply the map function to the cell
-                Cell2D cell = cellMap[key];
+                Cell2D cell = map[key];
                 cell.Accept(visitor);
             }
         }
@@ -167,7 +172,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public List<Cell2D> GetCells()
         {
-            return new List<Cell2D>(cellMap.Values);
+            return new List<Cell2D>(map.Values);
         }
 
         // (( SETTERS )) -------- )))
@@ -183,21 +188,21 @@ namespace Darklight.UnityExt.Game.Grid
             foreach (Cell2D cell in cells)
             {
                 if (cell == null) continue;
-                if (cellMap.ContainsKey(cell.Key))
-                    cellMap[cell.Key] = cell;
+                if (map.ContainsKey(cell.Key))
+                    map[cell.Key] = cell;
                 else
-                    cellMap.Add(cell.Key, cell);
+                    map.Add(cell.Key, cell);
             }
         }
 
         // ======== [[ PROTECTED METHODS ]] ======================================================= >>>>
         bool CreateCell(Vector2Int key)
         {
-            if (_cellMap.ContainsKey(key))
+            if (_map.ContainsKey(key))
                 return false;
 
             Cell2D cell = (Cell2D)Activator.CreateInstance(typeof(Cell2D), key);
-            _cellMap[key] = cell;
+            _map[key] = cell;
             return true;
         }
 
@@ -220,7 +225,7 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
 
-            if (cellMap.Count == 0) return false;
+            if (map.Count == 0) return false;
             return true;
         }
 
@@ -231,13 +236,13 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Remove null cells from the map
             int removedCount = 0;
-            List<Vector2Int> keys = new List<Vector2Int>(cellMap.Keys);
+            List<Vector2Int> keys = new List<Vector2Int>(map.Keys);
             for (int i = 0; i < keys.Count; i++)
             {
                 Vector2Int key = keys[i];
                 if (key.x >= newDimensions.x || key.y >= newDimensions.y)
                 {
-                    cellMap.Remove(key);
+                    map.Remove(key);
                     removedCount++;
                 }
             }

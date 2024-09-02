@@ -145,7 +145,7 @@ namespace Darklight.UnityExt.Editor
 				case SerializedPropertyType.Enum:
 					return element.enumDisplayNames[element.enumValueIndex];
 				case SerializedPropertyType.ObjectReference:
-					return element.objectReferenceValue != null ? element.objectReferenceValue.name : "None";
+					return element.objectReferenceValue != null ? element.objectReferenceValue.GetType().Name : "None";
 				case SerializedPropertyType.Vector2:
 					return element.vector2Value.ToString();
 				case SerializedPropertyType.Vector3:

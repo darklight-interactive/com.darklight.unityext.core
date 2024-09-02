@@ -16,14 +16,11 @@ namespace Darklight.UnityExt.Game.Grid
         public Cell2D_OverlapComponent(Cell2D cell, LayerMask layerMask) : base(cell)
         {
             _layerMask = layerMask;
-            Initialize(cell);
         }
 
-        public override void Initialize(Cell2D cell)
+        public override void Initialize()
         {
-            base.Initialize(cell);
-            Name = "Overlap2DComponent";
-            Flag = Cell2D.ComponentFlags.Overlap;
+            Tag = Type.OVERLAP;
         }
 
         public override void Update()
@@ -33,14 +30,14 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions);
+            Base.GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions);
             GetColor(out Color color);
             CustomGizmos.DrawWireRect(position, dimensions, normal, color);
         }
 
         void UpdateColliders(LayerMask layerMask)
         {
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             Vector3 halfExtents = Vector3.one * radius;
 
             // Use Physics.OverlapBox to detect colliders within the cell dimensions

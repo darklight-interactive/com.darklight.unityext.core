@@ -7,21 +7,21 @@ namespace Darklight.UnityExt.Game.Grid
 {
     partial class Cell2D
     {
-        public static class Cell2DComponentFactory
+        public static class ComponentFactory
         {
-            private static Dictionary<ComponentFlags, Func<Cell2D, ICell2DComponent>> _componentFactory = new Dictionary<ComponentFlags, Func<Cell2D, ICell2DComponent>>();
+            private static Dictionary<Component.Type, Func<Cell2D, Component>> _componentFactory = new Dictionary<Component.Type, Func<Cell2D, Component>>();
 
             // Static constructor to initialize the factory with component registrations
-            static Cell2DComponentFactory()
+            static ComponentFactory()
             {
-                RegisterComponent(ComponentFlags.Base, (cell) => new Component(cell));
-                RegisterComponent(ComponentFlags.Shape, (cell) => new Cell2D_OverlapComponent(cell));
-                RegisterComponent(ComponentFlags.Weight, (cell) => new Cell2D_WeightComponent(cell));
-                RegisterComponent(ComponentFlags.Overlap, (cell) => new Cell2D_OverlapComponent(cell));
+                RegisterComponent(Component.Type.BASE, (cell) => new Cell2D_BaseComponent(cell));
+                RegisterComponent(Component.Type.SHAPE, (cell) => new Cell2D_OverlapComponent(cell));
+                RegisterComponent(Component.Type.WEIGHT, (cell) => new Cell2D_WeightComponent(cell));
+                RegisterComponent(Component.Type.OVERLAP, (cell) => new Cell2D_OverlapComponent(cell));
             }
 
             // Method to register a component creation function
-            static void RegisterComponent(ComponentFlags type, Func<Cell2D, ICell2DComponent> factoryMethod)
+            static void RegisterComponent(Component.Type type, Func<Cell2D, Component> factoryMethod)
             {
                 if (!_componentFactory.ContainsKey(type))
                 {
@@ -34,9 +34,9 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // Method to create a component based on the TypeKey
-            public static ICell2DComponent CreateComponent(ComponentFlags type, Cell2D cell)
+            public static Component CreateComponent(Component.Type type, Cell2D cell)
             {
-                if (_componentFactory.TryGetValue(type, out Func<Cell2D, ICell2DComponent> factoryMethod))
+                if (_componentFactory.TryGetValue(type, out Func<Cell2D, Component> factoryMethod))
                 {
                     return factoryMethod(cell);
                 }

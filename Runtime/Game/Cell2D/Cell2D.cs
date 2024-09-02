@@ -71,12 +71,6 @@ namespace Darklight.UnityExt.Game.Grid
             data.SetDimensions(dimensions);
         }
 
-        public void InitializeComponents(ComponentFlags flags)
-        {
-            if (_composite == null) return;
-
-            _composite.SetComponentFlags(flags);
-        }
 
         public Cell2D Clone()
         {
@@ -142,16 +136,6 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // ========= [[ NESTED TYPES ]] ======================================================= >>>>
-        /// <summary>
-        /// Enum to represent the different types of components that can be attached to a cell.
-        /// Intended to be used as a bit mask to determine which components are present on a cell.
-        /// </summary>
-        public enum ComponentFlags
-        {
-            Base = 0,
-            Overlap = 1 << 0,
-            Shape = 1 << 1,
-            Weight = 1 << 2
-        }
+
     }
 }
