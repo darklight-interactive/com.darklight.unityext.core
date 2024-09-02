@@ -16,6 +16,8 @@ namespace Darklight.UnityExt.Game.Grid
         {
             cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.OVERLAP);
             Cell2D_OverlapComponent overlapComponent = cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
+            if (overlapComponent == null) return;
+
             overlapComponent.LayerMask = _layerMask;
 
             overlapComponent.OnColliderEnter = OnColliderEnter;
@@ -25,6 +27,12 @@ namespace Darklight.UnityExt.Game.Grid
         Cell2D.Visitor _updateVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
             Cell2D_OverlapComponent overlapComponent = cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
+            if (overlapComponent == null)
+            {
+                cell.Accept(_registrationVisitor);
+                return;
+            }
+
             overlapComponent.LayerMask = _layerMask;
             overlapComponent.UpdateComponent();
         });

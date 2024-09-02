@@ -32,12 +32,16 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
-            public void RegisterComponent(Cell2D_Component.Type type)
+            public void RegisterComponent(Cell2D_Component.Type type, Cell2D.Visitor visitor = null)
             {
                 if (!HasComponent(type))
                 {
                     Cell2D_Component component = ComponentFactory.CreateComponent(type, _cell);
                     _componentMap.Add(type, component);
+
+                    if (visitor != null)
+                        visitor.Visit(_cell);
+
                     Refresh();
                 }
             }

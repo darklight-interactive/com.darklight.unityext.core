@@ -15,26 +15,34 @@ namespace Darklight.UnityExt.Game.Grid
         Cell2D.Visitor _registrationVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
             cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.WEIGHT);
+        });
 
+        Cell2D.Visitor _updateVisitor => new Cell2D.Visitor((Cell2D cell) =>
+        {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
+            if (weightComponent == null)
+            {
+                cell.Accept(_registrationVisitor);
+                return;
+            }
+
+            weightComponent.UpdateComponent();
         });
 
         Cell2D.Visitor _randomizeVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            if (weightComponent != null)
-            {
-                weightComponent.SetRandomWeight();
-            }
+            if (weightComponent == null) return;
+
+            weightComponent.SetRandomWeight();
         });
 
         Cell2D.Visitor _gizmosVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            if (weightComponent != null)
-            {
-                weightComponent.DrawGizmos();
-            }
+            if (weightComponent == null) return;
+
+            weightComponent.DrawGizmos();
         });
 
         // ======== [[ METHODS ]] ================================== >>>>
@@ -46,7 +54,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
         public override void UpdateComponent()
         {
-
+            baseGrid.SendVisitorToAllCells(_updateVisitor);
         }
 
         public override Type GetTypeTag() => Type.WEIGHT;

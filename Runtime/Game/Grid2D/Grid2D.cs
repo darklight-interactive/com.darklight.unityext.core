@@ -34,7 +34,8 @@ namespace Darklight.UnityExt.Game.Grid
         [Space(10), Header("Internal Data")]
         [SerializeField] Config _config;
 
-        [SerializeField] SerializableDictionary<Vector2Int, Cell2D> _map;
+        Dictionary<Vector2Int, Cell2D> _map;
+        [SerializeField] List<Cell2D> _cellsInMap;
         [SerializeField] ComponentRegistry _componentSystem;
 
 
@@ -49,12 +50,12 @@ namespace Darklight.UnityExt.Game.Grid
             }
             set { _config = value; }
         }
-        protected SerializableDictionary<Vector2Int, Cell2D> map
+        protected Dictionary<Vector2Int, Cell2D> map
         {
             get
             {
                 if (_map == null)
-                    _map = new SerializableDictionary<Vector2Int, Cell2D>();
+                    _map = new Dictionary<Vector2Int, Cell2D>();
                 return _map;
             }
             set { _map = value; }
@@ -100,7 +101,7 @@ namespace Darklight.UnityExt.Game.Grid
                 _config = new Config();
 
             // Create a new cell map
-            _map = new SerializableDictionary<Vector2Int, Cell2D>();
+            _map = new Dictionary<Vector2Int, Cell2D>();
 
             // Create a new component system
             _componentSystem = new ComponentRegistry(this);
@@ -140,6 +141,8 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Resize the grid if the dimensions have changed
             ResizeCellMap();
+
+            _cellsInMap = new List<Cell2D>(map.Values);
 
             // Update the cells
             SendVisitorToAllCells(cellUpdateVisitor);
@@ -228,6 +231,15 @@ namespace Darklight.UnityExt.Game.Grid
             return true;
         }
 
+        bool RemoveCell(Vector2Int key)
+        {
+            if (!_map.ContainsKey(key))
+                return false;
+
+            _map.Remove(key);
+            return true;
+        }
+
         bool GenerateCellMap()
         {
             // Skip if already initialized
@@ -256,22 +268,28 @@ namespace Darklight.UnityExt.Game.Grid
             if (!_isInitialized) return;
             Vector2Int newDimensions = config.GridDimensions;
 
-            // Remove null cells from the map
-            int removedCount = 0;
+            // Check if the dimensions have changed
+            int newGridArea = newDimensions.x * newDimensions.y;
+            int oldGridArea = map.Count;
+            if (newGridArea == oldGridArea) return;
+
+            // Remove cells that are out of bounds
             List<Vector2Int> keys = new List<Vector2Int>(map.Keys);
-            for (int i = 0; i < keys.Count; i++)
+            foreach (Vector2Int key in keys)
             {
-                Vector2Int key = keys[i];
                 if (key.x >= newDimensions.x || key.y >= newDimensions.y)
-                {
-                    map.Remove(key);
-                    removedCount++;
-                }
+                    RemoveCell(key);
             }
 
-            // Generate new cells if needed
-            if (removedCount > 0)
-                GenerateCellMap();
+            // Add cells that are in bounds
+            for (int x = 0; x < newDimensions.x; x++)
+            {
+                for (int y = 0; y < newDimensions.y; y++)
+                {
+                    Vector2Int gridKey = new Vector2Int(x, y);
+                    CreateCell(gridKey);
+                }
+            }
         }
 
         // ======== [[ NESTED TYPES ]] ======================================================= >>>>

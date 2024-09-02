@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.Game.Grid
     {
         bool _initialized = false;
         [SerializeField, ShowOnly] int _guid = System.Guid.NewGuid().GetHashCode();
-        Type _type;
+        [SerializeField, ShowOnly] Type _type;
         Cell2D _baseCell;
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
