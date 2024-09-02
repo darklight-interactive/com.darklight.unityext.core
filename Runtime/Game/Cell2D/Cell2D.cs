@@ -48,8 +48,6 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (_data == null) return;
             if (_componentReg == null) return;
-
-            _componentReg.UpdateComponents();
         }
 
         // -- (( HANDLERS )) -------- )))

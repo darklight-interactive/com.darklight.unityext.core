@@ -10,7 +10,7 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] LayerMask _layerMask;
         Collider2D[] _colliders;
 
-        public LayerMask layerMask { get => _layerMask; set => _layerMask = value; }
+        public LayerMask LayerMask { get => _layerMask; set => _layerMask = value; }
 
         public Cell2D_OverlapComponent(Cell2D cell) : base(cell) { }
         public Cell2D_OverlapComponent(Cell2D cell, LayerMask layerMask) : base(cell)

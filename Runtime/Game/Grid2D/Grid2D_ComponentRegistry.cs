@@ -8,12 +8,12 @@ namespace Darklight.UnityExt.Game.Grid
     public partial class Grid2D
     {
         [Serializable]
-        public class ComponentSystem
+        public class ComponentRegistry
         {
             Grid2D _grid;
             [SerializeField, ShowOnly, NonReorderable]
             List<Grid2D_Component> _components = new List<Grid2D_Component>();
-            public ComponentSystem(Grid2D grid)
+            public ComponentRegistry(Grid2D grid)
             {
                 _grid = grid;
                 grid.OnGridInitialized += InitializeComponents;

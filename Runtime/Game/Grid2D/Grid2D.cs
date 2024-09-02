@@ -35,7 +35,7 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] Config _config;
 
         [SerializeField] SerializableDictionary<Vector2Int, Cell2D> _map;
-        [SerializeField] ComponentSystem _componentSystem;
+        [SerializeField] ComponentRegistry _componentSystem;
 
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
@@ -112,7 +112,7 @@ namespace Darklight.UnityExt.Game.Grid
             map = new SerializableDictionary<Vector2Int, Cell2D>();
 
             // Create a new component system
-            _componentSystem = new ComponentSystem(this);
+            _componentSystem = new ComponentRegistry(this);
 
             // Determine if the grid was preloaded
             _isLoaded = true;
