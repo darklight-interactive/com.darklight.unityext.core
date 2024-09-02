@@ -109,7 +109,7 @@ namespace Darklight.UnityExt.Game.Grid
 
 
         // (( GIZMOS )) -------- ))
-        public void DrawGizmos()
+        public void DrawDefaultGizmos()
         {
             if (_data == null) return;
 

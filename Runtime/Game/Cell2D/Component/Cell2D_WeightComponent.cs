@@ -10,7 +10,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Cell2D_WeightComponent : Cell2D.Component
+    public class Cell2D_WeightComponent : Cell2D_Component
     {
         [SerializeField, Range(0, 100)] int _weight;
         public int Weight { get => _weight; }
@@ -30,7 +30,7 @@ namespace Darklight.UnityExt.Game.Grid
             _weight = weight;
         }
 
-        public override TypeTag GetTypeTag() => TypeTag.WEIGHT;
+        public override Cell2D_Component.Type GetTypeTag() => Type.WEIGHT;
 
         public override void DrawGizmos()
         {

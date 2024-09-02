@@ -5,7 +5,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
 
     [System.Serializable]
-    public class Cell2D_OverlapComponent : Cell2D.Component
+    public class Cell2D_OverlapComponent : Cell2D_Component
     {
         [SerializeField] LayerMask _layerMask;
         Collider2D[] _colliders;
@@ -41,7 +41,7 @@ namespace Darklight.UnityExt.Game.Grid
             if (_colliders == null || _colliders.Length == 0) return;
         }
 
-        public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
+        public override Type GetTypeTag() => Type.OVERLAP;
 
         void GetColor(out Color color)
         {

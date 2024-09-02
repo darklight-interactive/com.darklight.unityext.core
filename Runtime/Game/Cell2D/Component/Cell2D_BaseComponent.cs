@@ -1,6 +1,6 @@
 namespace Darklight.UnityExt.Game.Grid
 {
-    public class Cell2D_BaseComponent : Cell2D.Component
+    public class Cell2D_BaseComponent : Cell2D_Component
     {
         public Cell2D_BaseComponent(Cell2D cell) : base(cell) { }
 
@@ -12,6 +12,6 @@ namespace Darklight.UnityExt.Game.Grid
         public override void UpdateComponent() { }
         public override void DrawGizmos() { }
         public override void DrawEditorGizmos() { }
-        public override TypeTag GetTypeTag() => TypeTag.BASE;
+        public override Type GetTypeTag() => Type.BASE;
     }
 }

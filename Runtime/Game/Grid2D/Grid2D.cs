@@ -67,9 +67,6 @@ namespace Darklight.UnityExt.Game.Grid
             cell.RecalculateDataFromGrid(this);
             cell.Update();
         });
-        protected Cell2D.Visitor cellGizmoVisitor => new Cell2D.Visitor(cell => cell.DrawGizmos());
-        protected Cell2D.Visitor cellEditorVisitor => new Cell2D.Visitor(cell => cell.DrawEditor());
-
 
         // ======== [[ EVENTS ]] ======================================================= >>>>
         public delegate void GridEvent();
@@ -84,18 +81,6 @@ namespace Darklight.UnityExt.Game.Grid
         public void Start() => Initialize();
 
         public void Update() => Refresh();
-
-        public void OnDrawGizmos()
-        {
-            if (map == null || map.Count == 0) return;
-            SendVisitorToAllCells(cellGizmoVisitor);
-        }
-
-        public void OnDrawEditor()
-        {
-            if (map == null || map.Count == 0) return;
-            SendVisitorToAllCells(cellEditorVisitor);
-        }
         #endregion
 
         #region -- (( RUNTIME )) -------- )))
@@ -339,7 +324,6 @@ namespace Darklight.UnityExt.Game.Grid
             void OnSceneGUI()
             {
                 _script.Refresh();
-                _script.OnDrawEditor();
             }
         }
 #endif

@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         Cell2D.Visitor _registrationVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
-            cell.ComponentReg.RegisterComponent(Cell2D.Component.TypeTag.WEIGHT);
+            cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.WEIGHT);
 
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
             if (weightComponent != null)
@@ -29,7 +29,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
 
-        public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
+        public override Type GetTypeTag() => Type.WEIGHT;
     }
 }
 

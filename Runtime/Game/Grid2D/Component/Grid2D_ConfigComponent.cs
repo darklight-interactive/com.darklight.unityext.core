@@ -24,7 +24,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawGizmos() { }
         public override void DrawEditorGizmos() { }
-        public override TypeTag GetTypeTag() => TypeTag.CONFIG;
+        public override Type GetTypeTag() => Type.CONFIG;
 
         #endregion
 

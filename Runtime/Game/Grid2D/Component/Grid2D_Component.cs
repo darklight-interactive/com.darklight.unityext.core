@@ -16,10 +16,10 @@ namespace Darklight.UnityExt.Game.Grid
     [RequireComponent(typeof(Grid2D))]
     public abstract class Grid2D_Component :
         MonoBehaviour,
-        IComponent<Grid2D, Grid2D_Component.TypeTag>
+        IComponent<Grid2D, Grid2D_Component.Type>
     {
         [SerializeField, ShowOnly] protected int guid;
-        [SerializeField, ShowOnly] protected TypeTag type;
+        [SerializeField, ShowOnly] protected Type type;
         protected Grid2D baseGrid;
 
         // (( VISITORS )) -------- )))
@@ -35,20 +35,9 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( UNITY METHODS )) -------- ))
-        public void Awake()
-        {
-            InitializeComponent(GetComponent<Grid2D>());
-        }
-
-        public void Update()
-        {
-            UpdateComponent();
-        }
-
-        public void OnDrawGizmos()
-        {
-            DrawGizmos();
-        }
+        public void Awake() => InitializeComponent(baseGrid);
+        public void Update() => UpdateComponent();
+        public void OnDrawGizmos() => DrawGizmos();
 
         // -- (( INTERFACE METHODS )) -------- ))
         public virtual void InitializeComponent(Grid2D baseObj)
@@ -61,14 +50,15 @@ namespace Darklight.UnityExt.Game.Grid
         public abstract void UpdateComponent();
         public virtual void DrawGizmos() => baseGrid.SendVisitorToAllCells(_gizmoVisitor);
         public virtual void DrawEditorGizmos() => baseGrid.SendVisitorToAllCells(_editorGizmoVisitor);
-        public abstract TypeTag GetTypeTag();
+        public abstract Type GetTypeTag();
 
         // ======== [[ NESTED TYPES ]] ================================== >>>>
-        public enum TypeTag
+        public enum Type
         {
             BASE = 0,
             CONFIG = 1,
             OVERLAP = 2,
+            WEIGHT = 3,
         }
     }
 
@@ -100,6 +90,11 @@ namespace Darklight.UnityExt.Game.Grid
                 _serializedObject.ApplyModifiedProperties();
                 _script.UpdateComponent();
             }
+        }
+
+        private void OnSceneGUI()
+        {
+            _script.DrawEditorGizmos();
         }
     }
 #endif

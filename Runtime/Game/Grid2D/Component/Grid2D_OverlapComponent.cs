@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         Cell2D.Visitor _registrationVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
-            cell.ComponentReg.RegisterComponent(Cell2D.Component.TypeTag.OVERLAP);
+            cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.OVERLAP);
         });
 
         Cell2D.Visitor _updateVisitor => new Cell2D.Visitor((Cell2D cell) =>
@@ -22,7 +22,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
             else
             {
-                cell.ComponentReg.RegisterComponent(Cell2D.Component.TypeTag.OVERLAP);
+                cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.OVERLAP);
             }
         });
 
@@ -37,7 +37,7 @@ namespace Darklight.UnityExt.Game.Grid
             baseGrid.SendVisitorToAllCells(_updateVisitor);
         }
 
-        public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
+        public override Type GetTypeTag() => Type.OVERLAP;
     }
 }
 

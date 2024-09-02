@@ -5,14 +5,14 @@ using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Shape_Cell2DComponent : Cell2D.Component
+    public class Cell2D_ShapeComponent : Cell2D_Component
     {
         public Shape2D Shape { get => _shape; }
 
         [SerializeField] Shape2D _shape;
         [SerializeField, Range(3, 32)] int _segments = 16;
 
-        public Shape_Cell2DComponent(Cell2D cell) : base(cell) { }
+        public Cell2D_ShapeComponent(Cell2D cell) : base(cell) { }
 
         public override void InitializeComponent(Cell2D baseObj)
         {
@@ -28,7 +28,7 @@ namespace Darklight.UnityExt.Game.Grid
             _shape.UpdateShape(position, radius, _segments, normal, Color.white);
         }
 
-        public override TypeTag GetTypeTag() => TypeTag.SHAPE;
+        public override Type GetTypeTag() => Type.SHAPE;
 
         public override void DrawGizmos()
         {
