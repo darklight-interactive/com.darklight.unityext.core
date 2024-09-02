@@ -16,6 +16,7 @@ namespace Darklight.UnityExt.Editor
 	public class ConsoleGUI
 	{
 		private Vector2 scrollPosition;
+		private float scrollHeightSetting = 20;
 		private bool autoScroll = true; // Default to true to enable auto-scrolling.
 		public class LogEntry
 		{
@@ -98,14 +99,24 @@ namespace Darklight.UnityExt.Editor
 					normal = { background = CustomInspectorGUI.MakeTex(600, 1, new Color(0.1f, 0.1f, 0.1f, 1.0f)) }
 				};
 
-				scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, backgroundStyle, GUILayout.Height(200));
+				float scrollHeight = scrollHeightSetting * 10;
+				scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, backgroundStyle, GUILayout.Height(scrollHeight));
+
 				int logCount = 0;
 				foreach (LogEntry log in AllLogEntries)
 				{
 					DrawLogEntry(log);
 					logCount++;
 				}
+
 				EditorGUILayout.EndScrollView();
+
+				// < BUTTONS > ---------------------------------------------------- >>
+				// Button to clear the console
+				if (GUILayout.Button("Clear Console"))
+				{
+					Clear();
+				}
 
 				// < SETTINGS > ---------------------------------------------------- >>
 				_settingsFoldoutOpen = EditorGUILayout.Foldout(_settingsFoldoutOpen, "Settings", true, EditorStyles.foldoutHeader);
@@ -132,11 +143,8 @@ namespace Darklight.UnityExt.Editor
 			// Toggle for enabling/disabling auto-scroll
 			autoScroll = EditorGUILayout.Toggle("Auto-scroll", autoScroll);
 
-			// Button to clear the console
-			if (GUILayout.Button("Clear Console"))
-			{
-				Clear();
-			}
+			// Slider for adjusting the scroll height
+			scrollHeightSetting = EditorGUILayout.Slider("Scroll Height", scrollHeightSetting, 1, 100);
 		}
 #endif
 

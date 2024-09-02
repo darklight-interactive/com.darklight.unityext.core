@@ -52,6 +52,10 @@ namespace Darklight.UnityExt.Game.Grid
         }
         protected ConsoleGUI console => _console;
 
+        // -- (( EVENTS )) ------------------ >>
+        public delegate void GridEvent();
+        public event GridEvent OnGridPreloaded;
+        public event GridEvent OnGridInitialized;
 
         // -- (( VISITORS )) ------------------ >>
         protected Cell2D.Visitor cellUpdateVisitor => new Cell2D.Visitor(cell =>
@@ -90,8 +94,13 @@ namespace Darklight.UnityExt.Game.Grid
                 config = new Config();
             cellMap = new Dictionary<Vector2Int, Cell2D>();
 
+
+            // ( Connect the events )
+            OnGridPreloaded += () => console.Log($"Preloaded {_isLoaded}.");
+            OnGridInitialized += () => console.Log($"Initialized {_isInitialized}.");
+
             _isLoaded = true;
-            console.Log($"{CONSOLE_PREFIX} preloaded.");
+            OnGridPreloaded?.Invoke();
         }
 
         public virtual void Initialize()
@@ -99,9 +108,11 @@ namespace Darklight.UnityExt.Game.Grid
             // Generate a new grid from the config
             bool mapGenerated = GenerateCellMap();
 
-
+            // Determine if the grid was initialized
             _isInitialized = mapGenerated;
-            console.Log($"{CONSOLE_PREFIX} initialized.");
+
+            if (_isInitialized)
+                OnGridInitialized?.Invoke();
         }
 
         public virtual void Refresh()
@@ -128,7 +139,6 @@ namespace Darklight.UnityExt.Game.Grid
             cellMap.Clear();
 
             _isInitialized = false;
-            console.Log($"{CONSOLE_PREFIX} cleared.");
         }
         #endregion
 
@@ -193,7 +203,11 @@ namespace Darklight.UnityExt.Game.Grid
 
         bool GenerateCellMap()
         {
-            _cellMap = new Dictionary<Vector2Int, Cell2D>();
+            // Skip if already initialized
+            if (_isInitialized) return false;
+
+            // Confirm the grid is cleared
+            Clear();
 
             // Iterate through the grid dimensions and create cells
             Vector2Int dimensions = config.GridDimensions;
@@ -206,14 +220,7 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
 
-            if (_cellMap.Count == 0)
-            {
-                console.Log($"{CONSOLE_PREFIX} failed to generate cells.", 0, LogSeverity.Error);
-                return false;
-            }
-
-            Debug.Log($"{CONSOLE_PREFIX} generated {_cellMap.Count} cells.");
-            console.Log($"{CONSOLE_PREFIX} generated {cellMap.Count} cells.", 1);
+            if (cellMap.Count == 0) return false;
             return true;
         }
 
@@ -267,9 +274,6 @@ namespace Darklight.UnityExt.Game.Grid
                 _serializedObject.Update();
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.Space();
-
-                int cellCount = _script.cellMap.Count;
-                EditorGUILayout.LabelField($"Cell Count: {cellCount}");
 
                 if (GUILayout.Button("Initialize")) { _script.Initialize(); }
 
