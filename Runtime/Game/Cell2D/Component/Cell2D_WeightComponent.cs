@@ -12,25 +12,34 @@ namespace Darklight.UnityExt.Game.Grid
     [System.Serializable]
     public class Cell2D_WeightComponent : Cell2D_Component
     {
-        [SerializeField, ShowOnly] int _weight;
-        Color _gizmoColor = Color.white;
+        const int MIN_WEIGHT = 0;
+        const int MAX_WEIGHT = 100;
 
+        [SerializeField, ShowOnly] int _weight;
+
+        // ======== [[ CONSTRUCTORS ]] =========================== >>>>
         public Cell2D_WeightComponent(Cell2D cell) : base(cell)
         {
             _weight = 0;
         }
 
-        public override void UpdateComponent()
-        {
-        }
-
+        // ======== [[ METHODS ]] ================================== >>>>
+        // -- (( INTERFACE METHODS )) -------- ))
+        public override void UpdateComponent() { }
         public override Type GetTypeTag() => Type.WEIGHT;
 
         public override void DrawGizmos()
         {
             baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
-            CustomGizmos.DrawFilledSquare(position, radius, normal, _gizmoColor);
-            CustomGizmos.DrawLabel($"Weight: {_weight}", position, CustomGUIStyles.CenteredStyle);
+            CustomGizmos.DrawFilledSquare(position, radius, normal, GetColor());
+
+            GUIStyle style = new GUIStyle()
+            {
+                fontSize = 12,
+                normal = new GUIStyleState() { textColor = GetInverseColor() }
+            };
+
+            CustomGizmos.DrawLabel($"Weight: {_weight}", position, style);
         }
 
         public override void DrawEditorGizmos()
@@ -45,19 +54,42 @@ namespace Darklight.UnityExt.Game.Grid
             }, Handles.RectangleHandleCap);
         }
 
-        public void SetWeight(int weight)
-        {
-            _weight = weight;
-        }
-
+        // -- (( GETTERS )) -------- ))
         public int GetWeight()
         {
             return _weight;
         }
 
-        public void SetGizmoColor(Color color)
+        Color GetColor()
         {
-            _gizmoColor = color;
+            return Color.Lerp(Color.black, Color.white, (float)_weight / MAX_WEIGHT);
+        }
+
+        Color GetInverseColor()
+        {
+            return Color.Lerp(Color.white, Color.black, (float)_weight / MAX_WEIGHT);
+        }
+
+        // -- (( SETTERS )) -------- ))
+        public void SetWeight(int weight)
+        {
+            _weight = weight;
+        }
+
+        public void SetRandomWeight()
+        {
+            _weight = UnityEngine.Random.Range(MIN_WEIGHT, MAX_WEIGHT);
+        }
+
+        // -- (( HANDLER METHODS )) -------- ))
+        public void AddWeight(int amount)
+        {
+            _weight += amount;
+        }
+
+        public void SubtractWeight(int amount)
+        {
+            _weight -= amount;
         }
     }
 }

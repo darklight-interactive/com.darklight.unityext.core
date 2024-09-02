@@ -7,9 +7,6 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public class Grid2D_WeightComponent : Grid2D_Component
     {
-        const int MIN_WEIGHT = 0;
-        const int MAX_WEIGHT = 100;
-
         // ======== [[ FIELDS ]] ================================== >>>>
         [SerializeField] bool _showGizmos;
 
@@ -27,7 +24,7 @@ namespace Darklight.UnityExt.Game.Grid
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
             if (weightComponent != null)
             {
-                weightComponent.SetWeight(Random.Range(MIN_WEIGHT, MAX_WEIGHT));
+                weightComponent.SetRandomWeight();
             }
         });
 
@@ -36,9 +33,6 @@ namespace Darklight.UnityExt.Game.Grid
             Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
             if (weightComponent != null)
             {
-                int weight = weightComponent.GetWeight();
-                Color color = GetColorForWeight(weight);
-                weightComponent.SetGizmoColor(color);
                 weightComponent.DrawGizmos();
             }
         });
@@ -69,10 +63,16 @@ namespace Darklight.UnityExt.Game.Grid
             baseGrid.SendVisitorToAllCells(_randomizeVisitor);
         }
 
-        // -- (( HELPER METHODS )) -------- ))
-        Color GetColorForWeight(int weight)
+        public void AddWeightToCell(Cell2D cell)
         {
-            return Color.Lerp(Color.red, Color.green, (float)weight / MAX_WEIGHT);
+            Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
+            weightComponent.AddWeight(50);
+        }
+
+        public void RemoveWeightFromCell(Cell2D cell)
+        {
+            Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
+            weightComponent.SubtractWeight(50);
         }
 
 #if UNITY_EDITOR

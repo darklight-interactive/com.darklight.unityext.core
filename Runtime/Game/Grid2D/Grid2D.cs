@@ -18,7 +18,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [ExecuteAlways]
-    public partial class Grid2D : MonoBehaviour
+    public partial class Grid2D : MonoBehaviour, IUnityEditorListener
     {
         // ======== [[ CONSTANTS ]] ======================================================= >>>>
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
@@ -75,6 +75,12 @@ namespace Darklight.UnityExt.Game.Grid
         public event GridEvent OnGridUpdated;
 
         // ======== [[ METHODS ]] ============================================================ >>>>
+        public void OnEditorReloaded()
+        {
+            _console.Clear();
+            Awake();
+        }
+
         #region -- (( UNITY )) -------- )))
         public void Awake() => Preload();
 
@@ -90,11 +96,11 @@ namespace Darklight.UnityExt.Game.Grid
             _isInitialized = false;
 
             // Create a new config if none exists
-            if (config == null)
-                config = new Config();
+            if (_config == null)
+                _config = new Config();
 
             // Create a new cell map
-            map = new SerializableDictionary<Vector2Int, Cell2D>();
+            _map = new SerializableDictionary<Vector2Int, Cell2D>();
 
             // Create a new component system
             _componentSystem = new ComponentRegistry(this);

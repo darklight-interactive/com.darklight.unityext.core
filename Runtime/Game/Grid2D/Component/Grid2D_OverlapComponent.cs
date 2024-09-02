@@ -30,8 +30,8 @@ namespace Darklight.UnityExt.Game.Grid
         });
 
         // ======== [[ EVENTS ]] ================================== >>>>
-        //public UnityEvent OnColliderEnter;
-        //public UnityEvent OnColliderExit;
+        public UnityEvent<Cell2D> HandleCollisionEnter;
+        public UnityEvent<Cell2D> HandleCollisionExit;
 
         // ======== [[ METHODS ]] ================================== >>>>
         public override void InitializeComponent(Grid2D baseObj)
@@ -63,12 +63,14 @@ namespace Darklight.UnityExt.Game.Grid
         // -- (( EVENT HANDLERS )) -------- ))
         void OnColliderEnter(Cell2D cell, Collider2D collider)
         {
-            Debug.Log($"Collider entered cell {cell.Key} :: {collider}");
+            HandleCollisionEnter?.Invoke(cell);
+            //Debug.Log($"Collider entered cell {cell.Key} :: {collider}");
         }
 
         void OnColliderExit(Cell2D cell, Collider2D collider)
         {
-            Debug.Log($"Collider exited cell {cell.Key} :: {collider}");
+            HandleCollisionExit?.Invoke(cell);
+            //Debug.Log($"Collider exited cell {cell.Key} :: {collider}");
         }
     }
 }

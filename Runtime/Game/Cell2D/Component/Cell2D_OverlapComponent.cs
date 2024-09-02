@@ -45,8 +45,13 @@ namespace Darklight.UnityExt.Game.Grid
 
         void UpdateColliders()
         {
+            if (_previousColliders == null)
+            {
+                _previousColliders = new HashSet<Collider2D>();
+            }
+
             // Clear the currentColliders set to prepare for new detections
-            _currentColliders.Clear();
+            _currentColliders = new HashSet<Collider2D>();
 
             baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             Vector3 halfExtents = Vector3.one * radius;
@@ -86,13 +91,11 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (_currentColliders == null || _currentColliders.Count == 0)
             {
-                color = Color.green;
+                color = Color.grey;
                 return;
             }
 
             color = Color.red;
         }
-
-        public override void DrawEditorGizmos() { }
     }
 }
