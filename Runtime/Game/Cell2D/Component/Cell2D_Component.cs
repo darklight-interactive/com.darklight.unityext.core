@@ -13,8 +13,7 @@ namespace Darklight.UnityExt.Game.Grid
         Cell2D _baseCell;
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
-        public int GUID { get => _guid; }
-        public Cell2D Base { get => _baseCell; }
+        protected Cell2D baseCell => _baseCell;
 
         // ======== [[ CONSTRUCTORS ]] ================================== >>>>
         public Cell2D_Component(Cell2D baseObj) => InitializeComponent(baseObj);

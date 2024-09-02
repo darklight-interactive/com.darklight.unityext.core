@@ -97,22 +97,6 @@ namespace Darklight.UnityExt.Game.Grid
                 return false;
             }
 
-            public void DrawComponentGizmos()
-            {
-                foreach (Cell2D_Component component in _components)
-                {
-                    component.DrawGizmos();
-                }
-            }
-
-            public void DrawComponentEditorGizmos()
-            {
-                foreach (Cell2D_Component component in _components)
-                {
-                    component.DrawEditorGizmos();
-                }
-            }
-
             void Refresh()
             {
                 _components = _componentMap.Values.ToList();

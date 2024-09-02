@@ -18,13 +18,13 @@ namespace Darklight.UnityExt.Game.Grid
         {
             base.InitializeComponent(baseObj);
 
-            Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape = new Shape2D(position, radius, _segments, normal, Color.white);
         }
 
         public override void UpdateComponent()
         {
-            Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape.UpdateShape(position, radius, _segments, normal, Color.white);
         }
 

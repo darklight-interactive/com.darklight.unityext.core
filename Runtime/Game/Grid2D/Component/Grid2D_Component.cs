@@ -1,6 +1,8 @@
 using UnityEngine;
 using Darklight.UnityExt.Behaviour.Interface;
 using Darklight.UnityExt.Editor;
+using UnityEngine.Events;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -18,20 +20,10 @@ namespace Darklight.UnityExt.Game.Grid
         MonoBehaviour,
         IComponent<Grid2D, Grid2D_Component.Type>
     {
+        // ======== [[ FIELDS ]] ================================== >>>>
         [SerializeField, ShowOnly] protected int guid;
         [SerializeField, ShowOnly] protected Type type;
         protected Grid2D baseGrid;
-
-        // (( VISITORS )) -------- )))
-        Cell2D.Visitor _gizmoVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            cell.ComponentReg.DrawComponentGizmos();
-        });
-
-        Cell2D.Visitor _editorGizmoVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            cell.ComponentReg.DrawComponentEditorGizmos();
-        });
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( UNITY METHODS )) -------- ))
@@ -48,8 +40,8 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         public abstract void UpdateComponent();
-        public virtual void DrawGizmos() => baseGrid.SendVisitorToAllCells(_gizmoVisitor);
-        public virtual void DrawEditorGizmos() => baseGrid.SendVisitorToAllCells(_editorGizmoVisitor);
+        public virtual void DrawGizmos() { }
+        public virtual void DrawEditorGizmos() { }
         public abstract Type GetTypeTag();
 
         // ======== [[ NESTED TYPES ]] ================================== >>>>
@@ -78,6 +70,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void OnInspectorGUI()
         {
+            if (_serializedObject == null) return;
             _serializedObject.Update();
 
             EditorGUI.BeginChangeCheck();
