@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Cell2D_OverlapComponent : Cell2D_Component
+    public class Cell2D_OverlapComponent : Cell2D.Component
     {
         [SerializeField] LayerMask _layerMask;
         Collider2D[] _colliders;
@@ -30,14 +30,14 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // ======== [[ METHODS ]] ================================== >>>>
-        public override void UpdateComponent()
+        public override void Updater()
         {
             UpdateColliders();
         }
 
         public override void DrawGizmos()
         {
-            baseCell.GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions);
+            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions);
             GetColor(out Color color);
             CustomGizmos.DrawWireRect(position, dimensions, normal, color);
         }
@@ -53,7 +53,7 @@ namespace Darklight.UnityExt.Game.Grid
             // Clear the currentColliders set to prepare for new detections
             _currentColliders = new HashSet<Collider2D>();
 
-            baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             Vector3 halfExtents = Vector3.one * radius;
 
             // Use Physics2D.OverlapBoxAll to detect colliders within the cell dimensions
@@ -70,7 +70,7 @@ namespace Darklight.UnityExt.Game.Grid
             enteredColliders.ExceptWith(_previousColliders); // Elements in current but not in previous
             foreach (var collider in enteredColliders)
             {
-                OnColliderEnter?.Invoke(baseCell, collider);
+                OnColliderEnter?.Invoke(Cell, collider);
             }
 
             // Detect colliders that have exited
@@ -78,14 +78,14 @@ namespace Darklight.UnityExt.Game.Grid
             exitedColliders.ExceptWith(_currentColliders); // Elements in previous but not in current
             foreach (var collider in exitedColliders)
             {
-                OnColliderExit?.Invoke(baseCell, collider);
+                OnColliderExit?.Invoke(Cell, collider);
             }
 
             // Swap sets: previous becomes current, reuse the set
             (_currentColliders, _previousColliders) = (_previousColliders, _currentColliders);
         }
 
-        public override Type GetTypeTag() => Type.OVERLAP;
+        public override Cell2D.ComponentTypeKey GetTypeKey() => Cell2D.ComponentTypeKey.OVERLAP;
 
         void GetColor(out Color color)
         {

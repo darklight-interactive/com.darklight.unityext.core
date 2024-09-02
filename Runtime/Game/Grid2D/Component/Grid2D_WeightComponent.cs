@@ -12,22 +12,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
         // -- (( VISITORS )) -------- ))
-        Cell2D.Visitor _registrationVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.WEIGHT);
-        });
-
-        Cell2D.Visitor _updateVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            if (weightComponent == null)
-            {
-                cell.Accept(_registrationVisitor);
-                return;
-            }
-
-            weightComponent.UpdateComponent();
-        });
+        protected override Cell2D.ComponentVisitor CellComponentVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
 
         Cell2D.Visitor _randomizeVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {
@@ -47,28 +32,21 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( INTERFACE METHODS )) -------- ))
-        public override void InitializeComponent(Grid2D baseObj)
+        public override void Updater()
         {
-            base.InitializeComponent(baseObj);
-            baseObj.SendVisitorToAllCells(_registrationVisitor);
+            BaseGrid.SendVisitorToAllCells(CellComponentVisitor);
         }
-        public override void UpdateComponent()
-        {
-            baseGrid.SendVisitorToAllCells(_updateVisitor);
-        }
-
-        public override Type GetTypeTag() => Type.WEIGHT;
 
         public override void DrawGizmos()
         {
             if (!_showGizmos) return;
-            baseGrid.SendVisitorToAllCells(_gizmosVisitor);
+            BaseGrid.SendVisitorToAllCells(_gizmosVisitor);
         }
 
         // -- (( HANDLER METHODS )) -------- ))
         public void RandomizeWeights()
         {
-            baseGrid.SendVisitorToAllCells(_randomizeVisitor);
+            BaseGrid.SendVisitorToAllCells(_randomizeVisitor);
         }
 
         public void AddWeightToCell(Cell2D cell, int weight)

@@ -8,31 +8,21 @@ namespace Darklight.UnityExt.Game.Grid
         // ======== [[ FIELDS ]] ======================================================= >>>>
         [SerializeField, Expandable] Grid2D_ConfigDataObject _configObj;
 
+        // ======== [[ PROPERTIES ]] ======================================================= >>>>
+        protected override Cell2D.ComponentVisitor CellComponentVisitor =>
+            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.BASE);
+
         // ======== [[ METHODS ]] ======================================================= >>>>
-
-        #region  -- (( UNITY RUNTIME )) ------------------ >>
-        public override void InitializeComponent(Grid2D baseObj)
-        {
-            base.InitializeComponent(baseObj);
-            RefreshConfig();
-        }
-
-        public override void UpdateComponent()
+        public override void Updater()
         {
             RefreshConfig();
         }
-
-        public override void DrawGizmos() { }
-        public override void DrawEditorGizmos() { }
-        public override Type GetTypeTag() => Type.CONFIG;
-
-        #endregion
 
         void RefreshConfig()
         {
             // Assign the grid's config from the config object
             Grid2D.Config newConfig = _configObj.CreateGridConfig();
-            baseGrid.SetConfig(newConfig);
+            BaseGrid.SetConfig(newConfig);
         }
 
     }

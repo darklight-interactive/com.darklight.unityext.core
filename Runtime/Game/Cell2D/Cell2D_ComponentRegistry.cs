@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
 
@@ -10,18 +12,26 @@ namespace Darklight.UnityExt.Game.Grid
         [System.Serializable]
         public class ComponentRegistry
         {
-            Cell2D _cell;
-            Dictionary<Cell2D_Component.Type, Cell2D_Component> _componentMap = new();
+            static Dictionary<Cell2D.ComponentTypeKey, Type> _componentTypeMap = new()
+            {
+                { Cell2D.ComponentTypeKey.BASE, typeof(Cell2D_BaseComponent) },
+                { Cell2D.ComponentTypeKey.OVERLAP, typeof(Cell2D_OverlapComponent) },
+                { Cell2D.ComponentTypeKey.SHAPE, typeof(Cell2D_ShapeComponent) },
+                { Cell2D.ComponentTypeKey.WEIGHT, typeof(Cell2D_WeightComponent) },
+                { Cell2D.ComponentTypeKey.SPAWNER, typeof(Cell2D_SpawnerComponent) },
+            };
 
-            // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
-            [SerializeReference, NonReorderable] List<Cell2D_Component> _components = new();
+            // ======== [[ FIELDS ]] ======================================================= >>>>
+            Cell2D _cell;
+            Dictionary<Cell2D.ComponentTypeKey, Component> _componentMap = new();
+            [SerializeReference, NonReorderable] List<Component> _components = new();
 
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
             public ComponentRegistry(Cell2D cell)
             {
                 _cell = cell;
-                _componentMap = new Dictionary<Cell2D_Component.Type, Cell2D_Component>();
-                _components = new List<Cell2D_Component>();
+                _componentMap = new Dictionary<Cell2D.ComponentTypeKey, Component>();
+                _components = new List<Component>();
             }
 
             public ComponentRegistry(ComponentRegistry originComposite)
@@ -32,21 +42,23 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
-            public void RegisterComponent(Cell2D_Component.Type type, Cell2D.Visitor visitor = null)
+            public Component RegisterComponent(Cell2D.ComponentTypeKey type, Cell2D.Visitor visitor = null)
             {
                 if (!HasComponent(type))
                 {
-                    Cell2D_Component component = ComponentFactory.CreateComponent(type, _cell);
+                    Component component = ComponentFactory.CreateComponent(type, _cell);
                     _componentMap.Add(type, component);
 
                     if (visitor != null)
                         visitor.Visit(_cell);
 
                     Refresh();
+                    return component;
                 }
+                return null;
             }
 
-            public Cell2D_Component GetComponent(Cell2D_Component.Type type)
+            public Component GetComponent(Cell2D.ComponentTypeKey type)
             {
                 if (_componentMap.ContainsKey(type))
                 {
@@ -55,9 +67,9 @@ namespace Darklight.UnityExt.Game.Grid
                 return null;
             }
 
-            public TComponent GetComponent<TComponent>() where TComponent : Cell2D_Component
+            public TComponent GetComponent<TComponent>() where TComponent : Component
             {
-                foreach (Cell2D_Component component in _components)
+                foreach (Component component in _components)
                 {
                     if (component is TComponent)
                     {
@@ -67,7 +79,8 @@ namespace Darklight.UnityExt.Game.Grid
                 return default;
             }
 
-            public void RemoveComponent(Cell2D_Component.Type type)
+
+            public void RemoveComponent(Cell2D.ComponentTypeKey type)
             {
                 // If the component is in the dictionary, remove it.
                 if (_componentMap.ContainsKey(type))
@@ -77,19 +90,19 @@ namespace Darklight.UnityExt.Game.Grid
                 Refresh();
             }
 
-            public void LoadComponents(List<Cell2D_Component> originComponents)
+            public void LoadComponents(List<Component> originComponents)
             {
-                _componentMap = new Dictionary<Cell2D_Component.Type, Cell2D_Component>();
-                foreach (Cell2D_Component component in originComponents)
+                _componentMap = new Dictionary<Cell2D.ComponentTypeKey, Component>();
+                foreach (Component component in originComponents)
                 {
-                    Cell2D_Component.Type type = component.GetTypeTag();
-                    Cell2D_Component newComponent = ComponentFactory.CreateComponent(type, _cell);
+                    Cell2D.ComponentTypeKey type = component.GetTypeKey();
+                    Component newComponent = ComponentFactory.CreateComponent(type, _cell);
                     _componentMap.Add(type, newComponent);
                 }
                 Refresh();
             }
 
-            public bool HasComponent(Cell2D_Component.Type type)
+            public bool HasComponent(Cell2D.ComponentTypeKey type)
             {
                 if (_componentMap.ContainsKey(type))
                 {
@@ -104,6 +117,20 @@ namespace Darklight.UnityExt.Game.Grid
             void Refresh()
             {
                 _components = _componentMap.Values.ToList();
+            }
+
+            // ---- (( STATIC METHODS )) -------- ))
+            public static Cell2D.ComponentTypeKey GetTypeKey<TComponent>() where TComponent : Component
+            {
+                foreach (var pair in _componentTypeMap)
+                {
+                    if (pair.Value == typeof(TComponent))
+                    {
+                        return pair.Key;
+                    }
+                }
+                throw new InvalidEnumArgumentException(
+                    $"Component type {typeof(TComponent)} is not registered in the factory.");
             }
         }
     }

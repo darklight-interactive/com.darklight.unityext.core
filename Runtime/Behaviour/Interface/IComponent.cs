@@ -15,12 +15,12 @@ namespace Darklight.UnityExt.Behaviour.Interface
         /// <param name="baseObj">
         ///     The base object that the component is attached to.
         /// </param>
-        void InitializeComponent(TBase baseObj);
+        void Initialize(TBase baseObj);
 
         /// <summary>
         /// Update the component.
         /// </summary>
-        void UpdateComponent();
+        void Updater();
 
         /// <summary>
         /// Draw gizmos for the component.
@@ -33,9 +33,7 @@ namespace Darklight.UnityExt.Behaviour.Interface
         void DrawEditorGizmos();
 
         /// <summary>
-        /// Get the tag of the component.
-        /// </summary>
-        /// <returns></returns>
-        TTag GetTypeTag();
+        /// Get the type key for the component.
+        TTag GetTypeKey();
     }
 }

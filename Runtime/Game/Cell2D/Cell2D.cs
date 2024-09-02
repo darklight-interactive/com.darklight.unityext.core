@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Darklight.UnityExt.Behaviour.Interface;
 using Darklight.UnityExt.Editor;
 using Unity.Android.Gradle.Manifest;
 using UnityEngine;
@@ -7,7 +8,7 @@ namespace Darklight.UnityExt.Game.Grid
 {
 
     [System.Serializable]
-    public partial class Cell2D
+    public partial class Cell2D : IVisitable<Cell2D>
     {
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField, ShowOnly] string _name = "Cell2D";
@@ -81,8 +82,8 @@ namespace Darklight.UnityExt.Game.Grid
             return clone;
         }
 
-        // (( VISITOR PATTERN )) -------- ))
-        public void Accept(Visitor visitor)
+        // (( INTERFACE )) : IVisitable -------- ))
+        public void Accept(IVisitor<Cell2D> visitor)
         {
             visitor.Visit(this);
         }

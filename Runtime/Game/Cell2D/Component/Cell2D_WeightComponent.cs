@@ -10,7 +10,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Cell2D_WeightComponent : Cell2D_Component
+    public class Cell2D_WeightComponent : Cell2D.Component
     {
         const int MIN_WEIGHT = 0;
         const int MAX_WEIGHT = 100;
@@ -25,12 +25,12 @@ namespace Darklight.UnityExt.Game.Grid
 
         // ======== [[ METHODS ]] ================================== >>>>
         // -- (( INTERFACE METHODS )) -------- ))
-        public override void UpdateComponent() { }
-        public override Type GetTypeTag() => Type.WEIGHT;
+        public override void Updater() { }
+        public override Cell2D.ComponentTypeKey GetTypeKey() => Cell2D.ComponentTypeKey.WEIGHT;
 
         public override void DrawGizmos()
         {
-            baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawFilledSquare(position, radius, normal, GetColor());
 
             GUIStyle style = new GUIStyle()
@@ -44,7 +44,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawEditorGizmos()
         {
-            baseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawButtonHandle(position, radius, normal, Color.white, () =>
             {
                 _weight += 5;

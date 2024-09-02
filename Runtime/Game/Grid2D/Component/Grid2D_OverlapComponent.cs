@@ -12,54 +12,57 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] bool _showGizmos;
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
-        // -- (( VISITORS )) -------- ))
-        Cell2D.Visitor _registrationVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            cell.ComponentReg.RegisterComponent(Cell2D_Component.Type.OVERLAP);
-            Cell2D_OverlapComponent overlapComponent = cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
-            if (overlapComponent == null) return;
-
-            overlapComponent.LayerMask = _layerMask;
-
-            overlapComponent.OnColliderEnter = OnColliderEnter;
-            overlapComponent.OnColliderExit = OnColliderExit;
-        });
-
-        Cell2D.Visitor _updateVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            Cell2D_OverlapComponent overlapComponent = cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
-            if (overlapComponent == null)
+        protected Cell2D.EventRegistry.VisitCellComponentEvent InitEvent =
+            (Cell2D cell, Cell2D.ComponentTypeKey type) =>
             {
-                cell.Accept(_registrationVisitor);
-                return;
-            }
+                // Only initialize if the component type is OVERLAP
+                if (type != Cell2D.ComponentTypeKey.OVERLAP) return;
+                Cell2D_OverlapComponent overlapComponent =
+                    cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
+                if (overlapComponent == null) return;
 
-            overlapComponent.LayerMask = _layerMask;
-            overlapComponent.UpdateComponent();
-        });
+                // << INITIALIZATION >> 
+                overlapComponent.LayerMask = overlapComponent.LayerMask;
+                overlapComponent.OnColliderEnter += overlapComponent.OnColliderEnter;
+                overlapComponent.OnColliderExit += overlapComponent.OnColliderExit;
+                overlapComponent.Initialize(cell);
+            };
+
+        protected Cell2D.EventRegistry.VisitCellComponentEvent UpdateEvent =
+            (Cell2D cell, Cell2D.ComponentTypeKey type) =>
+            {
+                if (type != Cell2D.ComponentTypeKey.OVERLAP) return;
+                Cell2D_OverlapComponent overlapComponent =
+                    cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
+                if (overlapComponent == null) return;
+
+                // << UPDATE >>
+                overlapComponent.Updater();
+            };
+
+        protected override Cell2D.ComponentVisitor CellComponentVisitor =>
+            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.OVERLAP);
 
         // ======== [[ EVENTS ]] ================================== >>>>
         public UltEvent<Cell2D> HandleCollisionEnter;
         public UltEvent<Cell2D> HandleCollisionExit;
 
         // ======== [[ METHODS ]] ================================== >>>>
-        public override void InitializeComponent(Grid2D baseObj)
+        // -- (( INTERFACE METHODS )) -------- ))
+        public override void Initialize(Grid2D baseObj)
         {
-            base.InitializeComponent(baseObj);
-            baseObj.SendVisitorToAllCells(_registrationVisitor);
+            base.Initialize(baseObj);
         }
 
-        public override void UpdateComponent()
+        public override void Updater()
         {
-            baseGrid.SendVisitorToAllCells(_updateVisitor);
+            BaseGrid.SendVisitorToAllCells(CellComponentVisitor);
         }
-
-        public override Type GetTypeTag() => Type.OVERLAP;
 
         public override void DrawGizmos()
         {
             if (!_showGizmos) return;
-            baseGrid.SendVisitorToAllCells(new Cell2D.Visitor((Cell2D cell) =>
+            BaseGrid.SendVisitorToAllCells(new Cell2D.Visitor((Cell2D cell) =>
             {
                 Cell2D_OverlapComponent overlapComponent = cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
                 if (overlapComponent != null)

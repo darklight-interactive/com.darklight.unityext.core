@@ -2,16 +2,16 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public class Cell2D_SpawnerComponent : Cell2D_Component
+    public class Cell2D_SpawnerComponent : Cell2D.Component
     {
         public Cell2D_SpawnerComponent(Cell2D cell) : base(cell) { }
 
-        public override Type GetTypeTag()
+        public override Cell2D.ComponentTypeKey GetTypeKey()
         {
             throw new System.NotImplementedException();
         }
 
-        public override void UpdateComponent()
+        public override void Updater()
         {
             throw new System.NotImplementedException();
         }

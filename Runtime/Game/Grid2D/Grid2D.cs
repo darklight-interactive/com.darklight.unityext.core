@@ -162,7 +162,7 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
 
         #region -- (( VISITOR PATTERN )) -------- )))
-        public void SendVisitorToAllCells(Cell2D.Visitor visitor)
+        public void SendVisitorToAllCells(IVisitor<Cell2D> visitor)
         {
             if (map == null) return;
 
