@@ -13,9 +13,9 @@ namespace Darklight.UnityExt.Game.Grid
         // ======== [[ PROPERTIES ]] ================================== >>>>
         // -- (( VISITORS )) -------- ))
         protected override Cell2D.ComponentVisitor GizmosVisitor =>
-            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+            Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
-            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+            Cell2D.VisitorFactory.CreateEditorGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         Cell2D.ComponentVisitor _updateVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         Cell2D.Visitor _randomizeVisitor => new Cell2D.Visitor((Cell2D cell) =>
         {

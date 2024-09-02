@@ -10,12 +10,6 @@ namespace Darklight.UnityExt.Game.Grid
         Grid2D_OverlapComponent _overlapComponent;
         Grid2D_WeightComponent _weightComponent;
 
-        // ======== [[ PROPERTIES ]] ================================== >>>>
-        Cell2D.ComponentVisitor _overlapVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.OVERLAP);
-        Cell2D.ComponentVisitor _weightVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
-        Cell2D.ComponentVisitor _overlapGizmosVisitor => Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.OVERLAP);
-        Cell2D.ComponentVisitor _weightGizmosVisitor => Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
-
         // ======== [[ METHODS ]] ================================== >>>>
         public override void Initialize(Grid2D baseObj)
         {
@@ -28,13 +22,7 @@ namespace Darklight.UnityExt.Game.Grid
             _weightComponent = GetComponent<Grid2D_WeightComponent>();
             if (_weightComponent == null)
                 _weightComponent = gameObject.AddComponent<Grid2D_WeightComponent>();
-        }
 
-        public override void DrawGizmos()
-        {
-            BaseGrid.SendVisitorToAllCells(_overlapGizmosVisitor);
-            BaseGrid.SendVisitorToAllCells(_weightGizmosVisitor);
         }
-
     }
 }
