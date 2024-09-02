@@ -14,7 +14,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [ExecuteAlways]
-    public partial class Grid2D : MonoBehaviour, IPreload
+    public partial class Grid2D : MonoBehaviour
     {
         // ======== [[ CONSTANTS ]] ======================================================= >>>>
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Grid2D";
@@ -26,8 +26,12 @@ namespace Darklight.UnityExt.Game.Grid
         ConsoleGUI _console = new ConsoleGUI();
         [SerializeField, ShowOnly] bool _isLoaded = false;
         [SerializeField, ShowOnly] bool _isInitialized = false;
+
+        [Space(10), Header("Internal Data")]
         [SerializeField] Config _config;
         [SerializeField] Dictionary<Vector2Int, Cell2D> _map;
+        [SerializeField] ComponentSystem _componentSystem;
+
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         protected Config config
@@ -52,11 +56,6 @@ namespace Darklight.UnityExt.Game.Grid
         }
         protected ConsoleGUI internalConsole => _console;
 
-        // -- (( EVENTS )) ------------------ >>
-        public delegate void GridEvent();
-        public event GridEvent OnGridPreloaded;
-        public event GridEvent OnGridInitialized;
-
         // -- (( VISITORS )) ------------------ >>
         protected Cell2D.Visitor cellUpdateVisitor => new Cell2D.Visitor(cell =>
         {
@@ -65,6 +64,13 @@ namespace Darklight.UnityExt.Game.Grid
         });
         protected Cell2D.Visitor cellGizmoVisitor => new Cell2D.Visitor(cell => cell.DrawGizmos());
         protected Cell2D.Visitor cellEditorVisitor => new Cell2D.Visitor(cell => cell.DrawEditor());
+
+
+        // ======== [[ EVENTS ]] ======================================================= >>>>
+        public delegate void GridEvent();
+        public event GridEvent OnGridPreloaded;
+        public event GridEvent OnGridInitialized;
+        public event GridEvent OnGridUpdated;
 
         // ======== [[ METHODS ]] ============================================================ >>>>
         #region -- (( UNITY RUNTIME )) -------- )))
@@ -86,7 +92,7 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
 
         #region -- (( IPreload )) -------- )))
-        public virtual void Preload()
+        void Preload()
         {
             _isLoaded = false;
             _isInitialized = false;
@@ -98,12 +104,18 @@ namespace Darklight.UnityExt.Game.Grid
             // Create a new cell map
             map = new Dictionary<Vector2Int, Cell2D>();
 
+            // Create a new component system
+            _componentSystem = new ComponentSystem(this);
+
+            // Determine if the grid was preloaded
             _isLoaded = true;
+
+            // Invoke the grid preloaded event
             OnGridPreloaded?.Invoke();
             internalConsole.Log($"Preloaded: {_isLoaded}");
         }
 
-        public virtual void Initialize()
+        void Initialize()
         {
             // Generate a new grid from the config
             bool mapGenerated = GenerateCellMap();
@@ -119,7 +131,7 @@ namespace Darklight.UnityExt.Game.Grid
             internalConsole.Log($"Initialized: {_isInitialized}");
         }
 
-        public virtual void Refresh()
+        void Refresh()
         {
             // Initialize if not already
             if (!_isInitialized)
@@ -133,9 +145,10 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Update the cells
             SendVisitorToAllCells(cellUpdateVisitor);
+            OnGridUpdated?.Invoke();
         }
 
-        public virtual void Clear()
+        void Clear()
         {
             _isLoaded = false;
             _isInitialized = false;
@@ -282,10 +295,13 @@ namespace Darklight.UnityExt.Game.Grid
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.Space();
 
-                if (GUILayout.Button("Initialize")) { _script.Initialize(); }
 
                 // < DEFAULT INSPECTOR > ------------------ >>
                 CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+
+                // < CUSTOM INSPECTOR > ------------------ >>
+                CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);
+                if (GUILayout.Button("Initialize")) { _script.Initialize(); }
 
                 // < CONSOLE > ------------------ >>
                 CustomInspectorGUI.DrawHorizontalLine(Color.gray, 4, 10);

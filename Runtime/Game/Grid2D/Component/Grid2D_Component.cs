@@ -1,7 +1,9 @@
 using UnityEngine;
 using Darklight.UnityExt.Behaviour.Interface;
 using Darklight.UnityExt.Editor;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Darklight.UnityExt.Game.Grid
 {
@@ -15,15 +17,16 @@ namespace Darklight.UnityExt.Game.Grid
         MonoBehaviour,
         IComponent<Grid2D, Grid2D_Component.TypeTag>
     {
-        [SerializeField, ShowOnly] int _guid;
-        Grid2D _base;
-        [SerializeField, ShowOnly] TypeTag _type;
+        [SerializeField, ShowOnly] protected int guid;
+        [SerializeField, ShowOnly] protected TypeTag _type;
+        protected Grid2D baseGrid;
 
         public virtual void InitializeComponent(Grid2D baseObj)
         {
-            _guid = System.Guid.NewGuid().GetHashCode();
-            _base = baseObj;
+            guid = System.Guid.NewGuid().GetHashCode();
             _type = GetTypeTag();
+
+            baseGrid = baseObj;
         }
 
         public abstract void UpdateComponent();
@@ -37,13 +40,31 @@ namespace Darklight.UnityExt.Game.Grid
             BASE = 0,
             CONFIG = 1
         }
-
-        public static class Factory
-        {
-
-        }
-
     }
+
+#if UNITY_EDITOR
+    [CustomEditor(typeof(Grid2D_Component), true)]
+    public class Grid2D_ComponentCustomEditor : UnityEditor.Editor
+    {
+        SerializedObject _serializedObject;
+        Grid2D_Component _script;
+
+        public override void OnInspectorGUI()
+        {
+            _serializedObject.Update();
+
+            EditorGUI.BeginChangeCheck();
+
+            // < DEFAULT INSPECTOR > ------------------------------------ >>
+            CustomInspectorGUI.DrawDefaultInspectorWithoutSelfReference(_serializedObject);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                _serializedObject.ApplyModifiedProperties();
+            }
+        }
+    }
+#endif
 
 
 }

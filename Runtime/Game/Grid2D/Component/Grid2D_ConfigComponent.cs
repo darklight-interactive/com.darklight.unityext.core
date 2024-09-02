@@ -14,24 +14,32 @@ namespace Darklight.UnityExt.Game.Grid
         public override void InitializeComponent(Grid2D baseObj)
         {
             base.InitializeComponent(baseObj);
-
-            // Assign the grid's config from the config object
-            Grid2D.Config config = _configObj.CreateGridConfig();
-            if (config.LockToTransform)
-            {
-                // Set the grid's position and normal to the transform's position and forward
-                config.SetGridPosition(transform.position);
-                config.SetGridNormal(transform.forward);
-            }
-            baseObj.SetConfig(config);
+            RefreshConfig();
         }
 
-        public override void UpdateComponent() { }
+        public override void UpdateComponent()
+        {
+            RefreshConfig();
+        }
+
         public override void DrawGizmos() { }
         public override void DrawEditorGizmos() { }
         public override TypeTag GetTypeTag() => TypeTag.CONFIG;
 
         #endregion
+
+        void RefreshConfig()
+        {
+            // Assign the grid's config from the config object
+            Grid2D.Config newConfig = _configObj.CreateGridConfig();
+            if (newConfig.LockToTransform)
+            {
+                // Set the grid's position and normal to the transform's position and forward
+                newConfig.SetGridPosition(transform.position);
+                newConfig.SetGridNormal(transform.forward);
+            }
+            baseGrid.SetConfig(newConfig);
+        }
 
     }
 }
