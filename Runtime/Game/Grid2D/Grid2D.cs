@@ -84,11 +84,11 @@ namespace Darklight.UnityExt.Game.Grid
         #region -- (( IPreload )) -------- )))
         public virtual void Preload()
         {
+            _isInitialized = false;
+
             if (config == null)
                 config = new Config();
-
-            if (cellMap == null)
-                cellMap = new Dictionary<Vector2Int, Cell2D>();
+            cellMap = new Dictionary<Vector2Int, Cell2D>();
 
             _isLoaded = true;
             console.Log($"{CONSOLE_PREFIX} preloaded.");
@@ -286,8 +286,6 @@ namespace Darklight.UnityExt.Game.Grid
                     _serializedObject.ApplyModifiedProperties();
 
                     _script.Refresh();
-
-
                     EditorUtility.SetDirty(target);
                     Repaint();
                 }
@@ -295,6 +293,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             void OnSceneGUI()
             {
+                _script.Refresh();
                 _script.OnDrawEditor();
             }
         }

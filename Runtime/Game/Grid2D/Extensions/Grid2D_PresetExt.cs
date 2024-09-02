@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public class Grid2D_Extended : Grid2D
+    public class Grid2D_PresetExt : Grid2D
     {
         // ======== [[ FIELDS ]] ======================================================= >>>>
         [SerializeField, Expandable] Grid2D_ConfigDataObject _configObj;
