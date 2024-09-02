@@ -72,45 +72,71 @@ namespace Darklight.UnityExt.Editor
 			}
 		}
 
-		public void Reset()
+		public void Clear()
 		{
 			AllLogEntries.Clear();
 		}
 
 #if UNITY_EDITOR
+		bool _mainFoldoutOpen = true;
+		bool _settingsFoldoutOpen = false;
+
 		public void DrawInEditor()
+		{
+			// Draw the foldout
+			_mainFoldoutOpen = EditorGUILayout.Foldout(_mainFoldoutOpen, $"CONSOLE_GUI", true, EditorStyles.foldoutHeader);
+
+			// If the foldout is expanded, show the console
+			if (_mainFoldoutOpen)
+			{
+				EditorGUI.indentLevel++; // Indent the contents of the foldout for better readability
+
+				// < SCROLL VIEW > ---------------------------------------------------- >>
+				// Dark gray background
+				GUIStyle backgroundStyle = new GUIStyle
+				{
+					normal = { background = CustomInspectorGUI.MakeTex(600, 1, new Color(0.1f, 0.1f, 0.1f, 1.0f)) }
+				};
+
+				scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, backgroundStyle, GUILayout.Height(200));
+				int logCount = 0;
+				foreach (LogEntry log in AllLogEntries)
+				{
+					DrawLogEntry(log);
+					logCount++;
+				}
+				EditorGUILayout.EndScrollView();
+
+				// < SETTINGS > ---------------------------------------------------- >>
+				_settingsFoldoutOpen = EditorGUILayout.Foldout(_settingsFoldoutOpen, "Settings", true, EditorStyles.foldoutHeader);
+				if (_settingsFoldoutOpen)
+				{
+					EditorGUI.indentLevel++; // Indent the contents of the foldout for better readability
+					DrawSettings();
+				}
+				EditorGUI.indentLevel--; // Reset indentation
+			}
+		}
+
+		void DrawLogEntry(LogEntry log)
+		{
+			EditorGUILayout.BeginHorizontal(); // Start a horizontal group for inline elements
+
+			string message = $"[{log.Timestamp}] || {log.Message}";
+			EditorGUILayout.LabelField(message, log.Style, GUILayout.ExpandWidth(true));
+			EditorGUILayout.EndHorizontal();
+		}
+
+		void DrawSettings()
 		{
 			// Toggle for enabling/disabling auto-scroll
 			autoScroll = EditorGUILayout.Toggle("Auto-scroll", autoScroll);
 
-			// Dark gray background
-			GUIStyle backgroundStyle = new GUIStyle
+			// Button to clear the console
+			if (GUILayout.Button("Clear Console"))
 			{
-				normal = { background = CustomInspectorGUI.MakeTex(600, 1, new Color(0.1f, 0.1f, 0.1f, 1.0f)) }
-			};
-
-			// Creating a scroll view with a custom background
-			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, backgroundStyle, GUILayout.Height(200));
-
-			int logCount = 0;
-			foreach (LogEntry log in AllLogEntries)
-			{
-				EditorGUILayout.BeginHorizontal(); // Start a horizontal group for inline elements
-
-				string message = $"[{log.Timestamp}] || {logCount} || {log.Message}";
-				EditorGUILayout.LabelField(message, CustomGUIStyles.SmallTextStyle, GUILayout.ExpandWidth(true));
-				EditorGUILayout.EndHorizontal();
-
-				/*
-				// Divider Line
-				EditorGUILayout.BeginHorizontal();
-				GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(2));
-				EditorGUILayout.EndHorizontal();
-				*/
-
-				logCount++;
+				Clear();
 			}
-			EditorGUILayout.EndScrollView();
 		}
 #endif
 

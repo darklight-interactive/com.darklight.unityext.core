@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Darklight.UnityExt.Game.Grid
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(Grid2D_MonoBehaviour))]
+    [RequireComponent(typeof(Grid2D))]
     public class Grid2D_Component : MonoBehaviour
     {
         Cell2D.Visitor _componentInitializer => new Cell2D.Visitor(cell =>
@@ -14,7 +14,7 @@ namespace Darklight.UnityExt.Game.Grid
 
         [SerializeField, EnumFlags] Cell2D.ComponentFlags _cellComponentFlags = Cell2D.ComponentFlags.Shape;
 
-        protected Grid2D grid => GetComponent<Grid2D_MonoBehaviour>().Grid;
+        protected Grid2D grid => GetComponent<Grid2D>();
 
         [Button]
         public void Initialize()

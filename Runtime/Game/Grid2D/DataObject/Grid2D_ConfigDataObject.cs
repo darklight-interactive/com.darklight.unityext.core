@@ -67,9 +67,9 @@ namespace Darklight.UnityExt.Game.Grid
             return config;
         }
 
-        public Grid2D_Config CreateGridConfig()
+        public Grid2D.Config CreateGridConfig()
         {
-            Grid2D_Config config = new Grid2D_Config();
+            Grid2D.Config config = new Grid2D.Config();
             config.SetLockToTransform(_lockToTransform);
             config.SetGridAlignment(_gridAlignment);
             config.SetGridPosition(_gridPosition);

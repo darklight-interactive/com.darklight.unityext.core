@@ -59,10 +59,10 @@ namespace Darklight.UnityExt.Game.Grid
             if (_composite == null) return;
 
             // Calculate the cell's transform
-            Grid2D_SpatialUtility.CalculateCellTransform(
+            Grid2D.SpatialUtility.CalculateCellTransform(
                 out Vector3 position, out Vector2Int coordinate,
                 out Vector3 normal, out Vector2 dimensions,
-                this, grid.Config);
+                this, grid.GetConfig());
 
             // Assign the calculated values to the cell
             data.SetPosition(position);
