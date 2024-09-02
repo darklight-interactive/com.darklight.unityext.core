@@ -49,6 +49,12 @@ namespace Darklight.UnityExt.Game.Grid
         SerializedObject _serializedObject;
         Grid2D_Component _script;
 
+        private void OnEnable()
+        {
+            _serializedObject = new SerializedObject(target);
+            _script = (Grid2D_Component)target;
+        }
+
         public override void OnInspectorGUI()
         {
             _serializedObject.Update();

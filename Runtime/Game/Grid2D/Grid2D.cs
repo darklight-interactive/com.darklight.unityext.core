@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,6 +5,11 @@ using Darklight.UnityExt.Behaviour.Interface;
 using Darklight.UnityExt.Editor;
 
 using UnityEngine;
+using System;
+using Sherbert.Framework.Generic;
+
+
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -29,7 +33,8 @@ namespace Darklight.UnityExt.Game.Grid
 
         [Space(10), Header("Internal Data")]
         [SerializeField] Config _config;
-        [SerializeField] Dictionary<Vector2Int, Cell2D> _map;
+
+        [SerializeField] SerializableDictionary<Vector2Int, Cell2D> _map;
         [SerializeField] ComponentSystem _componentSystem;
 
 
@@ -44,12 +49,12 @@ namespace Darklight.UnityExt.Game.Grid
             }
             set { _config = value; }
         }
-        protected Dictionary<Vector2Int, Cell2D> map
+        protected SerializableDictionary<Vector2Int, Cell2D> map
         {
             get
             {
                 if (_map == null)
-                    _map = new Dictionary<Vector2Int, Cell2D>();
+                    _map = new SerializableDictionary<Vector2Int, Cell2D>();
                 return _map;
             }
             set { _map = value; }
@@ -102,7 +107,7 @@ namespace Darklight.UnityExt.Game.Grid
                 config = new Config();
 
             // Create a new cell map
-            map = new Dictionary<Vector2Int, Cell2D>();
+            map = new SerializableDictionary<Vector2Int, Cell2D>();
 
             // Create a new component system
             _componentSystem = new ComponentSystem(this);
@@ -335,8 +340,6 @@ namespace Darklight.UnityExt.Game.Grid
             }
         }
 #endif
-
-
     }
 
 
