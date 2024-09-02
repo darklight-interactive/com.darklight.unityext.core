@@ -192,6 +192,16 @@ namespace Darklight.UnityExt.Game.Grid
         public void SetConfig(Config config)
         {
             if (config == null) return;
+
+            // Check if the grid should lock to the transform
+            if (config.LockToTransform)
+            {
+                // Set the grid's position and normal to the transform's position and forward
+                config.SetGridPosition(transform.position);
+                config.SetGridNormal(transform.forward);
+            }
+
+            // Assign the new config
             this.config = config;
         }
 

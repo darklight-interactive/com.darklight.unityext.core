@@ -32,12 +32,6 @@ namespace Darklight.UnityExt.Game.Grid
         {
             // Assign the grid's config from the config object
             Grid2D.Config newConfig = _configObj.CreateGridConfig();
-            if (newConfig.LockToTransform)
-            {
-                // Set the grid's position and normal to the transform's position and forward
-                newConfig.SetGridPosition(transform.position);
-                newConfig.SetGridNormal(transform.forward);
-            }
             baseGrid.SetConfig(newConfig);
         }
 
