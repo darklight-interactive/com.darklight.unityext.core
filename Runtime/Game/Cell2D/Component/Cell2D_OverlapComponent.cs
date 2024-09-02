@@ -37,9 +37,23 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions);
+            BaseCell.GetTransformData(out Vector3 position, out float size, out Vector3 normal);
             GetColor(out Color color);
-            CustomGizmos.DrawWireRect(position, dimensions, normal, color);
+
+            string label = $"Overlap Colliders : 0";
+            if (_colliders != null && _colliders.Length > 0)
+            {
+                label = $"Overlap Colliders : {_colliders.Length}";
+            }
+            CustomGizmos.DrawWireSquare(position, size, normal, color);
+
+            Vector3 dimensions = BaseCell.Config.CellDimensions;
+            Vector3 labelPosition = position + new Vector3(-dimensions.x, dimensions.y, 0);
+            CustomGizmos.DrawLabel(label, labelPosition, new GUIStyle()
+            {
+                fontSize = 12,
+                normal = new GUIStyleState() { textColor = color }
+            });
         }
 
         public void SetLayerMask(LayerMask layerMask)
@@ -57,7 +71,7 @@ namespace Darklight.UnityExt.Game.Grid
             // Clear the currentColliders set to prepare for new detections
             _currentColliders = new HashSet<Collider2D>();
 
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
+            BaseCell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             Vector3 halfExtents = Vector3.one * radius;
 
             // Use Physics2D.OverlapBoxAll to detect colliders within the cell dimensions
@@ -74,7 +88,7 @@ namespace Darklight.UnityExt.Game.Grid
             enteredColliders.ExceptWith(_previousColliders); // Elements in current but not in previous
             foreach (var collider in enteredColliders)
             {
-                OnColliderEnter?.Invoke(Cell, collider);
+                OnColliderEnter?.Invoke(BaseCell, collider);
             }
 
             // Detect colliders that have exited
@@ -82,7 +96,7 @@ namespace Darklight.UnityExt.Game.Grid
             exitedColliders.ExceptWith(_currentColliders); // Elements in previous but not in current
             foreach (var collider in exitedColliders)
             {
-                OnColliderExit?.Invoke(Cell, collider);
+                OnColliderExit?.Invoke(BaseCell, collider);
             }
 
             // Swap sets: previous becomes current, reuse the set

@@ -18,7 +18,7 @@ namespace Darklight.UnityExt.Game.Grid
             [SerializeField, ShowOnly] Cell2D.ComponentTypeKey _type;
             bool _initialized = false;
             // ======== [[ PROPERTIES ]] ================================== >>>>
-            public Cell2D Cell => _baseCell;
+            public Cell2D BaseCell => _baseCell;
             public int GUID => _guid;
             public ComponentTypeKey Type => GetTypeKey();
             public bool Initialized => _initialized;

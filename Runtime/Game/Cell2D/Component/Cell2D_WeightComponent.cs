@@ -30,13 +30,14 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
-            CustomGizmos.DrawFilledSquare(position, radius, normal, GetColor());
+            BaseCell.GetTransformData(out Vector3 position, out float size, out Vector3 normal);
+            CustomGizmos.DrawFilledSquare(position, size / 2, normal, GetColor());
 
             GUIStyle style = new GUIStyle()
             {
                 fontSize = 12,
-                normal = new GUIStyleState() { textColor = GetInverseColor() }
+                normal = new GUIStyleState() { textColor = GetInverseColor() },
+                alignment = TextAnchor.MiddleCenter
             };
 
             CustomGizmos.DrawLabel($"Weight: {_weight}", position, style);
@@ -44,8 +45,8 @@ namespace Darklight.UnityExt.Game.Grid
 
         public override void DrawEditorGizmos()
         {
-            Cell.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
-            CustomGizmos.DrawButtonHandle(position, radius, normal, Color.white, () =>
+            BaseCell.GetTransformData(out Vector3 position, out float size, out Vector3 normal);
+            CustomGizmos.DrawButtonHandle(position, size, normal, Color.white, () =>
             {
                 _weight += 5;
                 if (_weight > 100) _weight = 0;

@@ -90,16 +90,17 @@ namespace Darklight.UnityExt.Game.Grid
 
         // (( GETTERS )) -------- ))
         public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
-        public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
+        public void GetTransformData(out Vector3 position, out Vector2 dimensions, out Vector3 normal)
         {
             position = Data.Position;
-            normal = Data.Normal;
             dimensions = Data.Dimensions;
+            normal = Data.Normal;
         }
-        public void GetTransformData(out Vector3 position, out float radius, out Vector3 normal)
+
+        public void GetTransformData(out Vector3 position, out float size, out Vector3 normal)
         {
             position = Data.Position;
-            radius = GetMinDimension() / 2;
+            size = GetMinDimension();
             normal = Data.Normal;
         }
 
