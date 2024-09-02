@@ -58,9 +58,9 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, Range(0, 10)] float _cellBondingY = 0;
 
         // ======== [[ METHODS ]] ======================================================= >>>>
-        public Cell2D.Config CreateCellConfig()
+        public Cell2D.SettingsConfig CreateCellConfig()
         {
-            Cell2D.Config config = new Cell2D.Config();
+            Cell2D.SettingsConfig config = new Cell2D.SettingsConfig();
             config.SetCellDimensions(new Vector2(_cellWidth, _cellHeight));
             config.SetCellSpacing(new Vector2(_cellSpacingX, _cellSpacingY));
             config.SetCellBonding(new Vector2(_cellBondingX, _cellBondingY));
@@ -77,7 +77,7 @@ namespace Darklight.UnityExt.Game.Grid
             config.SetGridDimensions(new Vector2Int(_gridColumns, _gridRows));
 
             // Set the cell config from the property
-            Cell2D.Config cellConfig = CreateCellConfig();
+            Cell2D.SettingsConfig cellConfig = CreateCellConfig();
             config.SetCellConfig(cellConfig);
 
             return config;

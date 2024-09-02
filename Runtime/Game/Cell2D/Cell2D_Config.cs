@@ -8,7 +8,7 @@ namespace Darklight.UnityExt.Game.Grid
     public partial class Cell2D
     {
         [System.Serializable]
-        public class Config
+        public class SettingsConfig
         {
             // ======== [[ SERIALIZED FIELDS ]] ============================================================ >>>>
             [SerializeField, ShowOnly] Vector2 _cellDimensions = new Vector2(1, 1);
@@ -21,8 +21,8 @@ namespace Darklight.UnityExt.Game.Grid
             public Vector2 CellBonding => _cellBonding;
 
             // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
-            public Config() { }
-            public Config(Config originConfig)
+            public SettingsConfig() { }
+            public SettingsConfig(SettingsConfig originConfig)
             {
                 _cellDimensions = originConfig._cellDimensions;
                 _cellSpacing = originConfig._cellSpacing;

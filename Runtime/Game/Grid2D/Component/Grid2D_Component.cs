@@ -18,14 +18,22 @@ namespace Darklight.UnityExt.Game.Grid
         IComponent<Grid2D, Grid2D_Component.TypeTag>
     {
         [SerializeField, ShowOnly] protected int guid;
-        [SerializeField, ShowOnly] protected TypeTag _type;
+        [SerializeField, ShowOnly] protected TypeTag type;
         protected Grid2D baseGrid;
 
+        // ======== [[ METHODS ]] ================================== >>>>
+        // -- (( UNITY METHODS )) -------- ))
+        public void Awake()
+        {
+            InitializeComponent(GetComponent<Grid2D>());
+        }
+
+
+        // -- (( INTERFACE METHODS )) -------- ))
         public virtual void InitializeComponent(Grid2D baseObj)
         {
             guid = System.Guid.NewGuid().GetHashCode();
-            _type = GetTypeTag();
-
+            type = GetTypeTag();
             baseGrid = baseObj;
         }
 
@@ -38,7 +46,8 @@ namespace Darklight.UnityExt.Game.Grid
         public enum TypeTag
         {
             BASE = 0,
-            CONFIG = 1
+            CONFIG = 1,
+            OVERLAP = 2,
         }
     }
 
@@ -53,6 +62,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             _serializedObject = new SerializedObject(target);
             _script = (Grid2D_Component)target;
+            _script.Awake();
         }
 
         public override void OnInspectorGUI()
@@ -67,6 +77,7 @@ namespace Darklight.UnityExt.Game.Grid
             if (EditorGUI.EndChangeCheck())
             {
                 _serializedObject.ApplyModifiedProperties();
+                _script.UpdateComponent();
             }
         }
     }

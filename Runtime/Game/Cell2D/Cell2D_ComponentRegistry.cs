@@ -8,10 +8,9 @@ namespace Darklight.UnityExt.Game.Grid
     {
 
         [System.Serializable]
-        public class Composite
+        public class ComponentRegistry
         {
             Cell2D _cell;
-            Component.TypeTag _types;
             Dictionary<Component.TypeTag, Component> _componentMap = new();
 
             // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
@@ -20,17 +19,16 @@ namespace Darklight.UnityExt.Game.Grid
             // ======== [[ PROPERTIES ]] ======================================================= >>>>
 
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
-            public Composite(Cell2D cell)
+            public ComponentRegistry(Cell2D cell)
             {
                 _cell = cell;
                 _componentMap = new Dictionary<Component.TypeTag, Component>();
                 _components = new List<Component>();
             }
 
-            public Composite(Composite originComposite)
+            public ComponentRegistry(ComponentRegistry originComposite)
             {
                 _cell = originComposite._cell;
-                _types = originComposite._types;
 
                 LoadComponents(originComposite._components);
             }
@@ -44,9 +42,15 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
 
-            public void SetComponentFlags(Component.TypeTag flags)
+            public Component RegisterComponent(Component.TypeTag type)
             {
-                _types = flags;
+                if (!HasComponent(type))
+                {
+                    Component component = ComponentFactory.CreateComponent(type, _cell);
+                    _componentMap.Add(type, component);
+                    Refresh();
+                }
+                return _componentMap[type];
             }
 
             public void LoadComponents(List<Component> originComponents)
@@ -62,58 +66,10 @@ namespace Darklight.UnityExt.Game.Grid
 
             public void UpdateComponents()
             {
-                if (_componentMap == null)
+                foreach (Component component in _components)
                 {
-                    _componentMap = new Dictionary<Component.TypeTag, Component>();
-                    Debug.LogError("Component map is null. Creating new map.");
+                    component.UpdateComponent();
                 }
-
-                bool ShouldHaveComponent(Component.TypeTag type)
-                {
-                    return (_types & type) == type;
-                }
-
-                // Iterate through the component types and update the cell accordingly
-                foreach (Component.TypeTag flag in System.Enum.GetValues(typeof(Component.TypeTag)))
-                {
-                    bool shouldHaveComponent = ShouldHaveComponent(flag);
-                    if (shouldHaveComponent)
-                    {
-                        // If the cell does not have the component, add it
-                        if (!HasComponent(flag))
-                        {
-                            Component component = ComponentFactory.CreateComponent(flag, _cell);
-                            if (component != null)
-                            {
-                                AddComponent(component);
-                            }
-                        }
-                        else
-                        {
-                            // If the cell has the component, update it
-                            _componentMap[flag].UpdateComponent();
-                        }
-                    }
-                    else
-                    {
-                        // If the cell has the component, remove it
-                        if (HasComponent(flag))
-                        {
-                            RemoveComponent(flag);
-                        }
-                    }
-                }
-            }
-
-            public void AddComponent(Component component)
-            {
-                // If the component is not already in the dictionary, add it.
-                if (!_componentMap.ContainsKey(component.Type))
-                {
-                    _componentMap.Add(component.Type, component);
-                    //Debug.Log($"Added component {component.Name} to cell {_cell.Data.Key}");
-                }
-                Refresh();
             }
 
             public void OverrideComponent(Component component)

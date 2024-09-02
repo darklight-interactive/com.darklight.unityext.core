@@ -78,10 +78,12 @@ namespace Darklight.UnityExt.Game.Grid
         public event GridEvent OnGridUpdated;
 
         // ======== [[ METHODS ]] ============================================================ >>>>
-        #region -- (( UNITY RUNTIME )) -------- )))
+        #region -- (( UNITY )) -------- )))
         public void Awake() => Preload();
 
         public void Start() => Initialize();
+
+        public void Update() => Refresh();
 
         public void OnDrawGizmos()
         {
@@ -96,7 +98,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
         #endregion
 
-        #region -- (( IPreload )) -------- )))
+        #region -- (( RUNTIME )) -------- )))
         void Preload()
         {
             _isLoaded = false;
@@ -165,7 +167,7 @@ namespace Darklight.UnityExt.Game.Grid
         }
         #endregion
 
-        // -- (( VISITOR PATTERN )) -------- )))
+        #region -- (( VISITOR PATTERN )) -------- )))
         public void SendVisitorToAllCells(Cell2D.Visitor visitor)
         {
             if (map == null) return;
@@ -181,6 +183,7 @@ namespace Darklight.UnityExt.Game.Grid
                 cell.Accept(visitor);
             }
         }
+        #endregion
 
         // -- (( GETTERS )) -------- )))
         public Config GetConfig()
@@ -326,11 +329,11 @@ namespace Darklight.UnityExt.Game.Grid
                 if (EditorGUI.EndChangeCheck())
                 {
                     _serializedObject.ApplyModifiedProperties();
-
                     _script.Refresh();
                     EditorUtility.SetDirty(target);
                     Repaint();
                 }
+
             }
 
             void OnSceneGUI()

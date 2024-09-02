@@ -11,34 +11,34 @@ namespace Darklight.UnityExt.Game.Grid
     {
         // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
         [SerializeField, ShowOnly] string _name = "Cell2D";
-        [SerializeField] Config _config;
+        [SerializeField] SettingsConfig _config;
         [SerializeField] SerializedData _data;
-        [SerializeField] Composite _composite;
+        [SerializeField] ComponentRegistry _componentReg;
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         public Vector2Int Key { get => _data.Key; }
-        protected Config config { get => _config; }
-        protected SerializedData data { get => _data; }
-        protected Composite composite { get => _composite; }
+        public SettingsConfig Config { get => _config; }
+        public SerializedData Data { get => _data; }
+        public ComponentRegistry ComponentReg { get => _componentReg; }
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
         public Cell2D(Vector2Int key) => Initialize(key, null);
-        public Cell2D(Vector2Int key, Config config) => Initialize(key, config);
+        public Cell2D(Vector2Int key, SettingsConfig config) => Initialize(key, config);
 
         // ======== [[ METHODS ]] ============================================================ >>>>
         // -- (( RUNTIME )) -------- )))
-        public void Initialize(Vector2Int key, Config config)
+        public void Initialize(Vector2Int key, SettingsConfig config)
         {
             // Initialize the configuration
             if (config == null)
-                config = new Config();
+                config = new SettingsConfig();
             _config = config;
 
             // Create the data
             _data = new SerializedData(key);
 
             // Create the composite
-            _composite = new Composite(this);
+            _componentReg = new ComponentRegistry(this);
 
             // Set the name
             _name = $"Cell2D ({key.x},{key.y})";
@@ -47,16 +47,16 @@ namespace Darklight.UnityExt.Game.Grid
         public void Update()
         {
             if (_data == null) return;
-            if (_composite == null) return;
+            if (_componentReg == null) return;
 
-            _composite.UpdateComponents();
+            _componentReg.UpdateComponents();
         }
 
         // -- (( HANDLERS )) -------- )))
         public void RecalculateDataFromGrid(Grid2D grid)
         {
             if (_data == null) return;
-            if (_composite == null) return;
+            if (_componentReg == null) return;
 
             // Calculate the cell's transform
             Grid2D.SpatialUtility.CalculateCellTransform(
@@ -65,19 +65,18 @@ namespace Darklight.UnityExt.Game.Grid
                 this, grid.GetConfig());
 
             // Assign the calculated values to the cell
-            data.SetPosition(position);
-            data.SetCoordinate(coordinate);
-            data.SetNormal(normal);
-            data.SetDimensions(dimensions);
+            Data.SetPosition(position);
+            Data.SetCoordinate(coordinate);
+            Data.SetNormal(normal);
+            Data.SetDimensions(dimensions);
         }
-
 
         public Cell2D Clone()
         {
-            Cell2D clone = new Cell2D(data.Key);
-            SerializedData newData = new SerializedData(data);
-            Config newConfig = new Config(config);
-            Composite newComposite = new Composite(composite);
+            Cell2D clone = new Cell2D(Data.Key);
+            SerializedData newData = new SerializedData(Data);
+            SettingsConfig newConfig = new SettingsConfig(Config);
+            ComponentRegistry newComposite = new ComponentRegistry(ComponentReg);
             clone.SetData(newData);
             clone.SetConfig(newConfig);
             clone.SetComposite(newComposite);
@@ -91,24 +90,24 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // (( GETTERS )) -------- ))
-        public float GetMinDimension() => Mathf.Min(data.Dimensions.x, data.Dimensions.y);
+        public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
         public void GetTransformData(out Vector3 position, out Vector3 normal, out Vector2 dimensions)
         {
-            position = data.Position;
-            normal = data.Normal;
-            dimensions = data.Dimensions;
+            position = Data.Position;
+            normal = Data.Normal;
+            dimensions = Data.Dimensions;
         }
         public void GetTransformData(out Vector3 position, out float radius, out Vector3 normal)
         {
-            position = data.Position;
+            position = Data.Position;
             radius = GetMinDimension() / 2;
-            normal = data.Normal;
+            normal = Data.Normal;
         }
 
         // (( SETTERS )) -------- ))
         protected void SetData(SerializedData data) => _data = data;
-        protected void SetConfig(Config config) => _config = config;
-        protected void SetComposite(Composite composite) => _composite = composite;
+        protected void SetConfig(SettingsConfig config) => _config = config;
+        protected void SetComposite(ComponentRegistry composite) => _componentReg = composite;
 
 
         // (( GIZMOS )) -------- ))
@@ -119,7 +118,7 @@ namespace Darklight.UnityExt.Game.Grid
             GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             CustomGizmos.DrawWireSquare(position, radius, normal, Color.gray);
 
-            _composite.MapFunction(component =>
+            _componentReg.MapFunction(component =>
             {
                 component.DrawGizmos();
             });
@@ -129,7 +128,7 @@ namespace Darklight.UnityExt.Game.Grid
         {
             if (_data == null) return;
 
-            _composite.MapFunction(component =>
+            _componentReg.MapFunction(component =>
             {
                 component.DrawEditorGizmos();
             });

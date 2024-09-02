@@ -19,7 +19,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             public static Vector3 CalculatePositionFromKey(Vector2Int key, Config config)
             {
-                Cell2D.Config cellConfig = config.CellConfig;
+                Cell2D.SettingsConfig cellConfig = config.CellConfig;
 
                 // Get the origin key of the grid
                 Vector2Int originKey = CalculateOriginKey(config);

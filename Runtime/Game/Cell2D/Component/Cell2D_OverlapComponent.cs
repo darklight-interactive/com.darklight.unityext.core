@@ -37,6 +37,8 @@ namespace Darklight.UnityExt.Game.Grid
 
             // Use Physics.OverlapBox to detect colliders within the cell dimensions
             _colliders = Physics2D.OverlapBoxAll(position, halfExtents, 0, layerMask);
+
+            if (_colliders == null || _colliders.Length == 0) return;
         }
 
         public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
