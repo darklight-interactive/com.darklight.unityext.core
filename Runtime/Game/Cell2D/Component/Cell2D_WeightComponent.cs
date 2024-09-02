@@ -20,19 +20,17 @@ namespace Darklight.UnityExt.Game.Grid
             _weight = 0;
         }
 
-        public override void Initialize()
+        public override void UpdateComponent()
         {
-            Tag = Type.WEIGHT;
-        }
 
-        public override void Update()
-        {
         }
 
         public void SetWeight(int weight)
         {
             _weight = weight;
         }
+
+        public override TypeTag GetTypeTag() => TypeTag.WEIGHT;
 
         public override void DrawGizmos()
         {

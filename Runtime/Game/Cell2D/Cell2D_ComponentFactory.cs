@@ -9,19 +9,19 @@ namespace Darklight.UnityExt.Game.Grid
     {
         public static class ComponentFactory
         {
-            private static Dictionary<Component.Type, Func<Cell2D, Component>> _componentFactory = new Dictionary<Component.Type, Func<Cell2D, Component>>();
+            private static Dictionary<Component.TypeTag, Func<Cell2D, Component>> _componentFactory = new Dictionary<Component.TypeTag, Func<Cell2D, Component>>();
 
             // Static constructor to initialize the factory with component registrations
             static ComponentFactory()
             {
-                RegisterComponent(Component.Type.BASE, (cell) => new Cell2D_BaseComponent(cell));
-                RegisterComponent(Component.Type.SHAPE, (cell) => new Cell2D_OverlapComponent(cell));
-                RegisterComponent(Component.Type.WEIGHT, (cell) => new Cell2D_WeightComponent(cell));
-                RegisterComponent(Component.Type.OVERLAP, (cell) => new Cell2D_OverlapComponent(cell));
+                RegisterComponent(Component.TypeTag.BASE, (cell) => new Cell2D_BaseComponent(cell));
+                RegisterComponent(Component.TypeTag.SHAPE, (cell) => new Cell2D_OverlapComponent(cell));
+                RegisterComponent(Component.TypeTag.WEIGHT, (cell) => new Cell2D_WeightComponent(cell));
+                RegisterComponent(Component.TypeTag.OVERLAP, (cell) => new Cell2D_OverlapComponent(cell));
             }
 
             // Method to register a component creation function
-            static void RegisterComponent(Component.Type type, Func<Cell2D, Component> factoryMethod)
+            static void RegisterComponent(Component.TypeTag type, Func<Cell2D, Component> factoryMethod)
             {
                 if (!_componentFactory.ContainsKey(type))
                 {
@@ -34,7 +34,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // Method to create a component based on the TypeKey
-            public static Component CreateComponent(Component.Type type, Cell2D cell)
+            public static Component CreateComponent(Component.TypeTag type, Cell2D cell)
             {
                 if (_componentFactory.TryGetValue(type, out Func<Cell2D, Component> factoryMethod))
                 {

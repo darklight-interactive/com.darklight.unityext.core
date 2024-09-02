@@ -18,12 +18,7 @@ namespace Darklight.UnityExt.Game.Grid
             _layerMask = layerMask;
         }
 
-        public override void Initialize()
-        {
-            Tag = Type.OVERLAP;
-        }
-
-        public override void Update()
+        public override void UpdateComponent()
         {
             UpdateColliders(_layerMask);
         }
@@ -43,6 +38,8 @@ namespace Darklight.UnityExt.Game.Grid
             // Use Physics.OverlapBox to detect colliders within the cell dimensions
             _colliders = Physics2D.OverlapBoxAll(position, halfExtents, 0, layerMask);
         }
+
+        public override TypeTag GetTypeTag() => TypeTag.OVERLAP;
 
         void GetColor(out Color color)
         {

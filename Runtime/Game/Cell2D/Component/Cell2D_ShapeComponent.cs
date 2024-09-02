@@ -14,19 +14,21 @@ namespace Darklight.UnityExt.Game.Grid
 
         public Shape_Cell2DComponent(Cell2D cell) : base(cell) { }
 
-        public override void Initialize()
+        public override void InitializeComponent(Cell2D baseObj)
         {
-            Tag = Type.SHAPE;
+            base.InitializeComponent(baseObj);
 
             Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape = new Shape2D(position, radius, _segments, normal, Color.white);
         }
 
-        public override void Update()
+        public override void UpdateComponent()
         {
             Base.GetTransformData(out Vector3 position, out float radius, out Vector3 normal);
             _shape.UpdateShape(position, radius, _segments, normal, Color.white);
         }
+
+        public override TypeTag GetTypeTag() => TypeTag.SHAPE;
 
         public override void DrawGizmos()
         {

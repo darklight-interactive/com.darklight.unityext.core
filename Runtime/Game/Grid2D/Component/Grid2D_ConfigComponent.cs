@@ -8,14 +8,13 @@ namespace Darklight.UnityExt.Game.Grid
         // ======== [[ FIELDS ]] ======================================================= >>>>
         [SerializeField, Expandable] Grid2D_ConfigDataObject _configObj;
 
-        // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
-        public Grid2D_ConfigComponent(Grid2D grid) : base(grid) { }
-
         // ======== [[ METHODS ]] ======================================================= >>>>
 
         #region  -- (( UNITY RUNTIME )) ------------------ >>
-        public override void Initialize()
+        public override void InitializeComponent(Grid2D baseObj)
         {
+            base.InitializeComponent(baseObj);
+
             // Assign the grid's config from the config object
             Grid2D.Config config = _configObj.CreateGridConfig();
             if (config.LockToTransform)
@@ -24,16 +23,13 @@ namespace Darklight.UnityExt.Game.Grid
                 config.SetGridPosition(transform.position);
                 config.SetGridNormal(transform.forward);
             }
-
-            Base.SetConfig(config);
+            baseObj.SetConfig(config);
         }
 
-        public override void Update()
-        {
-
-        }
+        public override void UpdateComponent() { }
         public override void DrawGizmos() { }
         public override void DrawEditorGizmos() { }
+        public override TypeTag GetTypeTag() => TypeTag.CONFIG;
 
         #endregion
 

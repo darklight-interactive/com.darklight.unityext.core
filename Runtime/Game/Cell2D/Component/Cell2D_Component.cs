@@ -7,39 +7,39 @@ namespace Darklight.UnityExt.Game.Grid
     partial class Cell2D
     {
         [System.Serializable]
-        public abstract class Component : IComponent<Cell2D, Component.Type>
+        public abstract class Component : IComponent<Cell2D, Component.TypeTag>
         {
+            bool _initialized = false;
             [SerializeField, ShowOnly] int _guid = System.Guid.NewGuid().GetHashCode();
-            [SerializeField, ShowOnly] bool _initialized = false;
-
+            TypeTag _type;
             Cell2D _baseCell;
-            Type _tag;
 
             // ======== [[ PROPERTIES ]] ================================== >>>>
-            public int Guid { get => _guid; }
+            public int GUID { get => _guid; }
+            public TypeTag Type { get => _type; }
             public Cell2D Base { get => _baseCell; }
-            public Type Tag { get => _tag; protected set => _tag = value; }
 
             // ======== [[ CONSTRUCTORS ]] ================================== >>>>
-            public Component(Cell2D cell)
-            {
-                this._baseCell = cell;
-                this._tag = Type.BASE;
-                Initialize();
-            }
+            public Component(Cell2D baseObj) => InitializeComponent(baseObj);
 
             // ======== [[ METHODS ]] ================================== >>>>
-            public abstract void Initialize();
-            public abstract void Update();
+            public virtual void InitializeComponent(Cell2D baseObj)
+            {
+                _guid = System.Guid.NewGuid().GetHashCode();
+                _baseCell = baseObj;
+                _type = TypeTag.BASE;
+            }
+            public abstract void UpdateComponent();
             public abstract void DrawGizmos();
             public abstract void DrawEditorGizmos();
+            public abstract TypeTag GetTypeTag();
 
             // ======== [[ NESTED TYPES ]] ================================== >>>>
             /// <summary>
             /// Enum to represent the different types of components that can be attached to a cell.
             /// Intended to be used as a bit mask to determine which components are present on a cell.
             /// </summary>
-            public enum Type
+            public enum TypeTag
             {
                 BASE = 0,
                 OVERLAP = 1,

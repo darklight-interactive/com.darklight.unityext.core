@@ -11,8 +11,8 @@ namespace Darklight.UnityExt.Game.Grid
         public class Composite
         {
             Cell2D _cell;
-            Component.Type _types;
-            Dictionary<Component.Type, Component> _componentMap = new();
+            Component.TypeTag _types;
+            Dictionary<Component.TypeTag, Component> _componentMap = new();
 
             // ======== [[ SERIALIZED FIELDS ]] ======================================================= >>>>
             [SerializeReference, NonReorderable] List<Component> _components = new();
@@ -23,7 +23,7 @@ namespace Darklight.UnityExt.Game.Grid
             public Composite(Cell2D cell)
             {
                 _cell = cell;
-                _componentMap = new Dictionary<Component.Type, Component>();
+                _componentMap = new Dictionary<Component.TypeTag, Component>();
                 _components = new List<Component>();
             }
 
@@ -44,18 +44,18 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
 
-            public void SetComponentFlags(Component.Type flags)
+            public void SetComponentFlags(Component.TypeTag flags)
             {
                 _types = flags;
             }
 
             public void LoadComponents(List<Component> originComponents)
             {
-                _componentMap = new Dictionary<Component.Type, Component>();
+                _componentMap = new Dictionary<Component.TypeTag, Component>();
                 foreach (Component component in originComponents)
                 {
-                    Component newComponent = ComponentFactory.CreateComponent(component.Tag, _cell);
-                    _componentMap.Add(newComponent.Tag, newComponent);
+                    Component newComponent = ComponentFactory.CreateComponent(component.Type, _cell);
+                    _componentMap.Add(newComponent.Type, newComponent);
                 }
                 Refresh();
             }
@@ -64,17 +64,17 @@ namespace Darklight.UnityExt.Game.Grid
             {
                 if (_componentMap == null)
                 {
-                    _componentMap = new Dictionary<Component.Type, Component>();
+                    _componentMap = new Dictionary<Component.TypeTag, Component>();
                     Debug.LogError("Component map is null. Creating new map.");
                 }
 
-                bool ShouldHaveComponent(Component.Type type)
+                bool ShouldHaveComponent(Component.TypeTag type)
                 {
                     return (_types & type) == type;
                 }
 
                 // Iterate through the component types and update the cell accordingly
-                foreach (Component.Type flag in System.Enum.GetValues(typeof(Component.Type)))
+                foreach (Component.TypeTag flag in System.Enum.GetValues(typeof(Component.TypeTag)))
                 {
                     bool shouldHaveComponent = ShouldHaveComponent(flag);
                     if (shouldHaveComponent)
@@ -91,7 +91,7 @@ namespace Darklight.UnityExt.Game.Grid
                         else
                         {
                             // If the cell has the component, update it
-                            _componentMap[flag].Update();
+                            _componentMap[flag].UpdateComponent();
                         }
                     }
                     else
@@ -108,9 +108,9 @@ namespace Darklight.UnityExt.Game.Grid
             public void AddComponent(Component component)
             {
                 // If the component is not already in the dictionary, add it.
-                if (!_componentMap.ContainsKey(component.Tag))
+                if (!_componentMap.ContainsKey(component.Type))
                 {
-                    _componentMap.Add(component.Tag, component);
+                    _componentMap.Add(component.Type, component);
                     //Debug.Log($"Added component {component.Name} to cell {_cell.Data.Key}");
                 }
                 Refresh();
@@ -119,9 +119,9 @@ namespace Darklight.UnityExt.Game.Grid
             public void OverrideComponent(Component component)
             {
                 // If the component is in the dictionary, update it.
-                if (_componentMap.ContainsKey(component.Tag))
+                if (_componentMap.ContainsKey(component.Type))
                 {
-                    _componentMap[component.Tag] = component;
+                    _componentMap[component.Type] = component;
                 }
                 Refresh();
             }
@@ -129,14 +129,14 @@ namespace Darklight.UnityExt.Game.Grid
             public void RemoveComponent(Component component)
             {
                 // If the component is in the dictionary, remove it.
-                if (_componentMap.ContainsKey(component.Tag))
+                if (_componentMap.ContainsKey(component.Type))
                 {
-                    _componentMap.Remove(component.Tag);
+                    _componentMap.Remove(component.Type);
                 }
                 Refresh();
             }
 
-            public void RemoveComponent(Component.Type type)
+            public void RemoveComponent(Component.TypeTag type)
             {
                 // If the component is in the dictionary, remove it.
                 if (_componentMap.ContainsKey(type))
@@ -146,7 +146,7 @@ namespace Darklight.UnityExt.Game.Grid
                 Refresh();
             }
 
-            public bool HasComponent(Component.Type type)
+            public bool HasComponent(Component.TypeTag type)
             {
                 if (_componentMap.ContainsKey(type))
                 {

@@ -28,7 +28,6 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField, ShowOnly] bool _isInitialized = false;
         [SerializeField] Config _config;
         [SerializeField] Dictionary<Vector2Int, Cell2D> _map;
-        [SerializeField, ShowOnly] List<Grid2D_Component> _components = new List<Grid2D_Component>();
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
         protected Config config
@@ -51,7 +50,7 @@ namespace Darklight.UnityExt.Game.Grid
             }
             set { _map = value; }
         }
-        protected ConsoleGUI console => _console;
+        protected ConsoleGUI internalConsole => _console;
 
         // -- (( EVENTS )) ------------------ >>
         public delegate void GridEvent();
@@ -89,8 +88,8 @@ namespace Darklight.UnityExt.Game.Grid
         #region -- (( IPreload )) -------- )))
         public virtual void Preload()
         {
-            // Clear the grid of any existing data
-            Clear();
+            _isLoaded = false;
+            _isInitialized = false;
 
             // Create a new config if none exists
             if (config == null)
@@ -99,11 +98,9 @@ namespace Darklight.UnityExt.Game.Grid
             // Create a new cell map
             map = new Dictionary<Vector2Int, Cell2D>();
 
-            // Get the components that are on this object
-            _components = GetComponents<Grid2D_Component>().ToList();
-
             _isLoaded = true;
             OnGridPreloaded?.Invoke();
+            internalConsole.Log($"Preloaded: {_isLoaded}");
         }
 
         public virtual void Initialize()
@@ -114,8 +111,12 @@ namespace Darklight.UnityExt.Game.Grid
             // Determine if the grid was initialized
             _isInitialized = mapGenerated;
 
-            if (_isInitialized)
-                OnGridInitialized?.Invoke();
+            // Return if the grid was not initialized
+            if (!_isInitialized) return;
+
+            // Invoke the grid initialized event
+            OnGridInitialized?.Invoke();
+            internalConsole.Log($"Initialized: {_isInitialized}");
         }
 
         public virtual void Refresh()
@@ -139,11 +140,10 @@ namespace Darklight.UnityExt.Game.Grid
             _isLoaded = false;
             _isInitialized = false;
 
-            _console.Clear(); // << Clear the console
             if (map != null)
                 map.Clear(); // << Clear the map
 
-            _isInitialized = false;
+            internalConsole.Log("Cleared");
         }
         #endregion
 
@@ -211,8 +211,8 @@ namespace Darklight.UnityExt.Game.Grid
             // Skip if already initialized
             if (_isInitialized) return false;
 
-            // Confirm the grid is cleared
-            Clear();
+            // Clear the map
+            _map.Clear();
 
             // Iterate through the grid dimensions and create cells
             Vector2Int dimensions = config.GridDimensions;
@@ -225,7 +225,7 @@ namespace Darklight.UnityExt.Game.Grid
                 }
             }
 
-            if (map.Count == 0) return false;
+            if (_map.Count == 0) return false;
             return true;
         }
 
@@ -271,6 +271,8 @@ namespace Darklight.UnityExt.Game.Grid
             {
                 _serializedObject = new SerializedObject(target);
                 _script = (Grid2D)target;
+
+                _script.internalConsole.Clear();
                 _script.Awake();
             }
 
