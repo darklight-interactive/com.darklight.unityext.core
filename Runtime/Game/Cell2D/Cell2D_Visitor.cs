@@ -26,68 +26,25 @@ namespace Darklight.UnityExt.Game.Grid
         {
             // ======== [[ FIELDS ]] ======================================================= >>>>
             ComponentTypeKey _type; // The type of component to look for
-            VisitCellComponentEvent _initFunc; // The function to initialize the component
-            VisitCellComponentEvent _updateComponentFunc; // The function to update the component
+            VisitCellComponentEvent _visitFunction; // The function to call when visiting the cell
 
             // ======== [[ PROPERTIES ]] ======================================================= >>>>
-            #region -- (( EVENT FUNCTIONS )) -------- ))
-            /// <summary>
-            /// Register the component to the cell.
-            /// </summary>
-            public VisitCellComponentEvent RegisterFunc => (Cell2D cell, ComponentTypeKey type) =>
-            {
-                Component component = cell.ComponentReg.RegisterComponent(type);
-            };
-
-            /// <summary>
-            /// Initialize the component to the cell.
-            /// </summary>
-            public VisitCellComponentEvent InitFunc
+            public VisitCellComponentEvent VisitFunc
             {
                 get
                 {
-                    if (_initFunc == null)
-                    {
-                        _initFunc = (Cell2D cell, ComponentTypeKey type) =>
-                        {
-                            Component component = cell.ComponentReg.GetComponent(type);
-                            component.Initialize(cell);
-                        };
-                    }
-                    return _initFunc;
+                    if (_visitFunction == null)
+                        _visitFunction = BaseUpdateFunc;
+                    return _visitFunction;
                 }
-                set => _initFunc = value;
+                set => _visitFunction = value;
             }
 
-            // Update the component in the cell.
-            public VisitCellComponentEvent UpdateComponentFunc
+            // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
+            public ComponentVisitor(ComponentTypeKey type, VisitCellComponentEvent visitFunction = null)
             {
-                get
-                {
-                    if (_updateComponentFunc == null)
-                    {
-                        _updateComponentFunc = (Cell2D cell, ComponentTypeKey type) =>
-                        {
-                            Component component = cell.ComponentReg.GetComponent(type);
-                            component.Updater();
-                        };
-                    }
-                    return _updateComponentFunc;
-                }
-                set => _updateComponentFunc = value;
-            }
-            #endregion
-
-            // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
-            public ComponentVisitor(ComponentTypeKey type) => _type = type;
-            public ComponentVisitor(ComponentTypeKey type, VisitCellComponentEvent initFunc) : this(type)
-            {
-                InitFunc = initFunc;
-            }
-            public ComponentVisitor(ComponentTypeKey type,
-                VisitCellComponentEvent initFunc, VisitCellComponentEvent updateFunc) : this(type, initFunc)
-            {
-                UpdateComponentFunc = updateFunc;
+                _type = type;
+                VisitFunc = visitFunction;
             }
 
             // ======== [[ METHODS ]] ======================================================= >>>>
@@ -98,68 +55,18 @@ namespace Darklight.UnityExt.Game.Grid
                 // Check if the stored component type exists in the cell
                 if (componentRegistry.HasComponent(_type))
                 {
-                    // Check if the component is initialized
-                    Component component = componentRegistry.GetComponent(_type);
-                    if (!component.Initialized)
-                    {
-                        // Initialize the component
-                        InitFunc(cell, _type);
-                    }
-                    else
-                    {
-                        // Update the component
-                        UpdateComponentFunc(cell, _type);
-                    }
+                    VisitFunc(cell, _type);
                 }
                 // Register the component if it doesn't exist
                 else
                 {
-                    RegisterFunc(cell, _type);
+                    BaseRegisterFunc(cell, _type);
                 }
             }
 
         }
 
-        public static class VisitorFactory
-        {
-            public static Visitor Create(VisitCellEvent visitFunction)
-            {
-                return new Visitor(visitFunction);
-            }
 
-            public static ComponentVisitor Create(ComponentTypeKey type)
-            {
-                return new ComponentVisitor(type);
-            }
-
-            public static ComponentVisitor Create(ComponentTypeKey type, VisitCellComponentEvent initFunc)
-            {
-                return new ComponentVisitor(type, initFunc);
-            }
-
-            public static ComponentVisitor Create(ComponentTypeKey type, VisitCellComponentEvent initFunc, VisitCellComponentEvent updateFunc)
-            {
-                return new ComponentVisitor(type, initFunc, updateFunc);
-            }
-
-            public static ComponentVisitor CreateGizmosVisitor(ComponentTypeKey type)
-            {
-                return new ComponentVisitor(type, null, (Cell2D cell, ComponentTypeKey type) =>
-                {
-                    Component component = cell.ComponentReg.GetComponent(type);
-                    component.DrawGizmos();
-                });
-            }
-
-            public static ComponentVisitor CreateEditorGizmosVisitor(ComponentTypeKey type)
-            {
-                return new ComponentVisitor(type, null, (Cell2D cell, ComponentTypeKey type) =>
-                {
-                    Component component = cell.ComponentReg.GetComponent(type);
-                    component.DrawEditorGizmos();
-                });
-            }
-        }
 
     }
 }

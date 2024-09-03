@@ -23,7 +23,7 @@ namespace Darklight.UnityExt.Game.Grid
 
             // ======== [[ FIELDS ]] ======================================================= >>>>
             Cell2D _cell;
-            Dictionary<Cell2D.ComponentTypeKey, Component> _componentMap = new();
+            Dictionary<ComponentTypeKey, Component> _componentMap = new();
             [SerializeReference, NonReorderable] List<Component> _components = new();
 
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>

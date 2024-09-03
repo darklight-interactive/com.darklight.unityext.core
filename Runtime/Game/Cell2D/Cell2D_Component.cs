@@ -33,13 +33,13 @@ namespace Darklight.UnityExt.Game.Grid
             }
 
             // ======== [[ METHODS ]] ================================== >>>>
-            public virtual void Initialize(Cell2D cell)
+            public virtual void OnInitialize(Cell2D cell)
             {
                 _baseCell = cell;
                 _initialized = true;
             }
 
-            public virtual void Updater()
+            public virtual void OnUpdate()
             {
 
             }

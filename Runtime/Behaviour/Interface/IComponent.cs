@@ -15,12 +15,12 @@ namespace Darklight.UnityExt.Behaviour.Interface
         /// <param name="baseComponent">
         ///     The base object that the component is attached to.
         /// </param>
-        void Initialize(T baseComponent);
+        void OnInitialize(T baseComponent);
 
         /// <summary>
         /// Update the component.
         /// </summary>
-        void Updater();
+        void OnUpdate();
 
         /// <summary>
         /// Draw gizmos for the component.

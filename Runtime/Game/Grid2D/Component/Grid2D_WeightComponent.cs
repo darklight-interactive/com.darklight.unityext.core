@@ -11,33 +11,31 @@ namespace Darklight.UnityExt.Game.Grid
         [SerializeField] bool _showGizmos;
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
-        // -- (( VISITORS )) -------- ))
+        // -- (( BASE VISITORS )) -------- ))
+        protected override Cell2D.ComponentVisitor InitVisitor =>
+            Cell2D.VisitorFactory.CreateInitVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+        protected override Cell2D.ComponentVisitor UpdateVisitor =>
+            Cell2D.VisitorFactory.CreateBaseUpdateVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         protected override Cell2D.ComponentVisitor GizmosVisitor =>
-            Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
+            Cell2D.VisitorFactory.CreateBaseGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
         protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
-            Cell2D.VisitorFactory.CreateEditorGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
-        Cell2D.ComponentVisitor _updateVisitor => new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.WEIGHT);
-        Cell2D.Visitor _randomizeVisitor => new Cell2D.Visitor((Cell2D cell) =>
-        {
-            Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
-            if (weightComponent == null) return;
+            Cell2D.VisitorFactory.CreateBaseEditorGizmosVisitor(Cell2D.ComponentTypeKey.WEIGHT);
 
-            weightComponent.SetRandomWeight();
-        });
-
-
+        // -- (( CUSTOM VISITORS )) -------- ))
+        private Cell2D.ComponentVisitor _randomizeVisitor => Cell2D.VisitorFactory.CreateComponentVisitor
+            (Cell2D.ComponentTypeKey.WEIGHT, (Cell2D cell, Cell2D.ComponentTypeKey type) =>
+            {
+                Cell2D_WeightComponent weightComponent = cell.ComponentReg.GetComponent<Cell2D_WeightComponent>();
+                weightComponent.SetRandomWeight();
+                return true;
+            });
 
         // ======== [[ METHODS ]] ================================== >>>>
-        // -- (( INTERFACE METHODS )) -------- ))
-        public override void Updater()
-        {
-            BaseGrid.SendVisitorToAllCells(_updateVisitor);
-        }
-
+        // -- (( INTERFACE )) : IComponent -------- ))
         public override void DrawGizmos()
         {
             if (!_showGizmos) return;
-            BaseGrid.SendVisitorToAllCells(GizmosVisitor);
+            base.DrawGizmos();
         }
 
         // -- (( HANDLER METHODS )) -------- ))

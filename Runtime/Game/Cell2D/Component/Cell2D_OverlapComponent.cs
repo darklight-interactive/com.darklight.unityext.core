@@ -30,14 +30,14 @@ namespace Darklight.UnityExt.Game.Grid
         }
 
         // ======== [[ METHODS ]] ================================== >>>>
-        public override void Updater()
+        public override void OnUpdate()
         {
             UpdateColliders();
         }
 
         public override void DrawGizmos()
         {
-            BaseCell.GetTransformData(out Vector3 position, out float size, out Vector3 normal);
+            BaseCell.GetTransformData(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
             GetColor(out Color color);
 
             string label = $"Overlap Colliders : 0";
@@ -45,10 +45,8 @@ namespace Darklight.UnityExt.Game.Grid
             {
                 label = $"Overlap Colliders : {_colliders.Length}";
             }
-            CustomGizmos.DrawWireSquare(position, size, normal, color);
-
-            Vector3 dimensions = BaseCell.Config.CellDimensions;
-            Vector3 labelPosition = position + new Vector3(-dimensions.x, dimensions.y, 0);
+            CustomGizmos.DrawWireRect(position, dimensions, normal, color);
+            Vector3 labelPosition = position + (new Vector3(-dimensions.x, dimensions.y, 0) * 0.5f);
             CustomGizmos.DrawLabel(label, labelPosition, new GUIStyle()
             {
                 fontSize = 12,

@@ -11,7 +11,7 @@ namespace Darklight.UnityExt.Game.Grid
     public class Cell2D_BaseComponent : Cell2D.Component
     {
         public Cell2D_BaseComponent(Cell2D cell) : base(cell) { }
-        public override void Updater() { }
+        public override void OnUpdate() { }
         public override void DrawGizmos() { }
         public override void DrawEditorGizmos() { }
         public override Cell2D.ComponentTypeKey GetTypeKey() => Cell2D.ComponentTypeKey.BASE;

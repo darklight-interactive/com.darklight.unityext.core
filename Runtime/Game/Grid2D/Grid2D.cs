@@ -63,10 +63,11 @@ namespace Darklight.UnityExt.Game.Grid
         protected ConsoleGUI consoleGUI => _console;
 
         // -- (( VISITORS )) ------------------ >>
-        protected Cell2D.Visitor cellUpdateVisitor => new Cell2D.Visitor(cell =>
+        protected Cell2D.Visitor CellUpdateVisitor => new Cell2D.Visitor(cell =>
         {
             cell.RecalculateDataFromGrid(this);
             cell.Update();
+            return true;
         });
 
         // ======== [[ EVENTS ]] ======================================================= >>>>
@@ -147,7 +148,7 @@ namespace Darklight.UnityExt.Game.Grid
             _cellsInMap = new List<Cell2D>(map.Values);
 
             // Update the cells
-            SendVisitorToAllCells(cellUpdateVisitor);
+            SendVisitorToAllCells(CellUpdateVisitor);
             OnGridUpdated?.Invoke();
         }
 

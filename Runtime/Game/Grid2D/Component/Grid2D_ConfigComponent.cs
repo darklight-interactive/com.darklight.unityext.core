@@ -3,20 +3,15 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Game.Grid
 {
-    public class Grid2D_ConfigComponent : Grid2D_Component
+    public class Grid2D_ConfigComponent : Grid2D_BaseComponent
     {
         // ======== [[ FIELDS ]] ======================================================= >>>>
         [SerializeField, Expandable] Grid2D_ConfigDataObject _configObj;
 
-        // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        protected override Cell2D.ComponentVisitor GizmosVisitor =>
-            Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
-        protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
-            Cell2D.VisitorFactory.CreateEditorGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
-
         // ======== [[ METHODS ]] ======================================================= >>>>
-        public override void Updater()
+        public override void OnUpdate()
         {
+            base.OnUpdate();
             RefreshConfig();
         }
 

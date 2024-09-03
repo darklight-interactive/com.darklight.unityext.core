@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Darklight.UnityExt.Editor;
 using UltEvents;
 using UnityEngine;
@@ -10,53 +11,59 @@ namespace Darklight.UnityExt.Game.Grid
         // ======== [[ FIELDS ]] =========================== >>>>
         [SerializeField] LayerMask _layerMask;
         [SerializeField] bool _showGizmos;
+        Dictionary<Cell2D, int> _colliderWeightMap = new Dictionary<Cell2D, int>();
 
-        // ======== [[ PROPERTIES ]] ================================== >>>>
+        #region ======== [[ PROPERTIES ]] ================================== >>>>
+        // -- (( INITIALIZATION EVENT )) -------- ))
         protected Cell2D.EventRegistry.VisitCellComponentEvent InitEvent =>
             (Cell2D cell, Cell2D.ComponentTypeKey type) =>
             {
                 Cell2D_OverlapComponent overlapComponent =
                     cell.ComponentReg.GetComponent(type) as Cell2D_OverlapComponent;
-                if (overlapComponent == null) return;
+                if (overlapComponent == null) return false;
 
                 // << INITIALIZATION >> 
                 overlapComponent.LayerMask = _layerMask;
                 overlapComponent.OnColliderEnter += OnColliderEnter;
                 overlapComponent.OnColliderExit += OnColliderExit;
-                overlapComponent.Initialize(cell);
+                overlapComponent.OnInitialize(cell);
+                return true;
             };
 
+        // -- (( UPDATE EVENT )) -------- ))
         protected Cell2D.EventRegistry.VisitCellComponentEvent UpdateEvent =>
             (Cell2D cell, Cell2D.ComponentTypeKey type) =>
             {
-                // Only update if the component type is OVERLAP
-                if (type != Cell2D.ComponentTypeKey.OVERLAP) return;
                 Cell2D_OverlapComponent overlapComponent =
                     cell.ComponentReg.GetComponent<Cell2D_OverlapComponent>();
-                if (overlapComponent == null) return;
+                if (overlapComponent == null) return false;
 
                 // << UPDATE >>
                 overlapComponent.LayerMask = _layerMask;
-                overlapComponent.Updater();
+                overlapComponent.OnUpdate();
+                return true;
             };
 
-        protected Cell2D.ComponentVisitor CellComponentVisitor =>
-            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.OVERLAP, InitEvent, UpdateEvent);
+        // -- (( VISITORS )) -------- ))
+        protected override Cell2D.ComponentVisitor InitVisitor =>
+            Cell2D.VisitorFactory.CreateComponentVisitor(Cell2D.ComponentTypeKey.OVERLAP, InitEvent);
+        protected override Cell2D.ComponentVisitor UpdateVisitor =>
+            Cell2D.VisitorFactory.CreateComponentVisitor(Cell2D.ComponentTypeKey.OVERLAP, UpdateEvent);
         protected override Cell2D.ComponentVisitor GizmosVisitor =>
-            Cell2D.VisitorFactory.CreateGizmosVisitor(Cell2D.ComponentTypeKey.OVERLAP);
+            Cell2D.VisitorFactory.CreateBaseGizmosVisitor(Cell2D.ComponentTypeKey.OVERLAP);
         protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
-            Cell2D.VisitorFactory.CreateEditorGizmosVisitor(Cell2D.ComponentTypeKey.OVERLAP);
+            Cell2D.VisitorFactory.CreateBaseEditorGizmosVisitor(Cell2D.ComponentTypeKey.OVERLAP);
+        #endregion
 
         // ======== [[ EVENTS ]] ================================== >>>>
         public UltEvent<Cell2D> HandleCollisionEnter;
         public UltEvent<Cell2D> HandleCollisionExit;
 
         // ======== [[ METHODS ]] ================================== >>>>
-        // -- (( INTERFACE METHODS )) -------- ))
-
-        public override void Updater()
+        #region -- (( INTERFACE )) : IComponent -------- ))
+        public override void OnUpdate()
         {
-            BaseGrid.SendVisitorToAllCells(CellComponentVisitor);
+            BaseGrid.SendVisitorToAllCells(UpdateVisitor);
         }
 
         public override void DrawGizmos()
@@ -70,6 +77,11 @@ namespace Darklight.UnityExt.Game.Grid
             if (!_showGizmos) return;
             BaseGrid.SendVisitorToAllCells(EditorGizmosVisitor);
         }
+        #endregion
+
+        // -- (( GETTERS )) -------- ))
+
+
 
         // -- (( EVENT HANDLERS )) -------- ))
         void OnColliderEnter(Cell2D cell, Collider2D collider)

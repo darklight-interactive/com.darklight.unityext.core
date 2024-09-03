@@ -2,9 +2,15 @@ namespace Darklight.UnityExt.Game.Grid
 {
     public class Grid2D_BaseComponent : Grid2D_Component
     {
+        // ======== [[ PROPERTIES ]] ================================== >>>>
+        // -- (( VISITORS )) -------- ))
+        protected override Cell2D.ComponentVisitor InitVisitor =>
+            Cell2D.VisitorFactory.CreateInitVisitor(Cell2D.ComponentTypeKey.BASE);
+        protected override Cell2D.ComponentVisitor UpdateVisitor =>
+            Cell2D.VisitorFactory.CreateBaseUpdateVisitor(Cell2D.ComponentTypeKey.BASE);
         protected override Cell2D.ComponentVisitor GizmosVisitor =>
-            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.BASE);
+            Cell2D.VisitorFactory.CreateBaseGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
         protected override Cell2D.ComponentVisitor EditorGizmosVisitor =>
-            new Cell2D.ComponentVisitor(Cell2D.ComponentTypeKey.BASE);
+            Cell2D.VisitorFactory.CreateBaseEditorGizmosVisitor(Cell2D.ComponentTypeKey.BASE);
     }
 }

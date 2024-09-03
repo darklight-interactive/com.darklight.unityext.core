@@ -14,11 +14,12 @@ namespace Darklight.UnityExt.Game.Grid
         /// </summary>
         public enum ComponentTypeKey
         {
-            BASE = 0,
-            OVERLAP = 1,
-            SHAPE = 2,
-            WEIGHT = 3,
-            SPAWNER = 4,
+            BASE,
+            CONFIG,
+            OVERLAP,
+            SHAPE,
+            WEIGHT,
+            SPAWNER
         }
 
         public static class ComponentFactory
