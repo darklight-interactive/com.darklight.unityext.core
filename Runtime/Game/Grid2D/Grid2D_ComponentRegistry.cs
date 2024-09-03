@@ -32,27 +32,11 @@ namespace Darklight.UnityExt.Game.Grid
                 { ComponentTypeKey.CONFIG, typeof(Grid2D_ConfigComponent) },
                 { ComponentTypeKey.OVERLAP, typeof(Grid2D_OverlapComponent) },
                 { ComponentTypeKey.WEIGHT, typeof(Grid2D_WeightComponent) },
+                { ComponentTypeKey.SPAWNER, typeof(Grid2D_SpawnerComponent) }
             };
 
             // Reverse map for faster lookups in GetTypeKey methods
             private static readonly Dictionary<Type, ComponentTypeKey> _reverseTypeMap = new Dictionary<Type, ComponentTypeKey>();
-
-            private static readonly Dictionary<ComponentTypeKey, List<Cell2D.ComponentTypeKey>> _cellTypeMap = new Dictionary<ComponentTypeKey, List<Cell2D.ComponentTypeKey>>()
-            {
-                { ComponentTypeKey.BASE,
-                    new List<Cell2D.ComponentTypeKey> { Cell2D.ComponentTypeKey.BASE } },
-                { ComponentTypeKey.CONFIG,
-                    new List<Cell2D.ComponentTypeKey> { Cell2D.ComponentTypeKey.CONFIG } },
-                { ComponentTypeKey.OVERLAP,
-                    new List<Cell2D.ComponentTypeKey> { Cell2D.ComponentTypeKey.OVERLAP } },
-                { ComponentTypeKey.WEIGHT,
-                    new List<Cell2D.ComponentTypeKey> { Cell2D.ComponentTypeKey.WEIGHT } },
-                { ComponentTypeKey.SPAWNER,
-                    new List<Cell2D.ComponentTypeKey> {
-                        Cell2D.ComponentTypeKey.WEIGHT,
-                        Cell2D.ComponentTypeKey.SPAWNER }},
-            };
-
 
             private readonly Grid2D _grid;
             private List<Grid2D_Component> _components = new List<Grid2D_Component>();

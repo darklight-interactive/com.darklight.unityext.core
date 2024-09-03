@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Darklight.UnityExt.Game.Grid
 {
     public class Grid2D_BaseComponent : Grid2D_Component
