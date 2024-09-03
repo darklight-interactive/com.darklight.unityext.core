@@ -5,7 +5,7 @@ using System.Collections;
 
 public interface IWeightedData
 {
-    int weight { get; }
+    int Weight { get; }
 }
 
 /// <summary>
@@ -47,7 +47,7 @@ public static class WeightedDataSelector
         // Cache the total weight to avoid recalculating if the list hasn't changed
         if (!cachedTotalWeights.TryGetValue((IList)items, out totalWeight))
         {
-            totalWeight = items.Sum(item => item.weight);
+            totalWeight = items.Sum(item => item.Weight);
             cachedTotalWeights[(IList)items] = totalWeight;
         }
 
@@ -58,7 +58,7 @@ public static class WeightedDataSelector
         // Select the item based on the random weight
         foreach (var item in items)
         {
-            cumulativeWeight += item.weight;
+            cumulativeWeight += item.Weight;
             if (randomWeight <= cumulativeWeight)
             {
                 return itemSelector(item);
@@ -131,7 +131,7 @@ public static class WeightedDataSelector
             return default;
         }
 
-        return items.Aggregate((maxItem, nextItem) => nextItem.weight > maxItem.weight ? nextItem : maxItem);
+        return items.Aggregate((maxItem, nextItem) => nextItem.Weight > maxItem.Weight ? nextItem : maxItem);
     }
 
     /// <summary>
@@ -148,6 +148,6 @@ public static class WeightedDataSelector
             return default;
         }
 
-        return items.Aggregate((minItem, nextItem) => nextItem.weight < minItem.weight ? nextItem : minItem);
+        return items.Aggregate((minItem, nextItem) => nextItem.Weight < minItem.Weight ? nextItem : minItem);
     }
 }

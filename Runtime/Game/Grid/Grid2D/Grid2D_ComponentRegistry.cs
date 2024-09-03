@@ -20,7 +20,8 @@ namespace Darklight.UnityExt.Game.Grid
             CONFIG,
             OVERLAP,
             WEIGHT,
-            SPAWNER
+            SPAWNER,
+            WEIGHTED_SPAWNER
         }
 
         public class ComponentRegistry
@@ -32,7 +33,8 @@ namespace Darklight.UnityExt.Game.Grid
                 { ComponentTypeKey.CONFIG, typeof(Grid2D_ConfigComponent) },
                 { ComponentTypeKey.OVERLAP, typeof(Grid2D_OverlapComponent) },
                 { ComponentTypeKey.WEIGHT, typeof(Grid2D_WeightComponent) },
-                { ComponentTypeKey.SPAWNER, typeof(Grid2D_SpawnerComponent) }
+                { ComponentTypeKey.SPAWNER, typeof(Grid2D_SpawnerComponent) },
+                { ComponentTypeKey.WEIGHTED_SPAWNER, typeof(Grid2D_WeightedSpawner) }
             };
 
             // Reverse map for faster lookups in GetTypeKey methods

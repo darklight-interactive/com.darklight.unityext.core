@@ -10,12 +10,13 @@ using UnityEditor;
 namespace Darklight.UnityExt.Game.Grid
 {
     [System.Serializable]
-    public class Cell2D_WeightComponent : Cell2D.Component
+    public class Cell2D_WeightComponent : Cell2D.Component, IWeightedData
     {
         const int MIN_WEIGHT = 0;
         const int MAX_WEIGHT = 100;
 
         [SerializeField, ShowOnly] int _weight;
+        public int Weight => _weight;
 
         // ======== [[ CONSTRUCTORS ]] =========================== >>>>
         public Cell2D_WeightComponent(Cell2D cell) : base(cell)
@@ -31,7 +32,7 @@ namespace Darklight.UnityExt.Game.Grid
         public override void DrawGizmos()
         {
             BaseCell.GetTransformData(out Vector3 position, out float size, out Vector3 normal);
-            CustomGizmos.DrawFilledSquare(position, size / 2, normal, GetColor());
+            //CustomGizmos.DrawFilledSquare(position, size / 2, normal, GetColor());
 
             GUIStyle style = new GUIStyle()
             {

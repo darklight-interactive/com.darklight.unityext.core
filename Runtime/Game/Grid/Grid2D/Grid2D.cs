@@ -173,6 +173,18 @@ namespace Darklight.UnityExt.Game.Grid
         #endregion
 
         #region -- (( VISITOR PATTERN )) -------- )))
+        public void SendVisitorToCell(Vector2Int key, IVisitor<Cell2D> visitor)
+        {
+            if (map == null) return;
+
+            // Skip if the key is not in the map
+            if (!map.ContainsKey(key)) return;
+
+            // Apply the map function to the cell
+            Cell2D cell = map[key];
+            cell.Accept(visitor);
+        }
+
         public void SendVisitorToAllCells(IVisitor<Cell2D> visitor)
         {
             if (map == null) return;
@@ -199,6 +211,34 @@ namespace Darklight.UnityExt.Game.Grid
         public List<Cell2D> GetCells()
         {
             return new List<Cell2D>(map.Values);
+        }
+
+        public List<Cell2D> GetCellsByComponentType(Cell2D.ComponentTypeKey type)
+        {
+            List<Cell2D> cells = new List<Cell2D>();
+            foreach (Cell2D cell in map.Values)
+            {
+                if (cell.ComponentReg.HasComponent(type))
+                {
+                    cells.Add(cell);
+                }
+            }
+            return cells;
+        }
+
+        public List<TComponent> GetComponentsByType<TComponent>()
+            where TComponent : Cell2D.Component
+        {
+            List<TComponent> components = new List<TComponent>();
+            foreach (Cell2D cell in map.Values)
+            {
+                TComponent component = cell.ComponentReg.GetComponent<TComponent>();
+                if (component != null)
+                {
+                    components.Add(component);
+                }
+            }
+            return components;
         }
 
         // (( SETTERS )) -------- )))
