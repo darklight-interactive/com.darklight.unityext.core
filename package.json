@@ -1,8 +1,8 @@
 {
   "name": "com.darklight.unityext.core",
-  "version": "0.1.3",
+  "version": "0.1.23",
   "displayName": "Darklight UnityExt Core Library",
-  "description": "The Core Unity Extension Library for Darklight Interactive Studios.",
+  "description": "The Core Unity Extension Library for Darklight Interactive Studios",
   "unity": "2023.2",
   "dependencies": {
     "com.dbrizov.naughtyattributes": "2.1.4",
