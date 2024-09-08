@@ -10,27 +10,58 @@ namespace Darklight.UnityExt.Editor
     public static class CustomGizmos
     {
         #region -- << LABELS >> ------------------------------------ >>
+
+        /// <summary>
+        /// Draws a label at the specified position using Handles.Label.
+        /// </summary>
+        /// <param name="label">The text of the label to be drawn.</param>
+        /// <param name="position">The position in world space where the label will be drawn.</param>
+        /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawLabel(string label, Vector3 position, GUIStyle labelStyle)
         {
-            //labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
+            Handles.Label(position, label, labelStyle);
+        }
+
+        /// <summary>
+        /// Draws a label at the specified position using Handles.Label with a specified color.
+        /// </summary>
+        /// <param name="label">The text of the label to be drawn.</param>
+        /// <param name="position">The position in world space where the label will be drawn.</param>
+        /// <param name="color">The color of the label text.</param>
+        /// <param name="labelStyle">The GUIStyle to use for the label.</param>
+        public static void DrawLabel(string label, Vector3 position, Color color, GUIStyle labelStyle)
+        {
+            labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Handles.Label(position, label, labelStyle);
         }
         #endregion
 
         #region -- << SHAPES >> ------------------------------------ >>
+
+        /// <summary>
+        /// Draws a wireframe square at the specified position, size, and direction with a specified color.
+        /// </summary>
+        /// <param name="position">The center position of the square in world space.</param>
+        /// <param name="size">The size of the square.</param>
+        /// <param name="direction">The normal direction of the square.</param>
+        /// <param name="color">The color of the wireframe.</param>
         public static void DrawWireSquare(Vector3 position, float size, Vector3 direction, Color color)
         {
-            if (color == null)
-            {
-                Handles.color = Color.black;
-            }
-            else { Handles.color = color; }
+            Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, size * Vector2.one, direction), Color.clear, color);
         }
 
+        /// <summary>
+        /// Draws a wireframe square with a label at the specified position, size, and direction with a specified color.
+        /// </summary>
+        /// <param name="label">The text of the label to be drawn.</param>
+        /// <param name="position">The center position of the square in world space.</param>
+        /// <param name="size">The size of the square.</param>
+        /// <param name="direction">The normal direction of the square.</param>
+        /// <param name="color">The color of the wireframe and label.</param>
+        /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawWireSquare_withLabel(string label, Vector3 position, float size, Vector3 direction, Color color, GUIStyle labelStyle)
         {
-
             DrawWireSquare(position, size, direction, color);
 
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
@@ -39,7 +70,14 @@ namespace Darklight.UnityExt.Editor
             Handles.Label(labelPosition, label, labelStyle);
         }
 
-        public static void DrawFilledSquare(Vector3 position, float size, Vector3 direction, Color color)
+        /// <summary>
+        /// Draws a solid square at the specified position, size, and direction with a specified color.
+        /// </summary>
+        /// <param name="position">The center position of the square in world space.</param>
+        /// <param name="size">The size of the square.</param>
+        /// <param name="direction">The normal direction of the square.</param>
+        /// <param name="color">The color of the square.</param>
+        public static void DrawSolidSquare(Vector3 position, float size, Vector3 direction, Color color)
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
@@ -47,14 +85,42 @@ namespace Darklight.UnityExt.Editor
                 color, Color.clear);
         }
 
+        /// <summary>
+        /// Draws a wireframe rectangle at the specified position, area, and direction with a specified color.
+        /// </summary>
+        /// <param name="position">The center position of the rectangle in world space.</param>
+        /// <param name="area">The width and height of the rectangle.</param>
+        /// <param name="direction">The normal direction of the rectangle.</param>
+        /// <param name="color">The color of the wireframe.</param>
         public static void DrawWireRect(Vector3 position, Vector2 area, Vector3 direction, Color color)
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), Color.clear, color);
         }
+
+        /// <summary>
+        /// Draws a solid rectangle at the specified position, area, and direction with a specified color.
+        /// </summary>
+        /// <param name="position">The center position of the rectangle in world space.</param>
+        /// <param name="area">The width and height of the rectangle.</param>
+        /// <param name="direction">The normal direction of the rectangle.</param>
+        /// <param name="color">The color of the rectangle.</param>
+        public static void DrawSolidRect(Vector3 position, Vector2 area, Vector3 direction, Color color)
+        {
+            Handles.color = color;
+            Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), color, Color.clear);
+        }
         #endregion
 
-        // Draws a Handles.Button and executes the given action when clicked.
+        /// <summary>
+        /// Draws a Handles.Button and executes the given action when clicked.
+        /// </summary>
+        /// <param name="position">The position of the button in world space.</param>
+        /// <param name="size">The size of the button.</param>
+        /// <param name="direction">The direction the button is facing.</param>
+        /// <param name="color">The color of the button.</param>
+        /// <param name="onClick">The action to be invoked when the button is clicked.</param>
+        /// <param name="capFunction">The function used to draw the button cap.</param>
         public static void DrawButtonHandle(Vector3 position, float size, Vector3 direction, Color color, System.Action onClick, Handles.CapFunction capFunction)
         {
             Handles.color = color;
@@ -64,7 +130,13 @@ namespace Darklight.UnityExt.Editor
             }
         }
 
-
+        /// <summary>
+        /// Calculates the vertices of a rectangle given its center, size, and direction.
+        /// </summary>
+        /// <param name="center">The center position of the rectangle.</param>
+        /// <param name="area">The width and height of the rectangle.</param>
+        /// <param name="normalDirection">The normal direction the rectangle is facing.</param>
+        /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
         static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normalDirection)
         {
             Vector2 halfArea = area * 0.5f;
@@ -88,9 +160,14 @@ namespace Darklight.UnityExt.Editor
             return vertices;
         }
 
-
-
-        // Function to draw an arrow in the specified direction
+        /// <summary>
+        /// Draws an arrow at the specified position in the specified direction with a given color, head length, and angle.
+        /// </summary>
+        /// <param name="position">The starting position of the arrow.</param>
+        /// <param name="direction">The direction in which the arrow points.</param>
+        /// <param name="color">The color of the arrow.</param>
+        /// <param name="arrowHeadLength">The length of the arrowhead.</param>
+        /// <param name="arrowHeadAngle">The angle of the arrowhead.</param>
         public static void DrawArrow(Vector3 position, Vector3 direction, Color color, float arrowHeadLength = 1f, float arrowHeadAngle = 45.0f)
         {
             Handles.color = color; // Set the color for the arrow
