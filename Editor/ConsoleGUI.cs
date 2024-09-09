@@ -79,8 +79,8 @@ namespace Darklight.UnityExt.Editor
 		}
 
 #if UNITY_EDITOR
-		bool _mainFoldoutOpen = true;
-		bool _settingsFoldoutOpen = false;
+		bool _mainFoldoutOpen;
+		bool _settingsFoldoutOpen;
 
 		public void DrawInEditor()
 		{
