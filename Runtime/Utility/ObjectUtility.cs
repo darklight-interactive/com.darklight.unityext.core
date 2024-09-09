@@ -44,7 +44,7 @@ namespace Darklight.UnityExt.Utility
         /// <param name="worldPositionStays">If true, retains the world position of the instantiated object. Defaults to true.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>The instantiated object.</returns>
-        public static Object InstantiatePrefab(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
+        public static GameObject InstantiatePrefab(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null)
         {
             if (position == default) position = Vector3.zero;
             if (rotation == default) rotation = Quaternion.identity;
@@ -53,32 +53,37 @@ namespace Darklight.UnityExt.Utility
             if (!Application.isPlaying)
             {
                 Object instance = PrefabUtility.InstantiatePrefab(prefab);
-                if (instance is GameObject go)
+                if (instance is not GameObject)
                 {
-                    if (parent != null)
-                    {
-                        go.transform.SetParent(parent, worldPositionStays);
-                    }
-                    go.transform.position = position;
-                    go.transform.rotation = rotation;
-                    Undo.RegisterCreatedObjectUndo(go, "Instantiate Object");
+                    Debug.LogError("Prefab is not a GameObject: " + prefab.name);
+                    return null;
                 }
+
+                go.transform.position = position;
+                go.transform.rotation = rotation;
+
+                if (parent != null)
+                {
+                    go.transform.SetParent(parent, worldPositionStays);
+                }
+
+                Undo.RegisterCreatedObjectUndo(go, "Instantiate Object");
                 return instance as GameObject;
             }
 #endif
             return Object.Instantiate(prefab, position, rotation, parent);
         }
 
-        public static TObject InstantiatePrefabAs<TObject>(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
-            where TObject : Object
+        public static GameObject InstantiatePrefab
+            (GameObject prefab, Transform parent = null, bool worldPositionStays = false)
         {
-            return InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays) as TObject;
+            return InstantiatePrefab(prefab, Vector3.zero, Quaternion.identity, parent);
         }
 
-        public static TComponent InstantiatePrefabWithComponent<TComponent>(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
+        public static TComponent InstantiatePrefabWithComponent<TComponent>(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null)
             where TComponent : Component
         {
-            GameObject go = InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays) as GameObject;
+            GameObject go = InstantiatePrefab(prefab, position, rotation, parent);
             return go.GetComponent<TComponent>();
         }
 
@@ -90,12 +95,12 @@ namespace Darklight.UnityExt.Utility
         /// <param name="parent">Optional parent transform for the new objects.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>A list of instantiated objects.</returns>
-        public static List<Object> InstantiateMultiple(Object prefab, int count, Transform parent = null)
+        public static List<GameObject> InstantiateMultiple(GameObject prefab, int count, Transform parent = null)
         {
-            List<Object> instances = new List<Object>();
+            List<GameObject> instances = new List<GameObject>();
             for (int i = 0; i < count; i++)
             {
-                instances.Add(InstantiatePrefab(prefab, parent: parent));
+                instances.Add(InstantiatePrefab(prefab, parent));
             }
             return instances;
         }
