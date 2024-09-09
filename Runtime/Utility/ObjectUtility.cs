@@ -44,7 +44,7 @@ namespace Darklight.UnityExt.Utility
         /// <param name="worldPositionStays">If true, retains the world position of the instantiated object. Defaults to true.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>The instantiated object.</returns>
-        public static GameObject InstantiatePrefab(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
+        public static Object InstantiatePrefab(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
         {
             if (position == default) position = Vector3.zero;
             if (rotation == default) rotation = Quaternion.identity;
@@ -63,10 +63,16 @@ namespace Darklight.UnityExt.Utility
                     go.transform.rotation = rotation;
                     Undo.RegisterCreatedObjectUndo(go, "Instantiate Object");
                 }
-                return instance;
+                return instance as GameObject;
             }
 #endif
             return Object.Instantiate(prefab, position, rotation, parent);
+        }
+
+        public static TObject InstantiatePrefabAs<TObject>(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
+            where TObject : Object
+        {
+            return InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays) as TObject;
         }
 
         public static TComponent InstantiatePrefabWithComponent<TComponent>(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
