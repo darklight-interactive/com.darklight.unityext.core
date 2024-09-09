@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Darklight.UnityExt.Utility
 {
-    public static class GameObjectUtility
+    public static class ObjectUtility
     {
         #region ======== [[ DESTROY OBJECT ]] ================================== >>>>
         /// <summary>
@@ -37,14 +37,14 @@ namespace Darklight.UnityExt.Utility
         /// <summary>
         /// Instantiates a GameObject in Play Mode or Editor Mode with options for position, rotation, and parenting.
         /// </summary>
-        /// <param name="original">The original object to clone.</param>
+        /// <param name="prefab">The original object to clone.</param>
         /// <param name="position">The position for the new object. Defaults to Vector3.zero.</param>
         /// <param name="rotation">The rotation for the new object. Defaults to Quaternion.identity.</param>
         /// <param name="parent">The parent transform for the new object. Defaults to null.</param>
         /// <param name="worldPositionStays">If true, retains the world position of the instantiated object. Defaults to true.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>The instantiated object.</returns>
-        public static T InstantiateObject<T>(T original, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true) where T : Object
+        public static GameObject InstantiatePrefab(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
         {
             if (position == default) position = Vector3.zero;
             if (rotation == default) rotation = Quaternion.identity;
@@ -52,7 +52,7 @@ namespace Darklight.UnityExt.Utility
 #if UNITY_EDITOR
             if (!Application.isPlaying)
             {
-                T instance = (T)PrefabUtility.InstantiatePrefab(original);
+                Object instance = PrefabUtility.InstantiatePrefab(prefab);
                 if (instance is GameObject go)
                 {
                     if (parent != null)
@@ -66,23 +66,30 @@ namespace Darklight.UnityExt.Utility
                 return instance;
             }
 #endif
-            return Object.Instantiate(original, position, rotation, parent);
+            return Object.Instantiate(prefab, position, rotation, parent);
+        }
+
+        public static TComponent InstantiatePrefabWithComponent<TComponent>(Object prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = true)
+            where TComponent : Component
+        {
+            GameObject go = InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays) as GameObject;
+            return go.GetComponent<TComponent>();
         }
 
         /// <summary>
         /// Instantiates multiple instances of a GameObject in Play Mode or Editor Mode.
         /// </summary>
-        /// <param name="original">The original object to clone.</param>
+        /// <param name="prefab">The original object to clone.</param>
         /// <param name="count">The number of instances to create.</param>
         /// <param name="parent">Optional parent transform for the new objects.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>A list of instantiated objects.</returns>
-        public static List<T> InstantiateMultiple<T>(T original, int count, Transform parent = null) where T : Object
+        public static List<Object> InstantiateMultiple(Object prefab, int count, Transform parent = null)
         {
-            List<T> instances = new List<T>();
+            List<Object> instances = new List<Object>();
             for (int i = 0; i < count; i++)
             {
-                instances.Add(InstantiateObject(original, parent: parent));
+                instances.Add(InstantiatePrefab(prefab, parent: parent));
             }
             return instances;
         }
@@ -96,18 +103,43 @@ namespace Darklight.UnityExt.Utility
         /// <param name="parent"></param>
         /// <returns></returns>
         public static GameObject CreateGameObject
-        (string name, Func<GameObject, GameObject> initializer = null, Transform parent = null)
+            (string name, Func<GameObject, GameObject> initializer = null, Transform parent = null)
         {
-            GameObject go = new GameObject(name);
+            GameObject gameObject = new GameObject(name);
             if (initializer != null)
             {
-                initializer(go);
+                initializer(gameObject);
             }
             if (parent != null)
             {
-                go.transform.SetParent(parent);
+                gameObject.transform.SetParent(parent);
             }
-            return go;
+            return gameObject;
+        }
+
+        /// <summary>
+        /// Creates a new GameObject with the specified name and optional parent.
+        /// </summary>
+        /// <typeparam name="TComponent"></typeparam>
+        /// <param name="name"></param>
+        /// <param name="initializer"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
+        public static TComponent CreateGameObjectWithComponent<TComponent>
+            (string name, Func<TComponent, TComponent> initializer = null, Transform parent = null)
+            where TComponent : Component
+        {
+            GameObject gameObject = new GameObject(name);
+            TComponent component = gameObject.AddComponent<TComponent>();
+            if (initializer != null)
+            {
+                initializer(component);
+            }
+            if (parent != null)
+            {
+                gameObject.transform.SetParent(parent);
+            }
+            return component;
         }
 
 
