@@ -59,6 +59,7 @@ namespace Darklight.UnityExt.Utility
                     return null;
                 }
 
+                GameObject go = instance as GameObject;
                 go.transform.position = position;
                 go.transform.rotation = rotation;
 
@@ -68,7 +69,7 @@ namespace Darklight.UnityExt.Utility
                 }
 
                 Undo.RegisterCreatedObjectUndo(go, "Instantiate Object");
-                return instance as GameObject;
+                return go;
             }
 #endif
             return Object.Instantiate(prefab, position, rotation, parent);
