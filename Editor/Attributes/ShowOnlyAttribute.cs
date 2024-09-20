@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using Darklight.UnityExt.Editor.Utility;
 
 namespace Darklight.UnityExt.Editor
 {
@@ -23,7 +24,7 @@ namespace Darklight.UnityExt.Editor
             }
             else
             {
-                string valueString = CustomInspectorGUI.ConvertElementToString(prop);
+                string valueString = SerializedPropertyUtility.ConvertPropertyToString(prop);
                 EditorGUI.LabelField(position, label.text, valueString);
             }
 
