@@ -81,11 +81,17 @@ namespace Darklight.UnityExt.Utility
             return InstantiatePrefab(prefab, Vector3.zero, Quaternion.identity, parent, worldPositionStays);
         }
 
-        public static TComponent InstantiatePrefabWithComponent<TComponent>(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = false)
+        public static TComponent InstantiatePrefabAsComponent<TComponent>(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = false)
             where TComponent : Component
         {
             GameObject go = InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays);
             return go.GetComponent<TComponent>();
+        }
+
+        public static TComponent InstantiatePrefabAsComponent<TComponent>(GameObject prefab, Transform parent = null, bool worldPositionStays = false)
+            where TComponent : Component
+        {
+            return InstantiatePrefabAsComponent<TComponent>(prefab, Vector3.zero, Quaternion.identity, parent, worldPositionStays);
         }
 
         /// <summary>
