@@ -132,11 +132,6 @@ namespace Darklight.UnityExt.Behaviour
             else { GoToState(initialState); }
         }
 
-        public virtual bool GoToState(TState newState)
-        {
-            return GoToState(newState);
-        }
-
         /// <summary>
         /// Move the statemachine to a new current state.
         /// </summary>
