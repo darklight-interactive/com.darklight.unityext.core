@@ -132,22 +132,33 @@ namespace Darklight.UnityExt.Behaviour
             else { GoToState(initialState); }
         }
 
+        public virtual bool GoToState(TState newState)
+        {
+            return GoToState(newState);
+        }
+
         /// <summary>
         /// Move the statemachine to a new current state.
         /// </summary>
-        /// <param name="state">The enum type key of the desired state.</param>
-        /// <returns></returns>
-        public virtual bool GoToState(TState state)
+        /// <param name="newState">The enum type key of the desired state.</param>
+        /// <param name="force">If true, the state will be changed even if it is the same as the current state.</param>
+        public virtual bool GoToState(TState newState, bool force = false)
         {
-            // Exit from the previous state
-            if (currentFiniteState != null && currentFiniteState.StateType.Equals(state)) { return false; }
+            if (!force)
+            {
+                // If the state is the same as the current state, return false
+                if (currentFiniteState != null && currentFiniteState.StateType.Equals(newState))
+                    return false;
+            }
+
+            // Exit the current state
             if (currentFiniteState != null) { currentFiniteState.Exit(); }
 
             // Check if the state exists
-            if (possibleStates != null && possibleStates.Count > 0 && possibleStates.ContainsKey(state))
+            if (possibleStates != null && possibleStates.Count > 0 && possibleStates.ContainsKey(newState))
             {
                 // Enter the new state
-                currentFiniteState = possibleStates[state];
+                currentFiniteState = possibleStates[newState];
                 currentFiniteState.Enter();
             }
             else
@@ -157,7 +168,7 @@ namespace Darklight.UnityExt.Behaviour
             }
 
             // Invoke the OnStateChanged event
-            OnStateChanged?.Invoke(state);
+            OnStateChanged?.Invoke(newState);
             return true;
         }
 
