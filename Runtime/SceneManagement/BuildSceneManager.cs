@@ -28,7 +28,7 @@ namespace Darklight.UnityExt.SceneManagement
         public delegate void ActiveSceneChanged(Scene oldScene, Scene newScene);
         public event ActiveSceneChanged OnSceneChanged;
 
-        [SerializeField] protected string[] buildScenePaths = new string[0];
+        protected string[] buildScenePaths = new string[0];
 
         /// <summary>
         /// Handles the active scene change event.
