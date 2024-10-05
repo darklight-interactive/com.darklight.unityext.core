@@ -6,7 +6,6 @@
   "unity": "2023.2",
   "dependencies": {
     "com.dbrizov.naughtyattributes": "2.1.4",
-    "com.kybernetik.ultevents": "3.0.3"
   },
   "author": {
     "name": "Sky Casey { skysfalling }",
