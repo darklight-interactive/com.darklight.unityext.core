@@ -5,7 +5,7 @@
   "description": "The Core Unity Extension Library for Darklight Interactive Studios.",
   "unity": "2023.2",
   "dependencies": {
-    "com.dbrizov.naughtyattributes": "2.1.4",
+    "com.dbrizov.naughtyattributes": "2.1.4"
   },
   "author": {
     "name": "Sky Casey { skysfalling }",
