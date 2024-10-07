@@ -163,24 +163,26 @@ namespace Darklight.UnityExt.Input
         {
             Debug.Log($"{Prefix} Reset Input Events ");
 
-            // Unsubscribe from all input actions
-            if (_moveInputAction != null)
+            // Unsubscribe from all input events
+            _activeActionMap?.Disable();
+
+            try
             {
                 _moveInputAction.started -= HandleMoveStarted;
                 _moveInputAction.performed -= HandleMovePerformed;
                 _moveInputAction.canceled -= HandleMoveCanceled;
-            }
 
-            if (_primaryButtonAction != null)
-            {
                 _primaryButtonAction.performed -= HandlePrimaryPerformed;
                 _primaryButtonAction.canceled -= HandlePrimaryCanceled;
-            }
 
-            if (_secondaryButtonAction != null)
-            {
                 _secondaryButtonAction.performed -= HandleSecondaryPerformed;
                 _secondaryButtonAction.canceled -= HandleSecondaryCanceled;
+
+                _menuButtonAction.started -= HandleMenuStarted;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"{Prefix} Reset Input Events Error: {e.Message}");
             }
         }
         #endregion
