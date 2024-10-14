@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Editor.Utility
 {
+    #if UNITY_EDITOR
     public static class SerializedPropertyUtility
     {
         #region ======== [[ ConvertPropertyToString ]] ========
@@ -364,4 +365,5 @@ namespace Darklight.UnityExt.Editor.Utility
         #endregion
 
     }
+    #endif
 }
