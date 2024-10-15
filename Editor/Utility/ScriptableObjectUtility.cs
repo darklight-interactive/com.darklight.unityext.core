@@ -25,9 +25,12 @@
 
 
 using UnityEngine;
-using UnityEditor;
 using System.IO;
 using System;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 namespace Darklight.UnityExt.Utility
 {
     /// <summary>
@@ -35,6 +38,7 @@ namespace Darklight.UnityExt.Utility
     /// </summary>
     public static class ScriptableObjectUtility
     {
+#if UNITY_EDITOR
         /// <summary>
         /// Creates a new ScriptableObject asset of type <typeparamref name="T"/> or loads an existing one if it already exists.
         /// </summary>
@@ -122,5 +126,6 @@ namespace Darklight.UnityExt.Utility
         }
 
     }
+#endif
 
 }
