@@ -65,10 +65,12 @@ public class Shape2D
         _gizmoColor = color;
     }
 
+#if UNITY_EDITOR
     public void DrawGizmos(bool filled)
     {
         Shape2DGizmos.DrawShape2D(this, _gizmoColor, filled);
     }
+#endif
 
     public bool IsPositionWithinRadius(Vector3 position)
     {
