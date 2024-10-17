@@ -124,8 +124,6 @@ namespace Darklight.UnityExt.Utility
         {
             DeleteScriptableObject(pathToDirectory, typeof(T).Name);
         }
-
-    }
 #endif
-
+    }
 }

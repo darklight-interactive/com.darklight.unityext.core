@@ -161,7 +161,7 @@ namespace Darklight.UnityExt.Utility
         }
 
 
-
+#if UNITY_EDITOR
         /// <summary>
         /// Creates a temporary GameObject in the Editor that is hidden and not saved with the scene.
         /// </summary>
@@ -178,7 +178,7 @@ namespace Darklight.UnityExt.Utility
 
             return tempObject;
         }
-
+#endif
 
     }
 }
