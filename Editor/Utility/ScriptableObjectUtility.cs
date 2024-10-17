@@ -33,12 +33,12 @@ using UnityEditor;
 #endif
 namespace Darklight.UnityExt.Utility
 {
+    #if UNITY_EDITOR
     /// <summary>
     /// Utility class for creating, loading, and deleting ScriptableObjects within the Unity Editor.
     /// </summary>
     public static class ScriptableObjectUtility
     {
-#if UNITY_EDITOR
         /// <summary>
         /// Creates a new ScriptableObject asset of type <typeparamref name="T"/> or loads an existing one if it already exists.
         /// </summary>
@@ -124,6 +124,7 @@ namespace Darklight.UnityExt.Utility
         {
             DeleteScriptableObject(pathToDirectory, typeof(T).Name);
         }
-#endif
     }
+    #endif
+
 }
