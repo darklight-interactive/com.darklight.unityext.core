@@ -1,12 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-#if UNITY_EDITOR
 using UnityEditor;
 
 namespace Darklight.UnityExt.Editor
 {
+#if UNITY_EDITOR
     public static class CustomGizmos
     {
         #region -- << LABELS >> ------------------------------------ >>
@@ -185,6 +184,5 @@ namespace Darklight.UnityExt.Editor
             Handles.DrawLine(arrowTip, arrowTip + left * arrowHeadLength);
         }
     }
-}
-
 #endif
+}
