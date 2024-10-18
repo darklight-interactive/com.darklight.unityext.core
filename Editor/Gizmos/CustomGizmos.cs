@@ -5,7 +5,6 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Editor
 {
-#if UNITY_EDITOR
     public static class CustomGizmos
     {
         #region -- << LABELS >> ------------------------------------ >>
@@ -18,7 +17,9 @@ namespace Darklight.UnityExt.Editor
         /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawLabel(string label, Vector3 position, GUIStyle labelStyle)
         {
+#if UNITY_EDITOR
             Handles.Label(position, label, labelStyle);
+#endif
         }
 
         /// <summary>
@@ -30,8 +31,10 @@ namespace Darklight.UnityExt.Editor
         /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawLabel(string label, Vector3 position, Color color, GUIStyle labelStyle)
         {
+#if UNITY_EDITOR
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Handles.Label(position, label, labelStyle);
+#endif
         }
         #endregion
 
@@ -46,8 +49,10 @@ namespace Darklight.UnityExt.Editor
         /// <param name="color">The color of the wireframe.</param>
         public static void DrawWireSquare(Vector3 position, float size, Vector3 direction, Color color)
         {
+#if UNITY_EDITOR
             Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, size * Vector2.one, direction), Color.clear, color);
+#endif
         }
 
         /// <summary>
@@ -61,12 +66,14 @@ namespace Darklight.UnityExt.Editor
         /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawWireSquare_withLabel(string label, Vector3 position, float size, Vector3 direction, Color color, GUIStyle labelStyle)
         {
+#if UNITY_EDITOR
             DrawWireSquare(position, size, direction, color);
 
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Vector3 labelOffset = new Vector3(size / 2, size / 2, 0);
             Vector3 labelPosition = position + (size * labelOffset);
             Handles.Label(labelPosition, label, labelStyle);
+#endif
         }
 
         /// <summary>
@@ -78,10 +85,12 @@ namespace Darklight.UnityExt.Editor
         /// <param name="color">The color of the square.</param>
         public static void DrawSolidSquare(Vector3 position, float size, Vector3 direction, Color color)
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GetRectangleVertices(position, size * Vector2.one, direction),
                 color, Color.clear);
+#endif
         }
 
         /// <summary>
@@ -93,8 +102,10 @@ namespace Darklight.UnityExt.Editor
         /// <param name="color">The color of the wireframe.</param>
         public static void DrawWireRect(Vector3 position, Vector2 area, Vector3 direction, Color color)
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), Color.clear, color);
+#endif
         }
 
         /// <summary>
@@ -106,11 +117,14 @@ namespace Darklight.UnityExt.Editor
         /// <param name="color">The color of the rectangle.</param>
         public static void DrawSolidRect(Vector3 position, Vector2 area, Vector3 direction, Color color)
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), color, Color.clear);
+#endif
         }
         #endregion
 
+#if UNITY_EDITOR
         /// <summary>
         /// Draws a Handles.Button and executes the given action when clicked.
         /// </summary>
@@ -128,6 +142,7 @@ namespace Darklight.UnityExt.Editor
                 onClick?.Invoke(); // Invoke the action if the button is clicked
             }
         }
+#endif
 
         /// <summary>
         /// Calculates the vertices of a rectangle given its center, size, and direction.
@@ -158,31 +173,5 @@ namespace Darklight.UnityExt.Editor
 
             return vertices;
         }
-
-        /// <summary>
-        /// Draws an arrow at the specified position in the specified direction with a given color, head length, and angle.
-        /// </summary>
-        /// <param name="position">The starting position of the arrow.</param>
-        /// <param name="direction">The direction in which the arrow points.</param>
-        /// <param name="color">The color of the arrow.</param>
-        /// <param name="arrowHeadLength">The length of the arrowhead.</param>
-        /// <param name="arrowHeadAngle">The angle of the arrowhead.</param>
-        public static void DrawArrow(Vector3 position, Vector3 direction, Color color, float arrowHeadLength = 1f, float arrowHeadAngle = 45.0f)
-        {
-            Handles.color = color; // Set the color for the arrow
-
-            // Draw the arrow shaft
-            Handles.DrawLine(position, position + direction);
-
-            // Calculate the right and left vectors for the arrowhead
-            Vector3 right = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 + arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-            Vector3 left = Quaternion.LookRotation(direction) * Quaternion.Euler(0, 180 - arrowHeadAngle, 0) * new Vector3(0, 0, 1);
-
-            // Draw the arrowhead
-            Vector3 arrowTip = position + direction;
-            Handles.DrawLine(arrowTip, arrowTip + right * arrowHeadLength);
-            Handles.DrawLine(arrowTip, arrowTip + left * arrowHeadLength);
-        }
     }
-#endif
 }

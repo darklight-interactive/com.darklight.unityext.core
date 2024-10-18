@@ -31,9 +31,9 @@ using System;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+
 namespace Darklight.UnityExt.Utility
 {
-    #if UNITY_EDITOR
     /// <summary>
     /// Utility class for creating, loading, and deleting ScriptableObjects within the Unity Editor.
     /// </summary>
@@ -54,18 +54,22 @@ namespace Darklight.UnityExt.Utility
                 pathToDirectory += "/";
             }
 
+#if UNITY_EDITOR
             // Create the directory if it doesn't exist
             if (!Directory.Exists(pathToDirectory))
             {
                 Directory.CreateDirectory(pathToDirectory);
                 AssetDatabase.Refresh();
             }
+#endif
 
             // Combine the path and asset name to get the full path
             string assetPath = pathToDirectory + assetName + ".asset";
+            T asset = null;
 
+#if UNITY_EDITOR
             // Load the asset if it exists
-            T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
             if (asset == null)
             {
                 // Create and save the asset if it doesn't exist
@@ -74,7 +78,7 @@ namespace Darklight.UnityExt.Utility
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
-
+#endif
             return asset;
         }
 
@@ -106,6 +110,7 @@ namespace Darklight.UnityExt.Utility
             // Combine the path and asset name to get the full path
             string assetPath = pathToDirectory + assetName + ".asset";
 
+#if UNITY_EDITOR
             // Load the asset if it exists
             ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
             if (asset != null)
@@ -114,6 +119,7 @@ namespace Darklight.UnityExt.Utility
                 AssetDatabase.DeleteAsset(assetPath);
                 AssetDatabase.Refresh();
             }
+#endif
         }
         /// <summary>
         /// Deletes a ScriptableObject asset named after the type <typeparamref name="T"/> from the given directory.
@@ -125,6 +131,4 @@ namespace Darklight.UnityExt.Utility
             DeleteScriptableObject(pathToDirectory, typeof(T).Name);
         }
     }
-    #endif
-
 }
