@@ -122,39 +122,56 @@ namespace Darklight.UnityExt.Editor
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(position, area, direction), color, Color.clear);
 #endif
         }
-        #endregion
+                #endregion
+
+
+                /// <summary>
+                /// Draws a line between two points with a specified color and thickness.
+                /// </summary>
+                /// <param name="start">The starting point of the line.</param>
+                /// <param name="end">The ending point of the line.</param>
+                /// <param name="color">The color of the line.</param>
+                /// <param name="thickness">The thickness of the line.</param>
+                public static void DrawLine(Vector3 start, Vector3 end, Color color, float thickness = 1f)
+                {
+#if UNITY_EDITOR
+                        Handles.color = color;
+                        Handles.DrawAAPolyLine(thickness, new Vector3[] { start, end });
+#endif
+                }
+
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Draws a Handles.Button and executes the given action when clicked.
-        /// </summary>
-        /// <param name="position">The position of the button in world space.</param>
-        /// <param name="size">The size of the button.</param>
-        /// <param name="direction">The direction the button is facing.</param>
-        /// <param name="color">The color of the button.</param>
-        /// <param name="onClick">The action to be invoked when the button is clicked.</param>
-        /// <param name="capFunction">The function used to draw the button cap.</param>
-        public static void DrawButtonHandle(Vector3 position, float size, Vector3 direction, Color color, System.Action onClick, Handles.CapFunction capFunction)
-        {
-            Handles.color = color;
-            if (Handles.Button(position, Quaternion.LookRotation(direction), size / 2, size, capFunction))
-            {
-                onClick?.Invoke(); // Invoke the action if the button is clicked
-            }
-        }
+                /// <summary>
+                /// Draws a Handles.Button and executes the given action when clicked.
+                /// </summary>
+                /// <param name="position">The position of the button in world space.</param>
+                /// <param name="size">The size of the button.</param>
+                /// <param name="direction">The direction the button is facing.</param>
+                /// <param name="color">The color of the button.</param>
+                /// <param name="onClick">The action to be invoked when the button is clicked.</param>
+                /// <param name="capFunction">The function used to draw the button cap.</param>
+                public static void DrawButtonHandle(Vector3 position, float size, Vector3 direction, Color color, System.Action onClick, Handles.CapFunction capFunction)
+                {
+                        Handles.color = color;
+                        if (Handles.Button(position, Quaternion.LookRotation(direction), size / 2, size, capFunction))
+                        {
+                                onClick?.Invoke(); // Invoke the action if the button is clicked
+                        }
+                }
 #endif
 
-        /// <summary>
-        /// Calculates the vertices of a rectangle given its center, size, and direction.
-        /// </summary>
-        /// <param name="center">The center position of the rectangle.</param>
-        /// <param name="area">The width and height of the rectangle.</param>
-        /// <param name="normalDirection">The normal direction the rectangle is facing.</param>
-        /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
-        static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normalDirection)
-        {
-            Vector2 halfArea = area * 0.5f;
-            Vector3[] vertices = new Vector3[4]
+                /// <summary>
+                /// Calculates the vertices of a rectangle given its center, size, and direction.
+                /// </summary>
+                /// <param name="center">The center position of the rectangle.</param>
+                /// <param name="area">The width and height of the rectangle.</param>
+                /// <param name="normalDirection">The normal direction the rectangle is facing.</param>
+                /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
+                static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normalDirection)
+                {
+                        Vector2 halfArea = area * 0.5f;
+                        Vector3[] vertices = new Vector3[4]
             {
                 new Vector3(-halfArea.x, 0, -halfArea.y),
                 new Vector3(halfArea.x, 0, -halfArea.y),

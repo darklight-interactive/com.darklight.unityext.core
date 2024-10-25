@@ -9,8 +9,9 @@ namespace Darklight.UnityExt.Behaviour
     /// <typeparam name="T"></typeparam>
     public abstract class MonoBehaviourSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-        public static string Prefix => $"[{typeof(T).Name}]";
-        private static T _instance;
+        static T _instance;
+
+        public static string Prefix => $"<color=yellow><b>[{typeof(T).Name}]</b></color>";
         public static T Instance
         {
             get

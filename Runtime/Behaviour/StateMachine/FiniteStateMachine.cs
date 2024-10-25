@@ -32,51 +32,36 @@
 
 using System;
 using System.Collections.Generic;
+using Darklight.UnityExt.Editor;
+using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
 {
-    /// <summary>
-    /// An interface to define the structure of a State
-    /// </summary>
-    public interface IState
-    {
-        /// <summary>
-        /// Called when the state is entered.
-        /// </summary>
-        void Enter();
-
-        /// <summary>
-        /// Called when the state is exited.
-        /// </summary>
-        void Exit();
-
-        /// <summary>
-        /// Called when the state is executed.
-        /// </summary>
-        /// <remarks>
-        /// This method should be called in the game's update loop.
-        /// </remarks>
-        void Execute();
-    }
-
     /// <summary>
     /// An abstract Finite State class for the FiniteStateMachine
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     [System.Serializable]
-    public abstract class FiniteState<TState> : IState where TState : Enum
+    public class FiniteState<TState>
+        where TState : Enum
     {
+        [SerializeField] TState _stateType;
+
         public FiniteStateMachine<TState> StateMachine { get; private set; }
-        public TState StateType { get; private set; }
+        public TState StateType
+        {
+            get => _stateType;
+            private set => _stateType = value;
+        }
         public FiniteState(FiniteStateMachine<TState> stateMachine, TState stateType)
         {
             this.StateMachine = stateMachine;
             this.StateType = stateType;
         }
 
-        public abstract void Enter();
-        public abstract void Exit();
-        public abstract void Execute();
+        public virtual void Enter() { }
+        public virtual void Execute() { }
+        public virtual void Exit() { }
     }
 
     /// <summary>
@@ -85,41 +70,72 @@ namespace Darklight.UnityExt.Behaviour
     /// state class.
     /// </summary>
     /// <typeparam name="TState">The enum definition for the state keys</typeparam>
-    public abstract class FiniteStateMachine<TState> where TState : Enum
+    [Serializable]
+    public abstract class FiniteStateMachine<TState>
+        where TState : Enum
     {
-        protected TState initialState;
-        protected Dictionary<TState, FiniteState<TState>> possibleStates;
-        protected FiniteState<TState> currentFiniteState;
-        protected object[] args;
+        Dictionary<TState, FiniteState<TState>> _possibleFinitesStates = new Dictionary<TState, FiniteState<TState>>();
+
+        [SerializeField, ShowOnly] TState _initialState;
+        [SerializeField, ShowOnly] TState _currentState;
+        [SerializeField] FiniteState<TState> _currentFiniteState;
 
         // Event called when the state is changed
         public delegate void OnStateChange(TState state);
         public event OnStateChange OnStateChanged;
 
-        // Public access to the current state
-        public TState CurrentState { get { return currentFiniteState.StateType; } }
+        // Properties
+        public Dictionary<TState, FiniteState<TState>> PossibleStates { get => _possibleFinitesStates; }
+        public TState InitialState { get => _initialState; }
+        public TState CurrentState { get => _currentState; }
 
         // Constructors
         public FiniteStateMachine() { }
-        public FiniteStateMachine(Dictionary<TState, FiniteState<TState>> possibleStates, TState initialState, object[] args)
+        public FiniteStateMachine(TState initialState)
         {
-            this.initialState = initialState;
-            this.possibleStates = possibleStates;
-            if (possibleStates.ContainsKey(initialState))
+            this._possibleFinitesStates = new Dictionary<TState, FiniteState<TState>>();
+
+            this._initialState = initialState;
+            this._currentState = initialState;
+        }
+        public FiniteStateMachine(Dictionary<TState, FiniteState<TState>> possibleStates, TState initialState)
+        {
+            this._possibleFinitesStates = possibleStates;
+
+            this._initialState = initialState;
+            this._currentState = initialState;
+        }
+
+        void GenerateDefaultStates()
+        {
+            _possibleFinitesStates = new Dictionary<TState, FiniteState<TState>>();
+            TState[] stateEnums = (TState[])Enum.GetValues(typeof(TState));
+            foreach (TState state in stateEnums)
             {
-                this.currentFiniteState = possibleStates[initialState];
+                AddState(new FiniteState<TState>(this, state));
             }
-            this.args = args;
+
         }
 
         /// <summary>
         /// Add a state to the possibleStates dictionary
         /// </summary>
         /// <param name="finiteState">The FiniteState to add to the dictionary.</param>
-        public void AddState(FiniteState<TState> finiteState)
+        public void AddState(FiniteState<TState> finiteState, bool overwrite = true)
         {
-            if (possibleStates == null) { possibleStates = new Dictionary<TState, FiniteState<TState>>(); }
-            possibleStates.Add(finiteState.StateType, finiteState);
+            if (_possibleFinitesStates == null) { _possibleFinitesStates = new Dictionary<TState, FiniteState<TState>>(); }
+
+            if (_possibleFinitesStates.ContainsKey(finiteState.StateType))
+            {
+                if (overwrite)
+                    _possibleFinitesStates[finiteState.StateType] = finiteState;
+                else
+                    Debug.LogWarning($"The state {finiteState.StateType} already exists in the state machine and will not be added.");
+            }
+            else
+            {
+                _possibleFinitesStates.Add(finiteState.StateType, finiteState);
+            }
         }
 
         /// <summary>
@@ -128,8 +144,8 @@ namespace Darklight.UnityExt.Behaviour
         /// </summary>
         public virtual void Step()
         {
-            if (currentFiniteState != null) { currentFiniteState.Execute(); }
-            else { GoToState(initialState); }
+            if (_currentFiniteState != null) { _currentFiniteState.Execute(); }
+            else { GoToState(_initialState); }
         }
 
         /// <summary>
@@ -142,19 +158,19 @@ namespace Darklight.UnityExt.Behaviour
             if (!force)
             {
                 // If the state is the same as the current state, return false
-                if (currentFiniteState != null && currentFiniteState.StateType.Equals(newState))
+                if (_currentFiniteState != null && _currentFiniteState.StateType.Equals(newState))
                     return false;
             }
 
             // Exit the current state
-            if (currentFiniteState != null) { currentFiniteState.Exit(); }
+            if (_currentFiniteState != null) { _currentFiniteState.Exit(); }
 
             // Check if the state exists
-            if (possibleStates != null && possibleStates.Count > 0 && possibleStates.ContainsKey(newState))
+            if (_possibleFinitesStates != null && _possibleFinitesStates.Count > 0 && _possibleFinitesStates.ContainsKey(newState))
             {
                 // Enter the new state
-                currentFiniteState = possibleStates[newState];
-                currentFiniteState.Enter();
+                _currentFiniteState = _possibleFinitesStates[newState];
+                _currentFiniteState.Enter();
             }
             else
             {
@@ -172,7 +188,7 @@ namespace Darklight.UnityExt.Behaviour
         /// </summary>
         public virtual void ClearState()
         {
-            currentFiniteState = null;
+            _currentFiniteState = null;
         }
     }
 }
