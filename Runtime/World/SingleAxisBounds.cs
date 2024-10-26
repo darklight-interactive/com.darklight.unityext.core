@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.World
     public enum WorldAxis { X, Y, Z }
 
     [Serializable]
-    public class SingleAxisBound
+    public class SingleAxisBounds
     {
         readonly Vector2 valueRange;
 
@@ -40,8 +40,8 @@ namespace Darklight.UnityExt.World
                 _max = Mathf.Clamp(value, valueRange.x, valueRange.y);
             }
         }
-        public float Distance => Mathf.Abs(Max - Min);
-        public SingleAxisBound(WorldAxis axis, Vector2 range)
+        public float Length => Mathf.Abs(Max - Min);
+        public SingleAxisBounds(WorldAxis axis, Vector2 range)
         {
             _axis = axis;
             valueRange = range;
@@ -124,9 +124,8 @@ namespace Darklight.UnityExt.World
             else if (_axis == WorldAxis.Z)
                 perpendicular = Vector3.up * length; // Move up for Z axis
 
-            // Draw the rays for the min and max bounds
-            Gizmos.DrawRay(minPoint, perpendicular);
-            Gizmos.DrawRay(maxPoint, perpendicular);
+            // Draw the min and max points
+            CustomGizmos.DrawLine(minPoint, maxPoint, color, 5);
         }
     }
 }

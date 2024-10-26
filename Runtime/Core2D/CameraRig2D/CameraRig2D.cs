@@ -1,4 +1,5 @@
 using Darklight.UnityExt.Game;
+using Darklight.UnityExt.World;
 using UnityEngine;
 
 
@@ -6,7 +7,7 @@ namespace Darklight.UnityExt.Core2D
 {
     public class CameraRig2D : CameraRig
     {
-        [SerializeField] World2DBounds _bounds;
+        [SerializeField] WorldBounds _bounds;
 
         public Vector3 BoundsCenter
         {

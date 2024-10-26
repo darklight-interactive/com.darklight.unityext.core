@@ -4,13 +4,15 @@ using UnityEngine;
 namespace Darklight.UnityExt.Core3D
 {
     [RequireComponent(typeof(Rigidbody), (typeof(BoxCollider)))]
-    public class IsoPlayer3DController : UniversalInputController
+    public class Player3DController : UniversalInputController
     {
         const string PREFIX = "<color=green>[Player3DController]</color> ";
         Rigidbody _rb;
 
         bool _isPreloaded = false;
 
+
+        [Header("Settings")]
         public int speed = 10;
 
         void Start() => Preload();
@@ -28,12 +30,23 @@ namespace Darklight.UnityExt.Core3D
             _isPreloaded = true;
         }
 
-        // Update is called once per frame
         void Update()
         {
             if (!_isPreloaded) return;
 
+            // Move the player based on input
             _rb.linearVelocity = new Vector3(MoveInput.x, 0, MoveInput.y) * speed;
+
+            // Clamp the position to the nearest whole number
+            Vector3 clampedPosition = new Vector3(
+                Mathf.Round(_rb.position.x),
+                Mathf.Round(_rb.position.y),
+                Mathf.Round(_rb.position.z)
+            );
+
+            // Apply the clamped position
+            _rb.MovePosition(clampedPosition);
         }
+
     }
 }
