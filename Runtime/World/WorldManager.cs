@@ -23,7 +23,7 @@ namespace Darklight.UnityExt.World
 
         }
 
-        void OnDrawGizmos()
+        void OnDrawGizmosSelected()
         {
             _worldBounds?.DrawGizmos();
         }

@@ -11,6 +11,8 @@ namespace Darklight.UnityExt.World
     {
         const int DEFAULT_RANGE_VALUE = 1000;
 
+
+        public bool ShowGizmos = true;
         public Vector3 Center = Vector3.zero;
         public SingleAxisBounds XAxisBounds = new SingleAxisBounds(WorldAxis.X, new Vector2(-DEFAULT_RANGE_VALUE, DEFAULT_RANGE_VALUE));
         public SingleAxisBounds YAxisBounds = new SingleAxisBounds(WorldAxis.Y, new Vector2(-DEFAULT_RANGE_VALUE, DEFAULT_RANGE_VALUE));
@@ -78,6 +80,8 @@ namespace Darklight.UnityExt.World
 
         public void DrawGizmos()
         {
+            if (!ShowGizmos) return;
+
             XAxisBounds.DrawGizmos(Center, YAxisBounds.Length);
             YAxisBounds.DrawGizmos(Center, XAxisBounds.Length);
             ZAxisBounds.DrawGizmos(Center, XAxisBounds.Length);
