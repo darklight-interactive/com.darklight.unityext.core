@@ -1,3 +1,5 @@
+using Darklight.UnityExt.Editor;
+
 using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
@@ -7,11 +9,13 @@ namespace Darklight.UnityExt.Behaviour
     /// Defines a basic singleton pattern for a Unity MonoBehaviour type T.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class MonoBehaviourSingleton<T> : MonoBehaviour where T : MonoBehaviour
+    public abstract class MonoBehaviourSingleton<T> : MonoBehaviour, IUnityEditorListener
+        where T : MonoBehaviour
     {
         static T _instance;
 
         public static string Prefix => $"<color=yellow><b>[{typeof(T).Name}]</b></color>";
+        public static ConsoleGUI Console = new ConsoleGUI();
         public static T Instance
         {
             get
@@ -23,7 +27,7 @@ namespace Darklight.UnityExt.Behaviour
                 _instance = FindFirstObjectByType<T>();
                 if (_instance != null)
                 {
-                    Debug.Log($"{Prefix} Found existing instance of {typeof(T)} in scene.");
+                    Debug.Log($"{Prefix} Found existing instance of {typeof(T)} in scene.", _instance);
                     return _instance;
                 }
 
@@ -35,8 +39,9 @@ namespace Darklight.UnityExt.Behaviour
         /// <summary>
         /// On Awake, check is this GameObject is the singleton instance.
         /// </summary>
-        public virtual void Awake()
+        protected void Awake()
         {
+            // << CREATE INSTANCE >> -------------------------- //
             if (_instance == null)
             {
                 _instance = this as T;
@@ -44,17 +49,18 @@ namespace Darklight.UnityExt.Behaviour
                 {
                     DontDestroyOnLoad(this.gameObject);
                 }
+                Debug.Log($"{Prefix} Singleton instance created.", this);
             }
             else if (_instance != this)
             {
                 if (Application.isPlaying)
                 {
                     Destroy(this.gameObject);
-                    Debug.LogWarning($"{Prefix} Singleton instance already exists. Destroying this instance.");
+                    Debug.LogWarning($"{Prefix} Singleton instance already exists. Destroying this instance.", this);
                 }
                 else
                 {
-                    Debug.LogError($"{Prefix} Singleton instance already exists. Please check the scene for duplicates.");
+                    Debug.LogError($"{Prefix} Singleton instance already exists. Please check the scene for duplicates.", this);
                 }
                 return;
             }
@@ -67,5 +73,11 @@ namespace Darklight.UnityExt.Behaviour
         /// This method is called after the singleton instance is confirmed.
         /// </summary>
         public abstract void Initialize();
+
+        public virtual void OnEditorReloaded()
+        {
+            if (_instance == null)
+                Awake();
+        }
     }
 }

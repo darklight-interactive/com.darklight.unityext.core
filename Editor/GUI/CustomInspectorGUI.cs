@@ -1,20 +1,21 @@
 using System;
-using UnityEngine;
 using System.Collections.Generic;
+
 using Darklight.UnityExt.Editor.Utility;
 
+using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
+
 #endif
 
 namespace Darklight.UnityExt.Editor
 {
 	public static class CustomInspectorGUI
 	{
-
 #if UNITY_EDITOR
-		private static Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
+		static Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
 
 		/// <summary>
 		/// Draws the default inspector for a SerializedObject, excluding the m_Script property.
@@ -61,14 +62,15 @@ namespace Darklight.UnityExt.Editor
 			}
 		}
 
+		#region < PUBLIC_STATIC_METHODS > [[ Draw Serialized Fields ]] ================================================================ 
 
 		/// <summary>
-		/// Draws a read-only array or list as a foldout in the Inspector with each element displayed as a label.
+		/// Draws a show-only array or list as a foldout in the Inspector with each element displayed as a label.
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the array or list.</param>
 		/// <param name="label">The label to display for the foldout.</param>
 		/// <param name="elementNameProvider">A function that takes an index and a SerializedProperty element and returns a custom string for the element name.</param>
-		public static void DrawReadOnlyListFoldout(SerializedProperty property,
+		public static void DrawShowOnlyListFoldout(SerializedProperty property,
 			string label, Func<int, SerializedProperty, string> elementNameProvider = null)
 		{
 			if (property == null || (!property.isArray && property.propertyType != SerializedPropertyType.Generic))
@@ -102,32 +104,101 @@ namespace Darklight.UnityExt.Editor
 			}
 		}
 
-		public static void DrawSerializableClass(Rect position, SerializedProperty prop, GUIContent label)
+		public static void DrawShowOnlySerializableClass(Rect position, SerializedProperty prop, GUIContent label)
 		{
-			EditorGUI.LabelField(position, label.text, "Class Object");
+			// Draw the foldout arrow and label
+			prop.isExpanded = EditorGUI.Foldout(new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), prop.isExpanded, label);
 			position.y += EditorGUIUtility.singleLineHeight;
 
-			EditorGUI.indentLevel++;
-			SerializedProperty childProp = prop.Copy();
-			bool enterChildren = true;
-
-			while (childProp.NextVisible(enterChildren))
+			// If the foldout is expanded, display child properties
+			if (prop.isExpanded)
 			{
-				enterChildren = false;
+				EditorGUI.indentLevel++;
 
-				if (childProp.depth == 0)
+				SerializedProperty childProp = prop.Copy();
+				bool enterChildren = true;
+
+				while (childProp.NextVisible(enterChildren))
 				{
-					break; // Exit when reaching next sibling property
+					enterChildren = false;
+
+					if (childProp.depth == 0)
+					{
+						break; // Exit when reaching next sibling property
+					}
+
+					// Draw each child property as a label
+					Rect propertyPosition = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+					EditorGUI.LabelField(propertyPosition, childProp.displayName, SerializedPropertyUtility.ConvertPropertyToString(childProp));
+					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 				}
 
-				Rect propertyPosition = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-				EditorGUI.LabelField(propertyPosition, childProp.displayName, SerializedPropertyUtility.ConvertPropertyToString(childProp));
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+				EditorGUI.indentLevel--;
 			}
-			EditorGUI.indentLevel--;
 		}
 
+		/// <summary>
+		/// Draws all fields in the given SerializedProperty.
+		/// </summary>
+		/// <param name="property">The SerializedProperty representing the object to draw.</param>
+		/// <param name="header">An optional header label to display before the list of fields.</param>
+		public static void DrawAllSerializedFields(SerializedProperty property)
+		{
+			DrawHeader(property.displayName);
+			IterateSerializedProperties(property, (currentProperty) =>
+			{
+				EditorGUILayout.PropertyField(currentProperty, true);
+			});
+		}
 
+		/// <summary>
+		/// Draws all fields in the given SerializedProperty in a disabled (read-only) state.
+		/// </summary>
+		/// <param name="property">The SerializedProperty representing the object to draw.</param>
+		/// <param name="header">An optional header label to display before the list of fields.</param>
+		public static void DrawAllSerializedFieldsAsDisabled(SerializedProperty property)
+		{
+			DrawHeader(property.displayName);
+			EditorGUI.BeginDisabledGroup(true);
+			IterateSerializedProperties(property, (currentProperty) =>
+			{
+				EditorGUILayout.PropertyField(currentProperty, true);
+			});
+			EditorGUI.EndDisabledGroup();
+		}
+
+		/// <summary>
+		/// Draws all fields in the given SerializedProperty as labels, displaying only the field names and their values.
+		/// </summary>
+		/// <param name="property">The SerializedProperty representing the object to draw.</param>
+		/// <param name="header">An optional header label to display before the list of fields.</param>
+		public static void DrawAllSerializedFieldsAsShowOnly(SerializedProperty property)
+		{
+			DrawHeader(property.displayName);
+			IterateSerializedProperties(property, (currentProperty) =>
+			{
+				EditorGUILayout.LabelField(currentProperty.displayName, SerializedPropertyUtility.ConvertPropertyToString(currentProperty));
+			});
+		}
+
+		/// <summary>
+		/// Iterates through all visible fields in the given SerializedProperty, invoking a specified action on each field.
+		/// </summary>
+		/// <param name="property">The SerializedProperty containing the fields to iterate through.</param>
+		/// <param name="action">The action to perform on each field, typically for drawing.</param>
+		static void IterateSerializedProperties(SerializedProperty property, System.Action<SerializedProperty> action)
+		{
+			SerializedProperty currentProperty = property.Copy();
+			SerializedProperty endProperty = property.GetEndProperty();
+
+			// Iterate through all properties
+			while (currentProperty.NextVisible(true) && !SerializedProperty.EqualContents(currentProperty, endProperty))
+			{
+				action(currentProperty);
+			}
+		}
+
+		#endregion
 
 		#region -- << GUI ELEMENTS >> ------------------------------------ >>
 		public static void DrawHorizontalLine(Color color, int thickness = 1, int padding = 10)
@@ -136,6 +207,19 @@ namespace Darklight.UnityExt.Editor
 			rect.height = thickness;
 			rect.y += padding / 2;
 			EditorGUI.DrawRect(rect, color);
+		}
+
+		/// <summary>
+		/// Draws a header label if one is provided.
+		/// </summary>
+		/// <param name="header">The header label to draw, or null if no header should be displayed.</param>
+		private static void DrawHeader(string header)
+		{
+			if (!string.IsNullOrEmpty(header))
+			{
+				EditorGUILayout.LabelField(header, EditorStyles.boldLabel);
+				EditorGUILayout.Space(2);
+			}
 		}
 
 		public static void CreateIntegerControl(string title, int currentValue, int minValue, int maxValue, System.Action<int> setValue)
