@@ -1,4 +1,4 @@
-namespace Darklight.UnityExt.Behaviour.Interface
+namespace Darklight.UnityExt.Behaviour
 {
     /// <summary>
     /// An interface for a Visitor of type T.
