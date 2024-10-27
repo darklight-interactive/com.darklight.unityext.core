@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public class Config
+        public class InternalConfig
         {
             readonly DropdownList<Vector3> editor_directions = new DropdownList<Vector3>()
             {
@@ -52,10 +52,6 @@ namespace Darklight.UnityExt.Matrix
             [SerializeField, Range(-10, 10)] float _nodeBondingX;
             [SerializeField, Range(-10, 10)] float _nodeBondingY;
 
-            // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
-            public Config() { }
-            public Config(Transform transform) => SetTransform(transform);
-
             // ======== [[ PROPERTIES ]] ============================================================ >>>>
             public bool LockPosToTransform { get => _lockPosToTransform; set => _lockPosToTransform = value; }
             public bool LockNormalToTransform { get => _lockNormalToTransform; set => _lockNormalToTransform = value; }
@@ -76,6 +72,9 @@ namespace Darklight.UnityExt.Matrix
                     _matrixDimensions = value;
                 }
             }
+            public int MatrixWidth { get => _matrixColumns; set => _matrixColumns = value; }
+            public int MatrixHeight { get => _matrixRows; set => _matrixRows = value; }
+
             public Vector2 NodeDimensions
             {
                 get
@@ -120,7 +119,7 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
-            public void Copy(Config config)
+            public void Copy(InternalConfig config)
             {
                 _lockPosToTransform = config._lockPosToTransform;
                 _lockNormalToTransform = config._lockNormalToTransform;

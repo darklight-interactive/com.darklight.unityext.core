@@ -1,19 +1,15 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.Utility;
-
-using NaughtyAttributes;
 
 using UnityEngine;
 
 using Camera = UnityEngine.Camera;
 
-
 #if UNITY_EDITOR
 using UnityEditor;
+
 #endif
 
 
@@ -177,11 +173,11 @@ namespace Darklight.UnityExt.Game
         {
             Quaternion targetRotation = Quaternion.Euler(Vector3.zero);
 
-            if (_settings.OrbitTarget)
+            if (_settings.LookAtTarget)
             {
                 Vector3 camPosition = _targetPosition;
                 targetRotation = Quaternion.LookRotation(Origin - camPosition);
-                targetRotation = Quaternion.Euler(_settings.RotOffsetX, targetRotation.eulerAngles.y, targetRotation.eulerAngles.z);
+                targetRotation = Quaternion.Euler(_settings.RotOffsetX + targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, targetRotation.eulerAngles.z);
             }
             else
             {
@@ -220,6 +216,8 @@ namespace Darklight.UnityExt.Game
             _targetRotation = CalculateTargetRotation();
             _targetFOV = CalculateTargetFOV();
 
+            cam.orthographic = _settings.Projection == CameraRigSettings.ProjectionType.ORTHOGRAPHIC;
+
             // << UPDATE CAMERA VALUES >> -------------------------------------
             if (useLerp)
             {
@@ -256,6 +254,7 @@ namespace Darklight.UnityExt.Game
                 // Reset the local position and rotation of the camera
                 camera.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
+                camera.orthographic = _mainCamera.orthographic;
                 camera.fieldOfView = _mainCamera.fieldOfView;
             }
         }

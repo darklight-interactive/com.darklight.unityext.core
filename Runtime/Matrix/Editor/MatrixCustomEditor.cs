@@ -1,18 +1,17 @@
+#if UNITY_EDITOR
 
+using UnityEditor;
+
+using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix.Editor
 {
-#if UNITY_EDITOR
-
-    using UnityEditor;
-
-    using UnityEngine;
-
     [CustomEditor(typeof(Matrix))]
     public class MatrixCustomEditor : UnityEditor.Editor
     {
         SerializedObject _serializedObject;
         Matrix _script;
+
         private void OnEnable()
         {
             _serializedObject = new SerializedObject(target);
@@ -23,16 +22,18 @@ namespace Darklight.UnityExt.Matrix.Editor
         {
             _serializedObject.Update();
 
-            EditorGUI.BeginChangeCheck();
-
-            base.OnInspectorGUI();
-
-            if (EditorGUI.EndChangeCheck())
+            // Add a button to open the Matrix Editor Window
+            if (GUILayout.Button("Open Matrix Editor"))
             {
-                _serializedObject.ApplyModifiedProperties();
-                _script.Refresh();
+                // Open the MatrixEditorWindow and pass the current Matrix instance
+                MatrixEditorWindow.ShowWindow(_script);
             }
+
+            // Display default inspector properties
+            DrawDefaultInspector();
+
+            _serializedObject.ApplyModifiedProperties();
         }
     }
-#endif
 }
+#endif

@@ -7,7 +7,7 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public class Data
+        public class InternalData
         {
             [ShowOnly] public bool isPreloaded;
             [ShowOnly] public bool isInitialized;
