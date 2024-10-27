@@ -15,8 +15,6 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Matrix
 {
-    [ExecuteAlways]
-    [System.Serializable]
     public partial class Matrix : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
@@ -24,12 +22,10 @@ namespace Darklight.UnityExt.Matrix
         Dictionary<Vector2Int, MatrixNode> _nodeMap;
         ComponentRegistry _componentRegistry;
 
-
-        [Space(5), Header("Cells")]
+        [SerializeField] Config _config;
         [SerializeField] List<MatrixNode> _nodeList;
 
-        [Space(5), Header("Config")]
-        [SerializeField] Config _config;
+
 
 
         [Header("States")]
@@ -87,53 +83,6 @@ namespace Darklight.UnityExt.Matrix
                 return true;
             });
 
-        public static void CalculateCellTransform(
-            out Vector3 position,
-            out Vector2Int coordinate,
-            out Vector3 normal,
-            out Vector2 dimensions,
-            MatrixNode cell,
-            Matrix.Config config
-        )
-        {
-            position = CalculatePositionFromKey(cell.Key, config);
-            coordinate = CalculateCoordinateFromKey(cell.Key, config);
-            normal = config.MatrixNormal;
-            dimensions = config.NodeDimensions;
-        }
-
-        public static Vector3 CalculatePositionFromKey(Vector2Int key, Matrix.Config config)
-        {
-            // Get the origin key of the grid
-            Vector2Int originKey = CalculateOriginKey(config);
-
-            // Calculate the spacing offset && clamp it to avoid overlapping cells
-            Vector2 spacingOffsetPos = config.NodeSpacing + Vector2.one; // << Add 1 to allow for values of 0
-            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 0.5f, float.MaxValue);
-            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 0.5f, float.MaxValue);
-
-            // Calculate bonding offsets
-            Vector2 bondingOffset = Vector2.zero;
-            if (key.y % 2 == 0)
-                bondingOffset.x = config.NodeBonding.x;
-            if (key.x % 2 == 0)
-                bondingOffset.y = config.NodeBonding.y;
-
-            // Calculate the offset of the cell from the grid origin
-            Vector2 originOffsetPos = originKey * config.NodeDimensions;
-            Vector2 keyOffsetPos = key * config.NodeDimensions;
-
-            // Calculate the final position of the cell
-            Vector2 cellPosition = (keyOffsetPos - originOffsetPos); // << Calculate the position offset
-            cellPosition *= spacingOffsetPos; // << Multiply the spacing offset
-            cellPosition += bondingOffset; // << Add the bonding offset
-
-            // Create a rotation matrix based on the grid's normal
-            Quaternion rotation = Quaternion.LookRotation(config.MatrixNormal, Vector3.forward);
-
-            // Apply the rotation to the grid offset and return the final world position
-            return config.MatrixPosition + (rotation * new Vector3(cellPosition.x, cellPosition.y, 0));
-        }
 
 
         public MatrixNode GetCell(Vector2Int key)
@@ -258,6 +207,7 @@ namespace Darklight.UnityExt.Matrix
         void Start() => Initialize();
         void Update() => Refresh();
         void OnDrawGizmos() => Draw();
+        void OnValidate() => Refresh();
         #endregion
 
 
@@ -295,7 +245,7 @@ namespace Darklight.UnityExt.Matrix
                 Preload();
 
             // Generate a new grid from the config
-            bool mapGenerated = GenerateCellMap();
+            bool mapGenerated = Generate();
 
             // Determine if the grid was initialized
             _isInitialized = mapGenerated;
@@ -319,7 +269,7 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // Resize the grid if the dimensions have changed
-            ResizeCellMap();
+            Resize();
 
             _nodeList = new List<MatrixNode>(NodeMap.Values);
 
@@ -332,6 +282,9 @@ namespace Darklight.UnityExt.Matrix
         public void Reset()
         {
             Clear();
+
+            _config.SetToDefaults();
+
             Preload();
         }
 
@@ -347,16 +300,12 @@ namespace Darklight.UnityExt.Matrix
             _nodeList.Clear(); // << Clear the list
         }
 
-        public void Draw()
-        {
-            if (!_isInitialized) return;
-            SendVisitorToAllCells(CellGizmoVisitor);
-        }
+
 
         #endregion
 
         #region < PRIVATE_METHODS > [[ Handle Cells ]] ================================================================
-        bool CreateCell(Vector2Int key)
+        bool CreateNode(Vector2Int key)
         {
             if (_nodeMap.ContainsKey(key))
                 return false;
@@ -366,7 +315,16 @@ namespace Darklight.UnityExt.Matrix
             return true;
         }
 
-        bool GenerateCellMap()
+        bool RemoveNode(Vector2Int key)
+        {
+            if (!_nodeMap.ContainsKey(key))
+                return false;
+
+            _nodeMap.Remove(key);
+            return true;
+        }
+
+        bool Generate()
         {
             // Skip if already initialized
             if (_isInitialized)
@@ -382,7 +340,7 @@ namespace Darklight.UnityExt.Matrix
                 for (int y = 0; y < dimensions.y; y++)
                 {
                     Vector2Int gridKey = new Vector2Int(x, y);
-                    CreateCell(gridKey);
+                    CreateNode(gridKey);
                 }
             }
 
@@ -391,19 +349,11 @@ namespace Darklight.UnityExt.Matrix
             return true;
         }
 
-        bool RemoveCell(Vector2Int key)
-        {
-            if (!_nodeMap.ContainsKey(key))
-                return false;
-
-            _nodeMap.Remove(key);
-            return true;
-        }
-
-        void ResizeCellMap()
+        void Resize()
         {
             if (!_isInitialized)
                 return;
+
             Vector2Int newDimensions = _config.MatrixDimensions;
 
             // Check if the dimensions have changed
@@ -417,7 +367,7 @@ namespace Darklight.UnityExt.Matrix
             foreach (Vector2Int key in keys)
             {
                 if (key.x >= newDimensions.x || key.y >= newDimensions.y)
-                    RemoveCell(key);
+                    RemoveNode(key);
             }
 
             // Add cells that are in bounds
@@ -426,68 +376,139 @@ namespace Darklight.UnityExt.Matrix
                 for (int y = 0; y < newDimensions.y; y++)
                 {
                     Vector2Int gridKey = new Vector2Int(x, y);
-                    CreateCell(gridKey);
+                    CreateNode(gridKey);
                 }
             }
         }
         #endregion
 
+        public void Draw()
+        {
+            if (!_isInitialized) return;
+            SendVisitorToAllCells(CellGizmoVisitor);
+
+            Gizmos.color = Color.black;
+            Gizmos.DrawSphere(_config.MatrixPosition, _config.NodeDimensions.x / 2);
+        }
+
+
+        public static void CalculateCellTransform(
+            out Vector3 position,
+            out Vector2Int coordinate,
+            out Vector3 normal,
+            out Vector2 dimensions,
+            MatrixNode cell,
+            Matrix.Config config
+        )
+        {
+            position = CalculatePositionFromKey(cell.Key, config);
+            coordinate = CalculateCoordinateFromKey(cell.Key, config);
+            normal = config.MatrixNormal;
+            dimensions = config.NodeDimensions;
+        }
+
+        public static Vector3 CalculatePositionFromKey(Vector2Int key, Config config)
+        {
+            // Calculate the node position offset in world space based on dimensions
+            Vector2 keyOffsetPos = key * config.NodeDimensions;
+
+            // Calculate the origin position offset in world space based on alignment
+            Vector2 originOffset = CalculateOriginOffset(config);
+
+            // Calculate the spacing offset and clamp to avoid overlapping cells
+            Vector2 spacingOffsetPos = config.NodeSpacing + Vector2.one;
+            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 0.5f, float.MaxValue);
+            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 0.5f, float.MaxValue);
+
+            // Calculate bonding offsets
+            Vector2 bondingOffset = Vector2.zero;
+            if (key.y % 2 == 0)
+                bondingOffset.x = config.NodeBonding.x;
+            if (key.x % 2 == 0)
+                bondingOffset.y = config.NodeBonding.y;
+
+            Vector2 cellPosition = keyOffsetPos + originOffset;
+            cellPosition *= spacingOffsetPos;
+            cellPosition += bondingOffset;
+
+
+            // Apply a scale transformation that flips the x-axis
+            Vector3 scale = new Vector3(-1, 1, 1);  // Inverts the x-axis
+            Vector3 transformedPosition = Vector3.Scale(new Vector3(cellPosition.x, cellPosition.y, 0), scale);
+
+            // Apply rotation based on grid's normal and return the final world position
+            Quaternion rotation = Quaternion.LookRotation(config.MatrixNormal, Vector3.forward);
+            return config.MatrixPosition + (rotation * transformedPosition);
+        }
 
         static Vector2Int CalculateCoordinateFromKey(Vector2Int key, Matrix.Config config)
         {
-            Vector2Int originKey = CalculateOriginKey(config);
-            return key - originKey;
+            //Vector2Int originKey = CalculateOriginKey(config);
+            return key;
         }
 
-        static Vector2Int CalculateOriginKey(Matrix.Config config)
+        static Vector2 CalculateOriginOffset(Config config)
         {
             Vector2Int gridDimensions = config.MatrixDimensions - Vector2Int.one;
-            Vector2Int originKey = Vector2Int.zero;
+            Vector2 originOffset = Vector2.zero;
 
             switch (config.MatrixAlignment)
             {
                 case Matrix.Alignment.BottomLeft:
-                    originKey = new Vector2Int(0, 0);
+                    originOffset = Vector2.zero;
                     break;
                 case Matrix.Alignment.BottomCenter:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x / 2,
+                        0
+                    );
                     break;
                 case Matrix.Alignment.BottomRight:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x,
+                        0
+                    );
                     break;
                 case Matrix.Alignment.MiddleLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
+                    originOffset = new Vector2(
+                        0,
+                        -gridDimensions.y * config.NodeDimensions.y / 2
+                    );
                     break;
                 case Matrix.Alignment.Center:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x / 2,
+                        -gridDimensions.y * config.NodeDimensions.y / 2
                     );
                     break;
                 case Matrix.Alignment.MiddleRight:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x,
+                        -gridDimensions.y * config.NodeDimensions.y / 2
                     );
                     break;
                 case Matrix.Alignment.TopLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
+                    originOffset = new Vector2(
+                        0,
+                        -gridDimensions.y * config.NodeDimensions.y
+                    );
                     break;
                 case Matrix.Alignment.TopCenter:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y)
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x / 2,
+                        -gridDimensions.y * config.NodeDimensions.y
                     );
                     break;
                 case Matrix.Alignment.TopRight:
-                    originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y)
+                    originOffset = new Vector2(
+                        -gridDimensions.x * config.NodeDimensions.x,
+                        -gridDimensions.y * config.NodeDimensions.y
                     );
                     break;
             }
 
-            return originKey;
+            return originOffset;
         }
+
     }
 }

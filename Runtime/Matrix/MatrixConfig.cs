@@ -29,7 +29,7 @@ namespace Darklight.UnityExt.Matrix
             [SerializeField] bool _lockPosToTransform = true;
             [SerializeField, HideIf("_lockPosToTransform"), AllowNesting] Vector3 _matrixPosition = new Vector3(0, 0, 0);
             [SerializeField] bool _lockNormalToTransform = true;
-            [SerializeField, HideIf("_lockNormalToTransform"), AllowNesting] Vector3 _matrixNormal = Vector3.up;
+            [SerializeField, HideIf("_lockNormalToTransform"), AllowNesting, Dropdown("editor_directions")] Vector3 _matrixNormal = Vector3.up;
 
             [Space(10)]
             [SerializeField, ShowOnly] Vector2Int _matrixDimensions = new Vector2Int(3, 3);
@@ -51,8 +51,6 @@ namespace Darklight.UnityExt.Matrix
             [SerializeField, ShowOnly] Vector2 _nodeBonding;
             [SerializeField, Range(-10, 10)] float _nodeBondingX;
             [SerializeField, Range(-10, 10)] float _nodeBondingY;
-
-
 
             // ======== [[ CONSTRUCTORS ]] ============================================================ >>>>
             public Config() { }
@@ -139,7 +137,15 @@ namespace Darklight.UnityExt.Matrix
 
             public void SetToDefaults()
             {
-
+                _lockPosToTransform = true;
+                _lockNormalToTransform = true;
+                _matrixAlignment = Alignment.Center;
+                _matrixPosition = new Vector3(0, 0, 0);
+                _matrixNormal = Vector3.up;
+                _matrixDimensions = new Vector2Int(3, 3);
+                _nodeDimensions = new Vector2(1, 1);
+                _nodeSpacing = new Vector2(0, 0);
+                _nodeBonding = new Vector2(0, 0);
             }
 
             public void SetTransform(Transform transform)
@@ -155,7 +161,7 @@ namespace Darklight.UnityExt.Matrix
                 Vector3 position = _matrixPosition;
                 if (_lockPosToTransform && _transform != null)
                 {
-                    position = _transform.position + _matrixPosition;
+                    position = _transform.position;
                 }
                 return position;
             }
@@ -165,9 +171,14 @@ namespace Darklight.UnityExt.Matrix
                 Vector3 normal = _matrixNormal;
                 if (_lockNormalToTransform && _transform != null)
                 {
-                    normal = _transform.forward + _matrixNormal;
+                    normal = _transform.forward;
                 }
                 return normal;
+            }
+
+            void OnValidate()
+            {
+                Debug.Log("OnValidate");
             }
         }
     }
