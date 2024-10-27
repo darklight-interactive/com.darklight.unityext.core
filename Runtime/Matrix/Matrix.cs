@@ -1,16 +1,13 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
 
 using NaughtyAttributes;
 
 using UnityEngine;
 
 #if UNITY_EDITOR
-using UnityEditor;
-
 #endif
 
 namespace Darklight.UnityExt.Matrix
@@ -19,18 +16,10 @@ namespace Darklight.UnityExt.Matrix
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
 
-        Dictionary<Vector2Int, MatrixNode> _nodeMap;
-        ComponentRegistry _componentRegistry;
+        Dictionary<Vector2Int, Node> _nodeMap = new Dictionary<Vector2Int, Node>();
+        [SerializeField] Config _config = new Config();
+        [SerializeField] Data _data = new Data();
 
-        [SerializeField] Config _config;
-        [SerializeField] List<MatrixNode> _nodeList;
-
-
-
-
-        [Header("States")]
-        [SerializeField, ShowOnly] bool _isInitialized = false;
-        [SerializeField, ShowOnly] bool _isPreloaded = false;
 
         // ======== [[ EVENTS ]] ======================================================= >>>>
         public delegate void GridEvent();
@@ -54,30 +43,31 @@ namespace Darklight.UnityExt.Matrix
         }
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        public HashSet<Vector2Int> CellKeys => new HashSet<Vector2Int>(NodeMap.Keys);
-        public Dictionary<Vector2Int, MatrixNode> NodeMap
+        public Dictionary<Vector2Int, Node> NodeMap
         {
             get
             {
                 if (_nodeMap == null)
-                    _nodeMap = new Dictionary<Vector2Int, MatrixNode>();
+                    _nodeMap = new Dictionary<Vector2Int, Node>();
                 return _nodeMap;
             }
             protected set { _nodeMap = value; }
         }
-        public HashSet<MatrixNode> CellValues => new HashSet<MatrixNode>(NodeMap.Values);
+        public HashSet<Vector2Int> NodeKeys => new HashSet<Vector2Int>(NodeMap.Keys);
+        public HashSet<Node> NodeValues => new HashSet<Node>(NodeMap.Values);
+
 
         // -- (( VISITORS )) ------------------ >>
-        protected MatrixNode.Visitor CellUpdateVisitor =>
-            new MatrixNode.Visitor(cell =>
+        protected Node.Visitor CellUpdateVisitor =>
+            new Node.Visitor(cell =>
             {
                 cell.RecalculateDataFromGrid(this);
                 cell.Refresh();
                 return true;
             });
 
-        protected MatrixNode.Visitor CellGizmoVisitor =>
-            new MatrixNode.Visitor(cell =>
+        protected Node.Visitor CellGizmoVisitor =>
+            new Node.Visitor(cell =>
             {
                 cell.DrawGizmos();
                 return true;
@@ -85,36 +75,24 @@ namespace Darklight.UnityExt.Matrix
 
 
 
-        public MatrixNode GetCell(Vector2Int key)
+        public Node GetCell(Vector2Int key)
         {
             if (NodeMap.ContainsKey(key))
                 return NodeMap[key];
             return null;
         }
 
-        public List<MatrixNode> GetCells()
+        public List<Node> GetCells()
         {
-            return new List<MatrixNode>(NodeMap.Values);
+            return new List<Node>(NodeMap.Values);
         }
 
-        public List<MatrixNode> GetCellsByComponentType(ComponentTypeKey type)
-        {
-            List<MatrixNode> cells = new List<MatrixNode>();
-            foreach (MatrixNode cell in NodeMap.Values)
-            {
-                if (cell.ComponentReg.HasComponent(type))
-                {
-                    cells.Add(cell);
-                }
-            }
-            return cells;
-        }
 
-        public MatrixNode GetClosestCellTo(Vector2 position)
+        public Node GetClosestCellTo(Vector2 position)
         {
-            MatrixNode closestCell = null;
+            Node closestCell = null;
             float closestDistance = float.MaxValue;
-            foreach (MatrixNode cell in NodeMap.Values)
+            foreach (Node cell in NodeMap.Values)
             {
                 float distance = Vector2.Distance(cell.Position, position);
                 if (distance < closestDistance)
@@ -124,21 +102,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
             return closestCell;
-        }
-
-        public List<TComponent> GetComponentsByType<TComponent>()
-            where TComponent : MatrixNode.Component
-        {
-            List<TComponent> components = new List<TComponent>();
-            foreach (MatrixNode cell in NodeMap.Values)
-            {
-                TComponent component = cell.ComponentReg.GetComponent<TComponent>();
-                if (component != null)
-                {
-                    components.Add(component);
-                }
-            }
-            return components;
         }
 
         #region -- (( GETTERS )) -------- )))
@@ -153,7 +116,7 @@ namespace Darklight.UnityExt.Matrix
 
 
         #region -- (( VISITOR PATTERN )) -------- )))
-        public void SendVisitorToCell(Vector2Int key, IVisitor<MatrixNode> visitor)
+        public void SendVisitorToCell(Vector2Int key, IVisitor<Node> visitor)
         {
             if (NodeMap == null)
                 return;
@@ -163,11 +126,11 @@ namespace Darklight.UnityExt.Matrix
                 return;
 
             // Apply the map function to the cell
-            MatrixNode cell = NodeMap[key];
+            Node cell = NodeMap[key];
             cell.Accept(visitor);
         }
 
-        public void SendVisitorToAllCells(IVisitor<MatrixNode> visitor)
+        public void SendVisitorToAllCells(IVisitor<Node> visitor)
         {
             if (NodeMap == null)
                 return;
@@ -180,17 +143,17 @@ namespace Darklight.UnityExt.Matrix
                     continue;
 
                 // Apply the map function to the cell
-                MatrixNode cell = NodeMap[key];
+                Node cell = NodeMap[key];
                 cell.Accept(visitor);
             }
         }
         #endregion
 
-        public void SetCells(List<MatrixNode> cells)
+        public void SetCells(List<Node> cells)
         {
             if (cells == null || cells.Count == 0)
                 return;
-            foreach (MatrixNode cell in cells)
+            foreach (Node cell in cells)
             {
                 if (cell == null)
                     continue;
@@ -213,11 +176,11 @@ namespace Darklight.UnityExt.Matrix
 
         #region < PRIVATE_METHODS > [[ Internal Runtime ]] ================================================================
 
-        [HideIf("_isPreloaded"), Button]
+        [HideIf("_data.isPreloaded"), Button]
         public void Preload()
         {
-            _isPreloaded = false;
-            _isInitialized = false;
+            _data.isPreloaded = false;
+            _data.isInitialized = false;
 
             // Create a new config if none exists
             if (_config == null)
@@ -226,43 +189,40 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // Create a new cell map
-            _nodeMap = new Dictionary<Vector2Int, MatrixNode>();
-
-            // Create a new component system
-            _componentRegistry = new ComponentRegistry(this);
+            _nodeMap = new Dictionary<Vector2Int, Node>();
 
             // Determine if the grid was preloaded
-            _isPreloaded = true;
+            _data.isPreloaded = true;
 
             // Invoke the grid preloaded event
             OnGridPreloaded?.Invoke();
         }
 
-        [HideIf("_isInitialized"), Button]
+        [HideIf("_data.isInitialized"), Button]
         public void Initialize()
         {
-            if (!_isPreloaded)
+            if (!_data.isPreloaded)
                 Preload();
 
             // Generate a new grid from the config
             bool mapGenerated = Generate();
 
             // Determine if the grid was initialized
-            _isInitialized = mapGenerated;
+            _data.isInitialized = mapGenerated;
 
             // Return if the grid was not initialized
-            if (!_isInitialized)
+            if (!_data.isInitialized)
                 return;
 
             // Invoke the grid initialized event
             OnGridInitialized?.Invoke();
         }
 
-        [ShowIf("_isInitialized"), Button]
+        [ShowIf("_data.isInitialized"), Button]
         public void Refresh()
         {
             // Initialize if not already
-            if (!_isInitialized || _config == null)
+            if (!_data.isInitialized || _config == null)
             {
                 Initialize();
                 return;
@@ -271,14 +231,15 @@ namespace Darklight.UnityExt.Matrix
             // Resize the grid if the dimensions have changed
             Resize();
 
-            _nodeList = new List<MatrixNode>(NodeMap.Values);
+            _data.nodes = NodeMap.Values.ToArray();
+            _data.originKey = CalculateOriginKey(_config);
 
             // Update the cells
             SendVisitorToAllCells(CellUpdateVisitor);
             OnGridUpdated?.Invoke();
         }
 
-        [ShowIf("_isInitialized"), Button]
+        [ShowIf("_data.isInitialized"), Button]
         public void Reset()
         {
             Clear();
@@ -292,12 +253,10 @@ namespace Darklight.UnityExt.Matrix
         [Button]
         public void Clear()
         {
-            _isPreloaded = false;
-            _isInitialized = false;
+            _data.Reset();
 
             if (NodeMap != null)
                 NodeMap.Clear(); // << Clear the map
-            _nodeList.Clear(); // << Clear the list
         }
 
 
@@ -310,8 +269,8 @@ namespace Darklight.UnityExt.Matrix
             if (_nodeMap.ContainsKey(key))
                 return false;
 
-            MatrixNode cell = (MatrixNode)Activator.CreateInstance(typeof(MatrixNode), key);
-            _nodeMap[key] = cell;
+            Node node = new Node(this, key);
+            _nodeMap[key] = node;
             return true;
         }
 
@@ -327,7 +286,7 @@ namespace Darklight.UnityExt.Matrix
         bool Generate()
         {
             // Skip if already initialized
-            if (_isInitialized)
+            if (_data.isInitialized)
                 return false;
 
             // Clear the map
@@ -351,7 +310,7 @@ namespace Darklight.UnityExt.Matrix
 
         void Resize()
         {
-            if (!_isInitialized)
+            if (!_data.isInitialized)
                 return;
 
             Vector2Int newDimensions = _config.MatrixDimensions;
@@ -384,11 +343,8 @@ namespace Darklight.UnityExt.Matrix
 
         public void Draw()
         {
-            if (!_isInitialized) return;
+            if (!_data.isInitialized) return;
             SendVisitorToAllCells(CellGizmoVisitor);
-
-            Gizmos.color = Color.black;
-            Gizmos.DrawSphere(_config.MatrixPosition, _config.NodeDimensions.x / 2);
         }
 
 
@@ -397,7 +353,7 @@ namespace Darklight.UnityExt.Matrix
             out Vector2Int coordinate,
             out Vector3 normal,
             out Vector2 dimensions,
-            MatrixNode cell,
+            Node cell,
             Matrix.Config config
         )
         {
@@ -439,12 +395,6 @@ namespace Darklight.UnityExt.Matrix
             // Apply rotation based on grid's normal and return the final world position
             Quaternion rotation = Quaternion.LookRotation(config.MatrixNormal, Vector3.forward);
             return config.MatrixPosition + (rotation * transformedPosition);
-        }
-
-        static Vector2Int CalculateCoordinateFromKey(Vector2Int key, Matrix.Config config)
-        {
-            //Vector2Int originKey = CalculateOriginKey(config);
-            return key;
         }
 
         static Vector2 CalculateOriginOffset(Config config)
@@ -508,6 +458,64 @@ namespace Darklight.UnityExt.Matrix
             }
 
             return originOffset;
+        }
+
+
+        static Vector2Int CalculateCoordinateFromKey(Vector2Int key, Matrix.Config config)
+        {
+            Vector2Int originKey = CalculateOriginKey(config);
+            return key - originKey;
+        }
+
+        static Vector2Int CalculateOriginKey(Matrix.Config config)
+        {
+            Vector2Int gridDimensions = config.MatrixDimensions - Vector2Int.one;
+            Vector2Int originKey = Vector2Int.zero;
+
+            switch (config.MatrixAlignment)
+            {
+                case Matrix.Alignment.BottomLeft:
+                    originKey = new Vector2Int(0, 0);
+                    break;
+                case Matrix.Alignment.BottomCenter:
+                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
+                    break;
+                case Matrix.Alignment.BottomRight:
+                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
+                    break;
+                case Matrix.Alignment.MiddleLeft:
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
+                    break;
+                case Matrix.Alignment.Center:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x / 2),
+                        Mathf.FloorToInt(gridDimensions.y / 2)
+                    );
+                    break;
+                case Matrix.Alignment.MiddleRight:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x),
+                        Mathf.FloorToInt(gridDimensions.y / 2)
+                    );
+                    break;
+                case Matrix.Alignment.TopLeft:
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
+                    break;
+                case Matrix.Alignment.TopCenter:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x / 2),
+                        Mathf.FloorToInt(gridDimensions.y)
+                    );
+                    break;
+                case Matrix.Alignment.TopRight:
+                    originKey = new Vector2Int(
+                        Mathf.FloorToInt(gridDimensions.x),
+                        Mathf.FloorToInt(gridDimensions.y)
+                    );
+                    break;
+            }
+
+            return originKey;
         }
 
     }
