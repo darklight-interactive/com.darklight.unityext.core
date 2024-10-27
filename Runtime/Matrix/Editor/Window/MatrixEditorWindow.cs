@@ -1,5 +1,7 @@
 #if UNITY_EDITOR
 
+using Codice.Client.Common.TreeGrouper;
+
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Matrix;
 
@@ -9,86 +11,140 @@ using UnityEngine;
 
 public class MatrixEditorWindow : EditorWindow
 {
-    private Matrix matrix;
-    private Vector2Int nodeKey = Vector2Int.zero;
-    private Matrix.Node selectedNode;
-    private Vector2 scrollPosition;
+    const string WINDOW_NAME = "Matrix Editor";
+
+    readonly Color _textColor = Color.black;
+    readonly Color _defaultColor = Color.white * new Color(1, 1, 1, 0.5f);
+    readonly Color _selectedColor = Color.yellow * new Color(1, 1, 1, 0.5f);
+
+    SerializedObject _serializedMatrixObject;
+    Matrix _matrix;
+    Matrix.Node _selectedNode;
+    bool _selectedNodeIsExpanded = false;
+    Vector2 _scrollPosition;
+
+    Matrix.Node.Visitor SceneGUINodeVisitor => new Matrix.Node.Visitor(node =>
+    {
+        node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
+
+        // << GET COLOR >>
+        Color color = _defaultColor;
+        if (node == _selectedNode)
+            color = _selectedColor;
+
+        // << DRAW BACKGROUND >>
+        CustomGizmos.DrawSolidRect(position, dimensions, normal, color);
+
+        // << DRAW BUTTON >>
+        float size = node.Data.SizeAvg * 0.25f;
+        CustomGizmos.DrawButtonHandle(position, size, normal, color, () =>
+            {
+                SetSelectedNode(node);
+            }, Handles.DotHandleCap);
+
+        // << DRAW LABEL >>
+        CustomGizmos.DrawLabel($"{node.Data.Key}", position, new GUIStyle()
+        {
+            normal = new GUIStyleState()
+            {
+                textColor = _textColor
+            },
+            alignment = TextAnchor.MiddleCenter
+        });
+
+        return true;
+    });
 
     [MenuItem("Window/Darklight/MatrixEditorWindow")]
     public static void ShowWindow()
     {
-        GetWindow<MatrixEditorWindow>("Matrix Node Inspector");
+        GetWindow<MatrixEditorWindow>(WINDOW_NAME);
     }
 
-    private void OnEnable()
+    // Overloaded ShowWindow method to accept a Matrix instance
+    public static void ShowWindow(Matrix targetMatrix)
+    {
+        var window = GetWindow<MatrixEditorWindow>(WINDOW_NAME);
+        window._matrix = targetMatrix;
+    }
+
+
+    void OnEnable()
     {
         SceneView.duringSceneGui += OnSceneGUI;
     }
 
-    private void OnDisable()
+    void OnDisable()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
-    private void OnGUI()
+    void OnGUI()
     {
-        EditorGUILayout.LabelField("Matrix Node Inspector", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Matrix Editor", EditorStyles.boldLabel);
         EditorGUILayout.Space();
 
         // Select target Matrix
-        matrix = (Matrix)EditorGUILayout.ObjectField("Target Matrix", matrix, typeof(Matrix), true);
-        if (matrix != null)
+        _matrix = (Matrix)EditorGUILayout.ObjectField("Matrix", _matrix, typeof(Matrix), true);
+        _serializedMatrixObject = new SerializedObject(_matrix);
+
+
+        if (_matrix != null && _serializedMatrixObject != null)
         {
+            _serializedMatrixObject.Update(); // Ensure SerializedObject is up-to-date
+
             EditorGUILayout.Space();
-            nodeKey = EditorGUILayout.Vector2IntField("Node Key", nodeKey);
-
-            if (GUILayout.Button("Inspect Node"))
+            if (_selectedNode == null)
             {
-                selectedNode = matrix.GetCell(nodeKey);
-                if (selectedNode == null)
-                {
-                    Debug.LogWarning($"Node at {nodeKey} not found.");
-                }
+                EditorGUILayout.LabelField("Select a node to inspect.");
+            }
+            else
+            {
+                EditorGUILayout.LabelField($"Selected Node: {_selectedNode.Data.Key}");
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Node Data");
+
+                CustomInspectorGUI.DrawClassAsShowOnly(_selectedNode.Data, ref _selectedNodeIsExpanded);
             }
 
-            if (selectedNode != null)
-            {
-                //DisplayNodeDetails();
-            }
+            _serializedMatrixObject.ApplyModifiedProperties(); // Apply any changes made in the GUI
         }
         else
         {
             EditorGUILayout.HelpBox("Please assign a target Matrix object.", MessageType.Warning);
         }
+
+        if (GUILayout.Button("Refresh"))
+        {
+            _matrix.Refresh();
+            Repaint();
+        }
+
+        if (GUILayout.Button("Reset"))
+        {
+            _matrix.Reset();
+            Repaint();
+        }
     }
 
-    private void OnSceneGUI(SceneView sceneView)
+    void OnSceneGUI(SceneView sceneView)
     {
-        if (matrix == null) return;
+        if (_matrix == null) return;
 
-        matrix.SendVisitorToAllCells(SceneGUINodeVisitor);
+        _matrix.SendVisitorToAllCells(SceneGUINodeVisitor);
 
         // Repaint the scene view to update the handles in real-time
         sceneView.Repaint();
     }
 
-    Matrix.Node.Visitor SceneGUINodeVisitor => new Matrix.Node.Visitor(node =>
+    void SetSelectedNode(Matrix.Node node)
     {
-        node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
-        CustomGizmos.DrawButtonHandle(position, node.Data.SizeAvg, normal, Color.grey, () =>
-            {
-                selectedNode = node;
-                Debug.Log($"Selected node at {node.Data.Key}");
-            }, Handles.RectangleHandleCap);
-        return true;
-    });
+        _selectedNode = node;
+        Repaint();
 
-
-    // Overloaded ShowWindow method to accept a Matrix instance
-    public static void ShowWindow(Matrix targetMatrix)
-    {
-        var window = GetWindow<MatrixEditorWindow>("Matrix Node Inspector");
-        window.matrix = targetMatrix;
+        Debug.Log("{WINDOW_NAME}: SetSelectedNode: " + node.Data.Key);
     }
+
+
 }
 #endif

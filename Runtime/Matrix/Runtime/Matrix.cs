@@ -28,7 +28,7 @@ namespace Darklight.UnityExt.Matrix
             return true;
         });
 
-        Node.Visitor DrawGizmosNodeVisitor = new Node.Visitor(node =>
+        Node.Visitor DrawDefaultGizmosVisitor = new Node.Visitor(node =>
         {
             node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
             CustomGizmos.DrawWireRect(position, dimensions, normal, Color.grey);
@@ -77,40 +77,6 @@ namespace Darklight.UnityExt.Matrix
             // Return if the grid was not initialized
             if (!_data.isInitialized)
                 return;
-        }
-
-        protected void Refresh()
-        {
-            if (!_data.isPreloaded)
-            {
-                Preload();
-                return;
-            }
-
-            // Initialize if not already
-            if (!_data.isInitialized || _config == null)
-            {
-                Initialize();
-                return;
-            }
-
-            // Resize the grid if the dimensions have changed
-            Resize();
-
-            _data.nodes = _map.Values.ToArray();
-            _data.originKey = CalculateOriginKey();
-
-            // Update the cells
-            SendVisitorToAllCells(UpdateNodeVisitor);
-        }
-
-        protected void Reset()
-        {
-            Clear();
-
-            _config.SetToDefaults();
-
-            Preload();
         }
 
         protected void Clear()
@@ -368,7 +334,43 @@ namespace Darklight.UnityExt.Matrix
 
         #endregion
 
-        #region < PUBLIC_METHODS > [[ Node Visitor Handling ]] ================================================================ 
+        #region < PUBLIC_METHODS > [[ Matrix Handlers ]] ================================================================ 
+
+        public void Refresh()
+        {
+            if (!_data.isPreloaded)
+            {
+                Preload();
+                return;
+            }
+
+            // Initialize if not already
+            if (!_data.isInitialized || _config == null)
+            {
+                Initialize();
+                return;
+            }
+
+            // Resize the grid if the dimensions have changed
+            Resize();
+
+            _data.nodes = _map.Values.ToArray();
+            _data.originKey = CalculateOriginKey();
+
+            // Update the cells
+            SendVisitorToAllCells(UpdateNodeVisitor);
+        }
+
+        public void Reset()
+        {
+            Clear();
+            _config.SetToDefaults();
+            Preload();
+        }
+
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ Visitor Handlers ]] ================================================================ 
         public void SendVisitorToCell(Vector2Int key, IVisitor<Node> visitor)
         {
             if (_map == null)
@@ -420,19 +422,14 @@ namespace Darklight.UnityExt.Matrix
         #endregion
 
         #region < PUBLIC_METHODS > [[ Getters ]] ================================================================ 
-        public Node GetCell(Vector2Int key)
+        public Node GetNode(Vector2Int key)
         {
             if (_map.ContainsKey(key))
                 return _map[key];
             return null;
         }
 
-        public List<Node> GetCells()
-        {
-            return new List<Node>(_map.Values);
-        }
-
-        public Node GetClosestCellTo(Vector2 position)
+        public Node GetClosestNodeTo(Vector2 position)
         {
             Node closestCell = null;
             float closestDistance = float.MaxValue;
@@ -446,13 +443,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
             return closestCell;
-        }
-
-        public InternalConfig GetConfig()
-        {
-            if (_config == null)
-                _config = new InternalConfig();
-            return _config;
         }
         #endregion
 
@@ -477,7 +467,7 @@ namespace Darklight.UnityExt.Matrix
         public void DrawGizmos()
         {
             if (!_data.isInitialized) return;
-            SendVisitorToAllCells(DrawGizmosNodeVisitor);
+            SendVisitorToAllCells(DrawDefaultGizmosVisitor);
         }
         #endregion
 

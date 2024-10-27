@@ -30,8 +30,6 @@ namespace Darklight.UnityExt.Matrix
                 _data = new InternalData(this, key, matrix);
             }
 
-
-
             // ======== [[ METHODS ]] ============================================================ >>>>
             public void Refresh()
             {
@@ -54,6 +52,15 @@ namespace Darklight.UnityExt.Matrix
             }
 
             public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
+
+            public void DrawDataInEditor()
+            {
+#if UNITY_EDITOR
+
+
+
+#endif
+            }
         }
     }
 }

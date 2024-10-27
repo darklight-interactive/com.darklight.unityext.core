@@ -34,7 +34,7 @@ namespace Darklight.UnityExt.Editor
             }
             else if (prop.propertyType == SerializedPropertyType.Generic && IsSerializableClass(prop))
             {
-                CustomInspectorGUI.DrawShowOnlySerializableClass(position, prop, label);
+                CustomInspectorGUI.DrawAllFieldsInPropertyAsShowOnly(prop);
             }
             else
             {

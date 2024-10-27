@@ -40,7 +40,7 @@ namespace Darklight.UnityExt.Behaviour.Editor
             else
             {
                 // Draw the data's fields directly
-                CustomInspectorGUI.DrawAllSerializedFields(dataProperty);
+                CustomInspectorGUI.DrawAllFieldsInProperty(dataProperty);
             }
 
             Debug.Log("ScriptableDataCustomEditor OnInspectorGUI");

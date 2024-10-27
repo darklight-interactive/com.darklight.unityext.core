@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Darklight.UnityExt.Editor.Utility;
 
@@ -103,34 +104,34 @@ namespace Darklight.UnityExt.Editor
 				EditorGUI.indentLevel--;
 			}
 		}
-
-		public static void DrawShowOnlySerializableClass(Rect position, SerializedProperty prop, GUIContent label)
+		public static void DrawClassAsShowOnly(object classInstance, ref bool isExpanded)
 		{
-			// Draw the foldout arrow and label
-			prop.isExpanded = EditorGUI.Foldout(new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight), prop.isExpanded, label);
-			position.y += EditorGUIUtility.singleLineHeight;
+			if (classInstance == null)
+			{
+				EditorGUILayout.LabelField("No data available");
+				return;
+			}
 
-			// If the foldout is expanded, display child properties
-			if (prop.isExpanded)
+			// Draw foldout for the entire class
+			isExpanded = EditorGUILayout.Foldout(true, classInstance.GetType().Name);
+
+			if (isExpanded)
 			{
 				EditorGUI.indentLevel++;
 
-				SerializedProperty childProp = prop.Copy();
-				bool enterChildren = true;
-
-				while (childProp.NextVisible(enterChildren))
+				// Use reflection to retrieve fields from the class
+				var fields = classInstance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				foreach (var field in fields)
 				{
-					enterChildren = false;
-
-					if (childProp.depth == 0)
+					// Only display fields marked as [Serializable] or [SerializeField]
+					if (field.IsPublic || Attribute.IsDefined(field, typeof(SerializeField)))
 					{
-						break; // Exit when reaching next sibling property
-					}
+						// Display field label and value
+						object fieldValue = field.GetValue(classInstance);
+						string fieldStringValue = fieldValue != null ? fieldValue.ToString() : "null";
 
-					// Draw each child property as a label
-					Rect propertyPosition = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-					EditorGUI.LabelField(propertyPosition, childProp.displayName, SerializedPropertyUtility.ConvertPropertyToString(childProp));
-					position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+						EditorGUILayout.LabelField(ObjectNames.NicifyVariableName(field.Name), fieldStringValue);
+					}
 				}
 
 				EditorGUI.indentLevel--;
@@ -142,7 +143,7 @@ namespace Darklight.UnityExt.Editor
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
 		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllSerializedFields(SerializedProperty property)
+		public static void DrawAllFieldsInProperty(SerializedProperty property)
 		{
 			DrawHeader(property.displayName);
 			IterateSerializedProperties(property, (currentProperty) =>
@@ -156,7 +157,7 @@ namespace Darklight.UnityExt.Editor
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
 		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllSerializedFieldsAsDisabled(SerializedProperty property)
+		public static void DrawAllFieldsInPropertyAsDisabled(SerializedProperty property)
 		{
 			DrawHeader(property.displayName);
 			EditorGUI.BeginDisabledGroup(true);
@@ -172,7 +173,7 @@ namespace Darklight.UnityExt.Editor
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
 		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllSerializedFieldsAsShowOnly(SerializedProperty property)
+		public static void DrawAllFieldsInPropertyAsShowOnly(SerializedProperty property)
 		{
 			DrawHeader(property.displayName);
 			IterateSerializedProperties(property, (currentProperty) =>
