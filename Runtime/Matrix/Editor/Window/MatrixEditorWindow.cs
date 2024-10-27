@@ -130,6 +130,7 @@ public class MatrixEditorWindow : EditorWindow
     void OnSceneGUI(SceneView sceneView)
     {
         if (_matrix == null) return;
+        if (_matrix.isActiveAndEnabled == false) return;
 
         _matrix.SendVisitorToAllCells(SceneGUINodeVisitor);
 
@@ -142,9 +143,7 @@ public class MatrixEditorWindow : EditorWindow
         _selectedNode = node;
         Repaint();
 
-        Debug.Log("{WINDOW_NAME}: SetSelectedNode: " + node.Data.Key);
+        Debug.Log($"{WINDOW_NAME}: SetSelectedNode: " + node.Data.Key);
     }
-
-
 }
 #endif
