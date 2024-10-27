@@ -13,21 +13,13 @@ namespace Darklight.UnityExt.Matrix
         [System.Serializable]
         public class OverlapComponent : BaseComponent
         {
+            public OverlapEvent OnColliderEnter;
+            public OverlapEvent OnColliderExit;
             // ======== [[ FIELDS ]] =========================== >>>>
             LayerMask _layerMask;
             Collider2D[] _colliders;
             HashSet<Collider2D> _currentColliders = new HashSet<Collider2D>();
             HashSet<Collider2D> _previousColliders = new HashSet<Collider2D>();
-
-
-            // ======== [[ PROPERTIES ]] ================================== >>>>
-            public LayerMask LayerMask { get => _layerMask; set => _layerMask = value; }
-            public int ColliderCount => GetColliderCount();
-
-            // ======== [[ EVENTS ]] ================================== >>>>
-            public delegate void OverlapEvent(MatrixNode cell, Collider2D collider);
-            public OverlapEvent OnColliderEnter;
-            public OverlapEvent OnColliderExit;
 
             // ======== [[ CONSTRUCTORS ]] =========================== >>>>
             public OverlapComponent(MatrixNode cell) : base(cell) { }
@@ -35,6 +27,13 @@ namespace Darklight.UnityExt.Matrix
             {
                 _layerMask = layerMask;
             }
+
+            // ======== [[ EVENTS ]] ================================== >>>>
+            public delegate void OverlapEvent(MatrixNode cell, Collider2D collider);
+
+            // ======== [[ PROPERTIES ]] ================================== >>>>
+            public LayerMask LayerMask { get => _layerMask; set => _layerMask = value; }
+            public int ColliderCount => GetColliderCount();
 
             // ======== [[ INHERITED METHODS ]] ================================== >>>>
             public override void OnUpdate()
@@ -78,7 +77,6 @@ namespace Darklight.UnityExt.Matrix
                 return _colliders.Length;
             }
 
-
             // ======== [[ PRIVATE METHODS ]] =========================== >>>>
             void UpdateColliders()
             {
@@ -89,7 +87,6 @@ namespace Darklight.UnityExt.Matrix
 
                 // Clear the currentColliders set to prepare for new detections
                 _currentColliders = new HashSet<Collider2D>();
-
 
                 BaseCell.GetTransformData(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
                 Vector3 halfExtents = new Vector3(dimensions.x * 0.5f, dimensions.y * 0.5f, 0);

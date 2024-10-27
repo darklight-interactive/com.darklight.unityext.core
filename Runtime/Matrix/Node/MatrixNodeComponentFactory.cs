@@ -21,19 +21,6 @@ namespace Darklight.UnityExt.Matrix
                 RegisterComponent(ComponentTypeKey.SPAWNER, (MatrixNode cell) => new SpawnerComponent(cell));
             }
 
-            // Method to register a component creation function
-            static void RegisterComponent(ComponentTypeKey type, Func<MatrixNode, Component> factoryMethod)
-            {
-                if (!_componentFactory.ContainsKey(type))
-                {
-                    _componentFactory[type] = factoryMethod;
-                }
-                else
-                {
-                    Debug.LogWarning($"Component type {type} is already registered in the factory.");
-                }
-            }
-
             // Method to create a component based on the TypeKey
             public static Component CreateComponent(ComponentTypeKey type, MatrixNode cell)
             {
@@ -57,6 +44,19 @@ namespace Darklight.UnityExt.Matrix
                 }
                 throw new InvalidEnumArgumentException(
                     $"Component type {typeof(TComponent)} is not registered in the factory.");
+            }
+
+            // Method to register a component creation function
+            static void RegisterComponent(ComponentTypeKey type, Func<MatrixNode, Component> factoryMethod)
+            {
+                if (!_componentFactory.ContainsKey(type))
+                {
+                    _componentFactory[type] = factoryMethod;
+                }
+                else
+                {
+                    Debug.LogWarning($"Component type {type} is already registered in the factory.");
+                }
             }
         }
     }

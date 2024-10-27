@@ -24,7 +24,6 @@ namespace Darklight.UnityExt.Matrix
             Dictionary<ComponentTypeKey, Component> _componentMap = new();
             [SerializeField] List<Component> _components = new();
 
-
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
             public InternalComponentRegistry(MatrixNode cell)
             {
@@ -37,6 +36,33 @@ namespace Darklight.UnityExt.Matrix
             {
                 _cell = originComposite._cell;
                 LoadComponents(originComposite._components);
+            }
+
+            // ---- (( STATIC METHODS )) -------- ))
+            public static ComponentTypeKey GetTypeKey<TComponent>() where TComponent : Component
+            {
+                foreach (var pair in _componentTypeMap)
+                {
+                    if (pair.Value == typeof(TComponent))
+                    {
+                        return pair.Key;
+                    }
+                }
+                throw new InvalidEnumArgumentException(
+                    $"Component type {typeof(TComponent)} is not registered in the factory.");
+            }
+
+            public static ComponentTypeKey GetTypeKey(MatrixNode.Component component)
+            {
+                foreach (var pair in _componentTypeMap)
+                {
+                    if (pair.Value == component.GetType())
+                    {
+                        return pair.Key;
+                    }
+                }
+                throw new InvalidEnumArgumentException(
+                    $"Component type {component.GetType()} is not registered in the factory.");
             }
 
             // ======== [[ METHODS ]] ============================================================ >>>>
@@ -119,33 +145,6 @@ namespace Darklight.UnityExt.Matrix
             void Refresh()
             {
                 _components = _componentMap.Values.ToList();
-            }
-
-            // ---- (( STATIC METHODS )) -------- ))
-            public static ComponentTypeKey GetTypeKey<TComponent>() where TComponent : Component
-            {
-                foreach (var pair in _componentTypeMap)
-                {
-                    if (pair.Value == typeof(TComponent))
-                    {
-                        return pair.Key;
-                    }
-                }
-                throw new InvalidEnumArgumentException(
-                    $"Component type {typeof(TComponent)} is not registered in the factory.");
-            }
-
-            public static ComponentTypeKey GetTypeKey(MatrixNode.Component component)
-            {
-                foreach (var pair in _componentTypeMap)
-                {
-                    if (pair.Value == component.GetType())
-                    {
-                        return pair.Key;
-                    }
-                }
-                throw new InvalidEnumArgumentException(
-                    $"Component type {component.GetType()} is not registered in the factory.");
             }
         }
     }

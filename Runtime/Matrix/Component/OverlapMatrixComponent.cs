@@ -20,7 +20,7 @@ namespace Darklight.UnityExt.Matrix
                     cell.ComponentReg.GetComponent(type) as MatrixNode.OverlapComponent;
                 if (overlapComponent == null) return false;
 
-                // << INITIALIZATION >> 
+                // << INITIALIZATION >>
                 overlapComponent.LayerMask = _layerMask;
                 _colliderWeightMap[cell] = overlapComponent.GetColliderCount();
 

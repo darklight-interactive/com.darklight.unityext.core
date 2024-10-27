@@ -23,19 +23,6 @@ namespace Darklight.UnityExt.Matrix
 
         [SerializeField, Expandable] MatrixSpawnerComponentPreset _dataObject;
 
-        // ======== [[ PROPERTIES ]] ================================== >>>>
-        MatrixSpawnerComponentPreset DataObject
-        {
-            get
-            {
-                if (_dataObject == null)
-                    _dataObject = CreateOrLoadDataObject();
-                return _dataObject;
-            }
-        }
-
-        List<MatrixNode.SpawnerComponent.InternalData> SerializedData { get => DataObject.SerializedSpawnData; set => DataObject.SerializedSpawnData = value; }
-
         protected override MatrixNode.ComponentVisitor CellComponent_InitVisitor =>
             MatrixNode.VisitorFactory.CreateComponentVisitor(ComponentTypeKey.SPAWNER,
             (MatrixNode cell, ComponentTypeKey type) =>
@@ -54,7 +41,70 @@ namespace Darklight.UnityExt.Matrix
                 return true;
             });
 
+        // ======== [[ PROPERTIES ]] ================================== >>>>
+        MatrixSpawnerComponentPreset DataObject
+        {
+            get
+            {
+                if (_dataObject == null)
+                    _dataObject = CreateOrLoadDataObject();
+                return _dataObject;
+            }
+        }
 
+        List<MatrixNode.SpawnerComponent.InternalData> SerializedData { get => DataObject.SerializedSpawnData; set => DataObject.SerializedSpawnData = value; }
+
+        // ---- (( INTERFACE )) ---- >>
+        public override void OnInitialize(Matrix grid)
+        {
+            CreateOrLoadDataObject();
+            base.OnInitialize(grid);
+        }
+
+        public override void OnUpdate()
+        {
+            base.OnUpdate();
+            UpdateData();
+        }
+
+        public void AssignTransformToCell(Transform transform, MatrixNode cell)
+        {
+            MatrixNode.SpawnerComponent cellSpawner = cell.GetComponent<MatrixNode.SpawnerComponent>();
+            cellSpawner.AttachTransformToCell(transform);
+        }
+
+        public List<Transform> GetAttachedTransformsAtCell(MatrixNode cell)
+        {
+            if (_dataMap.ContainsKey(cell.Key))
+            {
+                MatrixNode.SpawnerComponent.InternalData data = _dataMap[cell.Key];
+                return data.AttachedTransforms;
+            }
+            return new List<Transform>();
+        }
+
+        public Spatial2D.AnchorPoint GetOriginAnchor(MatrixNode cell)
+        {
+            if (_dataMap.ContainsKey(cell.Key))
+                return _dataMap[cell.Key].OriginAnchor;
+            return Spatial2D.AnchorPoint.CENTER;
+        }
+
+        public Spatial2D.AnchorPoint GetTargetAnchor(MatrixNode cell)
+        {
+            if (_dataMap.ContainsKey(cell.Key))
+                return _dataMap[cell.Key].TargetAnchor;
+            return Spatial2D.AnchorPoint.CENTER;
+        }
+
+        public void SetAllCellsToDefault()
+        {
+            foreach (MatrixNode.SpawnerComponent.InternalData data in SerializedData)
+            {
+                data.OriginAnchor = _dataObject.DefaultOriginAnchor;
+                data.TargetAnchor = _dataObject.DefaultTargetAnchor;
+            }
+        }
 
         // ======== [[ METHODS ]] ================================== >>>>
         // ---- (( HANDLE DATA )) <PRIVATE_METHODS> ---- >>
@@ -153,58 +203,6 @@ namespace Darklight.UnityExt.Matrix
             });
         }
 
-        // ---- (( INTERFACE )) ---- >>
-        public override void OnInitialize(Matrix grid)
-        {
-            CreateOrLoadDataObject();
-            base.OnInitialize(grid);
-        }
-
-        public override void OnUpdate()
-        {
-            base.OnUpdate();
-            UpdateData();
-        }
-
-        public void AssignTransformToCell(Transform transform, MatrixNode cell)
-        {
-            MatrixNode.SpawnerComponent cellSpawner = cell.GetComponent<MatrixNode.SpawnerComponent>();
-            cellSpawner.AttachTransformToCell(transform);
-        }
-
-        public List<Transform> GetAttachedTransformsAtCell(MatrixNode cell)
-        {
-            if (_dataMap.ContainsKey(cell.Key))
-            {
-                MatrixNode.SpawnerComponent.InternalData data = _dataMap[cell.Key];
-                return data.AttachedTransforms;
-            }
-            return new List<Transform>();
-        }
-
-        public Spatial2D.AnchorPoint GetOriginAnchor(MatrixNode cell)
-        {
-            if (_dataMap.ContainsKey(cell.Key))
-                return _dataMap[cell.Key].OriginAnchor;
-            return Spatial2D.AnchorPoint.CENTER;
-        }
-
-        public Spatial2D.AnchorPoint GetTargetAnchor(MatrixNode cell)
-        {
-            if (_dataMap.ContainsKey(cell.Key))
-                return _dataMap[cell.Key].TargetAnchor;
-            return Spatial2D.AnchorPoint.CENTER;
-        }
-
-        public void SetAllCellsToDefault()
-        {
-            foreach (MatrixNode.SpawnerComponent.InternalData data in SerializedData)
-            {
-                data.OriginAnchor = _dataObject.DefaultOriginAnchor;
-                data.TargetAnchor = _dataObject.DefaultTargetAnchor;
-            }
-        }
-
         MatrixSpawnerComponentPreset CreateOrLoadDataObject()
         {
             if (_dataObject != null) return _dataObject;
@@ -215,7 +213,6 @@ namespace Darklight.UnityExt.Matrix
 #endif
             return _dataObject;
         }
-
 
         // ======== [[ NESTED TYPES ]] ================================== >>>>
 

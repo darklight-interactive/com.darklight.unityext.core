@@ -42,16 +42,7 @@ namespace Darklight.UnityExt.Matrix
 
             public int GUID => _guid;
             public ComponentTypeKey TypeKey => GetTypeKey();
-            public bool ShowGizmos
-            {
-                get
-                {
-                    if (BaseGrid.ShowGizmos == false)
-                        return false;
-                    else
-                        return _showGizmos;
-                }
-            }
+            public bool ShowGizmos => _showGizmos;
 
             // -- (( VISITORS )) -------- ))
             protected abstract MatrixNode.ComponentVisitor CellComponent_InitVisitor { get; }
@@ -103,7 +94,6 @@ namespace Darklight.UnityExt.Matrix
 
             // -- (( GETTERS )) -------- ))
             public virtual ComponentTypeKey GetTypeKey() => ComponentRegistry.GetTypeKey(this);
-
 
 #if UNITY_EDITOR
             [CustomEditor(typeof(Component), true)]

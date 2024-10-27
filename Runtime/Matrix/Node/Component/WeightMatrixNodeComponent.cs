@@ -20,13 +20,13 @@ namespace Darklight.UnityExt.Matrix
             const int MAX_WEIGHT = 100;
 
             [SerializeField, ShowOnly] int _weight;
-            public int Weight => _weight;
 
             // ======== [[ CONSTRUCTORS ]] =========================== >>>>
             public WeightComponent(MatrixNode cell) : base(cell)
             {
                 _weight = 0;
             }
+            public int Weight => _weight;
 
             // ======== [[ METHODS ]] ================================== >>>>
             // -- (( INTERFACE METHODS )) -------- ))
@@ -55,16 +55,6 @@ namespace Darklight.UnityExt.Matrix
                 return _weight;
             }
 
-            Color GetColor()
-            {
-                return Color.Lerp(Color.black, Color.white, (float)_weight / MAX_WEIGHT);
-            }
-
-            Color GetInverseColor()
-            {
-                return Color.Lerp(Color.white, Color.black, (float)_weight / MAX_WEIGHT);
-            }
-
             // -- (( SETTERS )) -------- ))
             public void SetWeight(int weight)
             {
@@ -85,6 +75,16 @@ namespace Darklight.UnityExt.Matrix
             public void SubtractWeight(int amount)
             {
                 _weight -= amount;
+            }
+
+            Color GetColor()
+            {
+                return Color.Lerp(Color.black, Color.white, (float)_weight / MAX_WEIGHT);
+            }
+
+            Color GetInverseColor()
+            {
+                return Color.Lerp(Color.white, Color.black, (float)_weight / MAX_WEIGHT);
             }
         }
     }

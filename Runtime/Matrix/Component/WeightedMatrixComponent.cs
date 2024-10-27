@@ -101,13 +101,6 @@ namespace Darklight.UnityExt.Matrix
                     weightComponent.SetWeight(_weightDataObject[cell.Key]);
                 return true;
             });
-        #endregion
-
-        // ======== [[ METHODS ]] ================================== >>>>
-        private void OnValidate()
-        {
-
-        }
 
         // -- (( INTERFACE )) : IComponent -------- ))
         public override void OnInitialize(Matrix baseObj)
@@ -269,6 +262,13 @@ namespace Darklight.UnityExt.Matrix
         {
             MatrixNode.WeightComponent weightComponent = cell.ComponentReg.GetComponent<MatrixNode.WeightComponent>();
             weightComponent.SetWeight(weight);
+        }
+        #endregion
+
+        // ======== [[ METHODS ]] ================================== >>>>
+        private void OnValidate()
+        {
+
         }
 
         // ======== [[ PRIVATE METHODS ]] ================================== >>>>

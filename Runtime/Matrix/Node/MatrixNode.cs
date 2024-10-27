@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix
 {
-
     [System.Serializable]
     public partial class MatrixNode : IVisitable<MatrixNode>
     {
@@ -15,33 +14,32 @@ namespace Darklight.UnityExt.Matrix
         bool _enabled;
         bool _initialized;
 
-        [SerializeField, ShowOnly] string _name = "Cell2D";
-        [SerializeField] NodeConfig _config;
-        [SerializeField] NodeData _data;
+        [SerializeField, ShowOnly]
+        string _name = "Cell2D";
 
+
+        [SerializeField]
+        NodeData _data;
 
         // ======== [[ PROPERTIES ]] ======================================================= >>>>
-        public string Name { get => _name; }
-        public Vector2Int Key { get => _data.Key; }
-        public NodeConfig Config { get => _config; }
-        public NodeData Data { get => _data; }
-        public InternalComponentRegistry ComponentReg { get => _componentRegistry; }
-        public Vector3 Position { get => Data.Position; }
-        public Vector2 Dimensions { get => Data.Dimensions; }
-        public Vector3 Normal { get => Data.Normal; }
+        public string Name => _name;
+        public NodeData Data => _data;
+        public InternalComponentRegistry ComponentReg => _componentRegistry;
+        public Vector2Int Key => _data.Key;
+        public Vector2Int Coordinate => _data.Coordinate;
+        public Vector3 Position => _data.Position;
+        public Vector3 Normal => _data.Normal;
+        public Vector2 Dimensions => _data.Dimensions;
+        public bool IsInitialized => _initialized;
 
         // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
-        public MatrixNode(Vector2Int key) => Initialize(key, null);
-        public MatrixNode(Vector2Int key, NodeConfig config) => Initialize(key, config);
+        public MatrixNode(Vector2Int key) => Initialize(key);
 
         // ======== [[ METHODS ]] ============================================================ >>>>
         #region -- (( RUNTIME )) -------- )))
-        public void Initialize(Vector2Int key, NodeConfig config)
+        public void Initialize(Vector2Int key)
         {
-            // Initialize the configuration
-            if (config == null)
-                config = new NodeConfig();
-            _config = config;
+
 
             // Create the data
             _data = new NodeData(key);
@@ -53,7 +51,7 @@ namespace Darklight.UnityExt.Matrix
             _name = $"Cell2D ({key.x},{key.y})";
 
             // << SET INITIALIZED >>
-            if (_config == null || _data == null || _componentRegistry == null)
+            if (_data == null || _componentRegistry == null)
             {
                 _initialized = false;
                 return;
@@ -61,25 +59,48 @@ namespace Darklight.UnityExt.Matrix
             _initialized = true;
         }
 
-        public void Update()
+        public void Refresh()
         {
-            if (!_initialized) return;
+            if (!_initialized)
+                return;
+        }
+
+        public void DrawGizmos()
+        {
+            if (!_initialized)
+                return;
+            Gizmos.color = Color.white;
+            Gizmos.DrawWireCube(Position, new Vector3(Dimensions.x, 0, Dimensions.y));
+            CustomGizmos.DrawLabel(Key.ToString(), Position, new GUIStyle()
+            {
+                fontSize = 12,
+                normal = new GUIStyleState() { textColor = Color.white },
+                alignment = TextAnchor.MiddleCenter
+            });
         }
         #endregion
 
         // -- (( HANDLERS )) -------- )))
         public void RecalculateDataFromGrid(Matrix grid)
         {
-            if (!_initialized) return;
-            if (grid == null) return;
-            if (grid.GetConfig() == null) return;
-            if (Data == null) return;
+            if (!_initialized)
+                return;
+            if (grid == null)
+                return;
+            if (grid.GetConfig() == null)
+                return;
+            if (Data == null)
+                return;
 
             // Calculate the cell's transform
-            MatrixUtility.CalculateCellTransform(
-                out Vector3 position, out Vector2Int coordinate,
-                out Vector3 normal, out Vector2 dimensions,
-                this, grid.GetConfig());
+            Matrix.CalculateCellTransform(
+                out Vector3 position,
+                out Vector2Int coordinate,
+                out Vector3 normal,
+                out Vector2 dimensions,
+                this,
+                grid.GetConfig()
+            );
 
             // Assign the calculated values to the cell
             Data.SetPosition(position);
@@ -92,10 +113,8 @@ namespace Darklight.UnityExt.Matrix
         {
             MatrixNode clone = new MatrixNode(Data.Key);
             NodeData newData = new NodeData(Data);
-            NodeConfig newConfig = new NodeConfig(Config);
             InternalComponentRegistry newComposite = new InternalComponentRegistry(ComponentReg);
             clone.SetData(newData);
-            clone.SetConfig(newConfig);
             clone.SetComposite(newComposite);
             return clone;
         }
@@ -108,24 +127,35 @@ namespace Darklight.UnityExt.Matrix
 
         // (( GETTERS )) -------- ))
         public bool IsEnabled() => _enabled;
+
         public float GetMinDimension() => Mathf.Min(Data.Dimensions.x, Data.Dimensions.y);
-        public void GetTransformData(out Vector3 position, out Vector2 dimensions, out Vector3 normal)
+
+        public void GetTransformData(
+            out Vector3 position,
+            out Vector2 dimensions,
+            out Vector3 normal
+        )
         {
             position = Data.Position;
             dimensions = Data.Dimensions;
             normal = Data.Normal;
         }
 
-        public TComponent GetComponent<TComponent>() where TComponent : Component
+        public TComponent GetComponent<TComponent>()
+            where TComponent : Component
         {
             return _componentRegistry.GetComponent<TComponent>();
         }
-        public Component GetComponentByTypeKey(ComponentTypeKey typeKey) => _componentRegistry.GetComponent(typeKey);
+
+        public Component GetComponentByTypeKey(ComponentTypeKey typeKey) =>
+            _componentRegistry.GetComponent(typeKey);
 
         // (( SETTERS )) -------- ))
         protected void SetData(NodeData data) => _data = data;
-        protected void SetConfig(NodeConfig config) => _config = config;
-        protected void SetComposite(InternalComponentRegistry composite) => _componentRegistry = composite;
+
+        protected void SetComposite(InternalComponentRegistry composite) =>
+            _componentRegistry = composite;
+
         protected void SetEnabled(bool enabled) => _enabled = enabled;
     }
 }

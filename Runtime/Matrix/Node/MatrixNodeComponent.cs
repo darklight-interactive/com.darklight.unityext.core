@@ -20,12 +20,6 @@ namespace Darklight.UnityExt.Matrix
             [SerializeField, ShowOnly] protected int _guid = System.Guid.NewGuid().GetHashCode();
             [SerializeField, ShowOnly] protected ComponentTypeKey _typeKey;
             protected bool _initialized = false;
-            // ======== [[ PROPERTIES ]] ================================== >>>>
-            public MatrixNode BaseCell => _baseCell;
-            public int GUID => _guid;
-            public ComponentTypeKey TypeKey => GetTypeKey();
-            public bool Initialized => _initialized;
-
 
             // ======== [[ CONSTRUCTORS ]] ================================== >>>>
             public Component(MatrixNode baseObj)
@@ -34,6 +28,11 @@ namespace Darklight.UnityExt.Matrix
                 _baseCell = baseObj;
                 _typeKey = GetTypeKey();
             }
+            // ======== [[ PROPERTIES ]] ================================== >>>>
+            public MatrixNode BaseCell => _baseCell;
+            public int GUID => _guid;
+            public ComponentTypeKey TypeKey => GetTypeKey();
+            public bool Initialized => _initialized;
 
             // ======== [[ METHODS ]] ================================== >>>>
             public abstract void OnInitialize(MatrixNode cell);

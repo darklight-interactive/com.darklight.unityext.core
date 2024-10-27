@@ -50,7 +50,7 @@ namespace Darklight.UnityExt.Matrix
                 if (_grid == null)
                     return;
 
-                _grid.GetComponentsInChildren(_components);
+                //_grid.GetComponentsInChildren(_components);
 
                 _components.ForEach(component => component.OnInitialize(_grid));
             }

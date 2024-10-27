@@ -25,14 +25,6 @@ namespace Darklight.UnityExt.Matrix
             [Header("Flags")]
             [SerializeField, ShowOnly] bool _isDisabled = false;
 
-            // ======== [[ PROPERTIES ]] ======================================================= >>>>
-            public Vector2Int Key { get => _key; }
-            public Vector2Int Coordinate { get => _coordinate; }
-            public Vector2 Dimensions { get => _dimensions; }
-            public Vector3 Position { get => _position; }
-            public Vector3 Normal { get => _normal; }
-            public bool Disabled { get => _isDisabled; }
-
             // ======== [[ CONSTRUCTORS ]] ======================================================= >>>>
             public NodeData()
             {
@@ -64,8 +56,15 @@ namespace Darklight.UnityExt.Matrix
                 _isDisabled = originData._isDisabled;
             }
 
-            // ======== [[ METHODS ]] ============================================================ >>>>
+            // ======== [[ PROPERTIES ]] ======================================================= >>>>
+            public Vector2Int Key { get => _key; }
+            public Vector2Int Coordinate { get => _coordinate; }
+            public Vector2 Dimensions { get => _dimensions; }
+            public Vector3 Position { get => _position; }
+            public Vector3 Normal { get => _normal; }
+            public bool Disabled { get => _isDisabled; }
 
+            // ======== [[ METHODS ]] ============================================================ >>>>
 
             // (( GETTERS )) -------- )))
             public void GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal)
@@ -95,9 +94,6 @@ namespace Darklight.UnityExt.Matrix
                 _normal = data.Normal;
                 _isDisabled = data.Disabled;
             }
-
-
-
 
         }
     }

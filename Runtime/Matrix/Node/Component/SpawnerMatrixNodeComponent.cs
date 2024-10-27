@@ -16,6 +16,9 @@ namespace Darklight.UnityExt.Matrix
             // ======== [[ FIELDS ]] ================================== >>>>
             InternalData _data;
 
+            // ======== [[ CONSTRUCTORS ]] ================================== >>>>
+            public SpawnerComponent(MatrixNode cell) : base(cell) { }
+
             // ======== [[ PROPERTIES ]] ================================== >>>>
             public InternalData Data { get => _data; set => _data = value; }
             public Spatial2D.AnchorPoint OriginAnchorPoint
@@ -94,7 +97,6 @@ namespace Darklight.UnityExt.Matrix
             {
                 base.DrawSelectedGizmos();
 
-
             }
 
             // ---- (( PUBLIC METHODS )) ---- >>
@@ -165,10 +167,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
 
-            // ======== [[ CONSTRUCTORS ]] ================================== >>>>
-            public SpawnerComponent(MatrixNode cell) : base(cell) { }
-
-
             // ======== [[ NESTED CLASSES ]] ================================== >>>>
             [System.Serializable]
             public class InternalData
@@ -188,16 +186,6 @@ namespace Darklight.UnityExt.Matrix
                 [Tooltip("This is an identifier for the cell to be used as a 'direction anchor' to determine properties of the spawned object")]
                 [SerializeField] Spatial2D.AnchorPoint _targetAnchor = Spatial2D.AnchorPoint.CENTER;
 
-
-                // ======== [[ PROPERTIES ]] ================================== >>>>
-                public Vector2Int CellKey { get => _cellKey; set => _cellKey = value; }
-                public List<Transform> AttachedTransforms { get => _attachedTransforms; set => _attachedTransforms = value; }
-                public bool InheritCellWidth { get => _inheritCellWidth; set => _inheritCellWidth = value; }
-                public bool InheritCellHeight { get => _inheritCellHeight; set => _inheritCellHeight = value; }
-                public bool InheritCellNormal { get => _inheritCellNormal; set => _inheritCellNormal = value; }
-                public Spatial2D.AnchorPoint OriginAnchor { get => _originAnchor; set => _originAnchor = value; }
-                public Spatial2D.AnchorPoint TargetAnchor { get => _targetAnchor; set => _targetAnchor = value; }
-
                 // ======== [[ CONSTRUCTORS ]] ================================== >>>>
                 public InternalData(Vector2Int key)
                 {
@@ -213,9 +201,17 @@ namespace Darklight.UnityExt.Matrix
                     _originAnchor = data._originAnchor;
                     _targetAnchor = data._targetAnchor;
                 }
+
+                // ======== [[ PROPERTIES ]] ================================== >>>>
+                public Vector2Int CellKey { get => _cellKey; set => _cellKey = value; }
+                public List<Transform> AttachedTransforms { get => _attachedTransforms; set => _attachedTransforms = value; }
+                public bool InheritCellWidth { get => _inheritCellWidth; set => _inheritCellWidth = value; }
+                public bool InheritCellHeight { get => _inheritCellHeight; set => _inheritCellHeight = value; }
+                public bool InheritCellNormal { get => _inheritCellNormal; set => _inheritCellNormal = value; }
+                public Spatial2D.AnchorPoint OriginAnchor { get => _originAnchor; set => _originAnchor = value; }
+                public Spatial2D.AnchorPoint TargetAnchor { get => _targetAnchor; set => _targetAnchor = value; }
             }
         }
-
 
     }
 }

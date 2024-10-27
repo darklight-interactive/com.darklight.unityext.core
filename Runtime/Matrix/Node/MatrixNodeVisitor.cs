@@ -6,6 +6,21 @@ namespace Darklight.UnityExt.Matrix
 {
     partial class MatrixNode
     {
+
+        public static class VisitorFactory
+        {
+            public static ComponentVisitor CreateComponentVisitor
+                (ComponentTypeKey type, VisitCellComponentEvent visitFunction)
+            {
+                return new ComponentVisitor(type, visitFunction);
+            }
+
+            public static ComponentVisitor CreateComponentVisitor
+                (Matrix.Component gridComponent, VisitCellComponentEvent visitFunction)
+            {
+                return new ComponentVisitor(gridComponent.TypeKey, visitFunction);
+            }
+        }
         public class Visitor : IVisitor<MatrixNode>
         {
             VisitCellEvent _visitFunction;
@@ -26,6 +41,13 @@ namespace Darklight.UnityExt.Matrix
             ComponentTypeKey _type; // The type of component to look for
             VisitCellComponentEvent _visitFunction; // The function to call when visiting the cell
 
+            // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
+            public ComponentVisitor(ComponentTypeKey type, VisitCellComponentEvent visitFunction)
+            {
+                _type = type;
+                VisitFunc = visitFunction;
+            }
+
             // ======== [[ PROPERTIES ]] ======================================================= >>>>
             public VisitCellComponentEvent VisitFunc
             {
@@ -36,13 +58,6 @@ namespace Darklight.UnityExt.Matrix
                     return _visitFunction;
                 }
                 set => _visitFunction = value;
-            }
-
-            // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
-            public ComponentVisitor(ComponentTypeKey type, VisitCellComponentEvent visitFunction)
-            {
-                _type = type;
-                VisitFunc = visitFunction;
             }
 
             // ======== [[ METHODS ]] ======================================================= >>>>
@@ -62,21 +77,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
 
-        }
-
-        public static class VisitorFactory
-        {
-            public static ComponentVisitor CreateComponentVisitor
-                (ComponentTypeKey type, VisitCellComponentEvent visitFunction)
-            {
-                return new ComponentVisitor(type, visitFunction);
-            }
-
-            public static ComponentVisitor CreateComponentVisitor
-                (Matrix.Component gridComponent, VisitCellComponentEvent visitFunction)
-            {
-                return new ComponentVisitor(gridComponent.TypeKey, visitFunction);
-            }
         }
 
     }
