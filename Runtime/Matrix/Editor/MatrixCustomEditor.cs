@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix.Editor
 {
-    [CustomEditor(typeof(Matrix))]
+    [CustomEditor(typeof(Matrix), true)]
     public class MatrixCustomEditor : UnityEditor.Editor
     {
         SerializedObject _serializedObject;
@@ -18,16 +18,26 @@ namespace Darklight.UnityExt.Matrix.Editor
             _script = (Matrix)target;
         }
 
-        public override void OnInspectorGUI()
+        protected virtual void DrawButtons()
         {
-            _serializedObject.Update();
-
-            // Add a button to open the Matrix Editor Window
+                        // Add a button to open the Matrix Editor Window
             if (GUILayout.Button("Open Matrix Editor"))
             {
                 // Open the MatrixEditorWindow and pass the current Matrix instance
                 MatrixEditorWindow.ShowWindow(_script);
             }
+
+            if (_script.HasConfigPreset == false && GUILayout.Button("ExtractConfigToPreset"))
+            {
+                _script.ExtractConfigToPreset("DefaultMatrixConfigPreset");
+            }
+        }
+
+        public override void OnInspectorGUI()
+        {
+            _serializedObject.Update();
+
+            DrawButtons();
 
             // Display default inspector properties
             base.OnInspectorGUI();

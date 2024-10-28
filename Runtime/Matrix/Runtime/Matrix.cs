@@ -3,6 +3,7 @@ using System.Linq;
 
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
+using Darklight.UnityExt.Utility;
 
 using NaughtyAttributes;
 
@@ -21,11 +22,17 @@ namespace Darklight.UnityExt.Matrix
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
         protected Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
 
-        [SerializeField] Config _config = new Config();
+        [Header("Matrix Data")]
         [SerializeField] Data _data;
+
+        [Header("Matrix Config")]
+        [SerializeField, Expandable] MatrixConfigPreset _configPreset;
+        [SerializeField, DisableIf("HasConfigPreset"), AllowNesting] Config _config = new Config();
 
         [ShowOnly] public bool isPreloaded;
         [ShowOnly] public bool isInitialized;
+
+        public bool HasConfigPreset => _configPreset != null;
 
         public Vector3 Position {
             get{
@@ -336,18 +343,13 @@ namespace Darklight.UnityExt.Matrix
         #endregion
 
         #region < PUBLIC_METHODS > [[ Matrix Handlers ]] ================================================================ 
-        /*************  ✨ Codeium Command ⭐  *************/
-        /// <summary>
-        /// Refreshes the matrix by reinitializing the grid if needed, resizing if needed, and updating all cells.
-        /// </summary>
-        /// <remarks>
-        /// If the matrix is not preloaded, it will be preloaded.
-        /// If the matrix is not initialized, it will be initialized.
-        /// If the matrix dimensions have changed, the grid will be resized.
-        /// The origin key will be recalculated.
-        /// All cells will be updated.
-        /// </remarks>
-        /******  76bc5546-b1d4-40fd-90b1-ba852bcf2eda  *******/
+
+        public void ExtractConfigToPreset(string name)
+        {
+            _configPreset = ScriptableObjectUtility.CreateOrLoadScriptableObject<MatrixConfigPreset>(ASSET_PATH, name);
+            _configPreset.SetData(_config);
+        }
+
         public void Refresh()
         {
             if (!isPreloaded)
@@ -362,6 +364,9 @@ namespace Darklight.UnityExt.Matrix
                 Initialize();
                 return;
             }
+
+            if (_configPreset != null)
+                _config = _configPreset.ToData();
 
             // Resize the grid if the dimensions have changed
             Resize();

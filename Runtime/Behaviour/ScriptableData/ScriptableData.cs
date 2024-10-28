@@ -13,6 +13,8 @@ namespace Darklight.UnityExt.Behaviour
         where T : class
     {
         [SerializeReference] T _data = default;
+        
+        public virtual void SetData(T data) => _data = data;
         public virtual T ToData() => _data;
 
         public virtual void Refresh()

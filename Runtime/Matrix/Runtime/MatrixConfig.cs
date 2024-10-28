@@ -14,7 +14,7 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        class Config
+        public class Config
         {
             readonly DropdownList<Vector3> _dropdown_vec3directions = new DropdownList<Vector3>()
             {
@@ -25,28 +25,37 @@ namespace Darklight.UnityExt.Matrix
                 { "Forward", Vector3.forward },
                 { "Back", Vector3.back },
             };
-            public bool LockPosToTransform = true;
-            public bool LockNormalToTransform = true;
 
-            public Alignment MatrixAlignment = Alignment.Center;
+            [SerializeField] bool _lockPosToTransform = true;
+            [SerializeField] bool _lockNormalToTransform = true;
 
-            [HideIf("LockPosToTransform"), AllowNesting] 
-            public Vector3 MatrixPosition = new Vector3(0, 0, 0);
+            [Header("Matrix Config")]
+            [SerializeField] Alignment _matrixAlignment = Alignment.Center;
+            [SerializeField, HideIf("_lockPosToTransform")] Vector3 _matrixPosition = new Vector3(0, 0, 0);
+            [SerializeField, Dropdown("_dropdown_vec3directions")] Vector3 _matrixNormal = Vector3.up;
+            [SerializeField, Range(1, 25)] int _matrixColumns = 3;
+            [SerializeField, Range(1, 25)] int _matrixRows = 3;
 
-            [HideIf("LockNormalToTransform"),Dropdown("_dropdown_vec3directions"), AllowNesting] 
-            public Vector3 MatrixNormal = Vector3.up;
+            [Header("Node Config")]
+            [SerializeField, Range(0.125f, 10.0f)] float _nodeWidth = 1.0f;
+            [SerializeField, Range(0.125f, 10.0f)] float _nodeHeight = 1.0f;
+            [SerializeField] Vector2 _nodeSpacing = Vector2.zero;
+            [SerializeField] Vector2 _nodeBonding = Vector2.zero;
 
-            [Space(5)]
-            [Range(1, 25)] public int MatrixColumns = 3;
-            [Range(1, 25)] public int MatrixRows = 3;
+            public bool LockPosToTransform => _lockPosToTransform;
+            public bool LockNormalToTransform => _lockNormalToTransform;
 
-            [Space(5)]
-            [Range(0.125f, 10)]public float NodeWidth = 1.0f;
-            [Range(0.125f, 10)]public float NodeHeight = 1.0f;
-            public Vector2 NodeSpacing;
-            public Vector2 NodeBonding;
+            public Alignment MatrixAlignment => _matrixAlignment;
+            public Vector3 MatrixPosition => _matrixPosition;
+            public Vector3 MatrixNormal => _matrixNormal;
+            public int MatrixColumns => _matrixColumns;
+            public int MatrixRows => _matrixRows;
 
-            public Vector2 NodeDimensions => new Vector2(NodeWidth, NodeHeight);
+            public float NodeWidth => _nodeWidth;
+            public float NodeHeight => _nodeHeight;
+            public Vector2 NodeDimensions => new Vector2(_nodeWidth, _nodeHeight);
+            public Vector2 NodeSpacing => _nodeSpacing;
+            public Vector2 NodeBonding => _nodeBonding;
         }
     }
-}
+}   
