@@ -20,57 +20,74 @@ namespace Darklight.UnityExt.Matrix
         const float MIN_NODE_DIMENSION = 0.125f;
         const float MIN_NODE_SPACING = -0.5f;
         readonly DropdownList<Vector3> _vec3directions => new DropdownList<Vector3>()
-            {
-                { "Up", Vector3.up },
-                { "Down", Vector3.down },
-                { "Left", Vector3.left },
-                { "Right", Vector3.right },
-                { "Forward", Vector3.forward },
-                { "Back", Vector3.back },
-            };
+        {
+            { "Up", Vector3.up },
+            { "Down", Vector3.down },
+            { "Left", Vector3.left },
+            { "Right", Vector3.right },
+            { "Forward", Vector3.forward },
+            { "Back", Vector3.back },
+        };
 
+        static Context DefaultContext = new Context()
+        {
+            MatrixParent = null,
+            MatrixPosition = Vector3.zero,
+            MatrixNormal = Vector3.up,
+
+            MatrixAlignment = Alignment.MiddleCenter,
+            MatrixColumns = 3,
+            MatrixRows = 3,
+
+            NodeDimensions = new Vector2(1, 1),
+            NodeSpacing = new Vector2(0, 0),
+            NodeBonding = new Vector2(0, 0),
+        };
+
+
+        [SerializeField, ShowIf("HasParent"), DisableIf("HasParent"), AllowNesting] public Transform MatrixParent;
+
+        [Space(5)]
+        [SerializeField, HideIf("HasParent"), AllowNesting] public Vector3 MatrixPosition;
+        [SerializeField, HideIf("HasParent"), AllowNesting, Dropdown("_vec3directions")] public Vector3 MatrixNormal;
+
+        [Space(5)]
         public Alignment MatrixAlignment;
         [Range(1, 25)] public int MatrixRows;
         [Range(1, 25)] public int MatrixColumns;
-        public Vector3 MatrixPosition;
-        [Dropdown("_vec3directions"), AllowNesting] public Vector3 MatrixNormal;
+
+        [Space(5)]
         public Vector2 NodeDimensions;
         public Vector2 NodeSpacing;
         public Vector2 NodeBonding;
 
-        public Context(int rows, int columns)
+        public bool HasParent => MatrixParent != null;
+
+        public Context(Transform parent = null)
         {
-            MatrixRows = rows;
-            MatrixColumns = columns;
+            this = DefaultContext;
+            MatrixParent = parent;
 
-            MatrixAlignment = Alignment.MiddleCenter;
-            MatrixPosition = Vector3.zero;
-            MatrixNormal = Vector2.up;
+            if (MatrixParent == null)
+            {
+                MatrixPosition = parent.position;
+                MatrixNormal = parent.up;
+            }
+        }
 
-            NodeDimensions = new Vector2(1, 1);
-            NodeSpacing = new Vector2(0, 0);
-            NodeBonding = new Vector2(0, 0);
-
+        public Context(Context context, Transform parent = null) : this(parent)
+        {
+            this = context;
             Validate();
         }
 
-        public Context(Alignment alignment, int rows, int columns) : this(rows, columns) => MatrixAlignment = alignment;
-        public Context(Context context)
+
+        public Context(int rows, int columns, Transform parent = null) : this(parent)
         {
-            context.Validate();
-            this = context;
+            MatrixRows = rows > 0 ? rows : 1;
+            MatrixColumns = columns > 0 ? rows : 1;
         }
-
-        public bool IsValid()
-        {
-            bool matrixValid = MatrixRows > 0 && MatrixColumns > 0;
-
-            bool nodeDimensionsValid = NodeDimensions.x > MIN_NODE_DIMENSION && NodeDimensions.y > MIN_NODE_DIMENSION;
-
-            bool nodeSpacingValid = NodeSpacing.x > MIN_NODE_SPACING && NodeSpacing.y > MIN_NODE_SPACING;
-
-            return matrixValid && nodeDimensionsValid && nodeSpacingValid;
-        }
+        public Context(int rows, int columns, Alignment alignment, Transform parent = null) : this(rows, columns, parent) => MatrixAlignment = alignment;
 
         public bool Equals(Context other)
         {
@@ -86,6 +103,12 @@ namespace Darklight.UnityExt.Matrix
 
         public void Validate()
         {
+            if (HasParent)
+            {
+                MatrixPosition = MatrixParent.position;
+                MatrixNormal = MatrixParent.up;
+            }
+
             MatrixRows = MatrixRows > 0 ? MatrixRows : 1;
             MatrixColumns = MatrixColumns > 0 ? MatrixColumns : 1;
 
@@ -98,18 +121,20 @@ namespace Darklight.UnityExt.Matrix
 
         public void SetToDefaults()
         {
+            MatrixParent = null;
+            MatrixPosition = Vector3.zero;
+            MatrixNormal = Vector3.up;
+
             MatrixRows = 3;
             MatrixColumns = 3;
-
             MatrixAlignment = Alignment.MiddleCenter;
-            MatrixPosition = Vector3.zero;
-            MatrixNormal = Vector2.up;
 
             NodeDimensions = new Vector2(1, 1);
             NodeSpacing = new Vector2(0, 0);
             NodeBonding = new Vector2(0, 0);
         }
 
+        #region ---- < METHODS > ( Calculations ) --------------------------------- 
         Vector2 CalculateAlignmentOffset()
         {
             int rows = MatrixRows - 1;
@@ -174,7 +199,7 @@ namespace Darklight.UnityExt.Matrix
             return originOffset;
         }
 
-        Vector2Int CalculateOriginKey()
+        public Vector2Int CalculateOriginKey()
         {
             int rows = MatrixRows - 1;
             int columns = MatrixColumns - 1;
@@ -262,6 +287,7 @@ namespace Darklight.UnityExt.Matrix
             Vector2Int originKey = CalculateOriginKey();
             return key - originKey;
         }
-    }
+        #endregion
 
+    }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using Darklight.UnityExt.Editor;
+
 using NaughtyAttributes;
 
 using UnityEngine;
@@ -16,6 +18,7 @@ namespace Darklight.UnityExt.Matrix
             Context _ctx;
             Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
 
+            [SerializeField, ShowOnly] int _nodeCount;
             [SerializeField] List<Node> _nodes = new List<Node>();
 
             public List<Vector2Int> Keys
@@ -30,8 +33,11 @@ namespace Darklight.UnityExt.Matrix
             {
                 get
                 {
-                    if (_map == null || _map.Count == 0) return new List<Node>();
-                    return new List<Node>(_map.Values);
+                    if (_map == null || _map.Count == 0)
+                        _nodes = new List<Node>();
+                    else
+                        _nodes = new List<Node>(_map.Values);
+                    return _nodes;
                 }
             }
 
@@ -109,24 +115,24 @@ namespace Darklight.UnityExt.Matrix
 
             public void Refresh()
             {
-                if (_map == null)
-                    _map = new Dictionary<Vector2Int, Node>();
                 if (_matrix == null) return;
 
+                if (_map == null)
+                    _map = new Dictionary<Vector2Int, Node>();
+
+                // << CHECK FOR CHANGES >>
                 if (_matrix.GetContext().Equals(_ctx) == false)
                 {
                     _ctx = _matrix.GetContext();
                     Matrix.SendVisitorToNodes(_nodes, _matrix.UpdateNodeContextVisitor);
-                    _nodes = new List<Node>(_map.Values);
                 }
 
                 if (IsDirty())
                     Clean();
-
-                Debug.Log("MatrixNodeMap: Refresh: " + _map.Count);
+                
+                _nodeCount = _map.Count;
+                _nodes = new List<Node>(_map.Values);
             }
-
-
         }
     }
 

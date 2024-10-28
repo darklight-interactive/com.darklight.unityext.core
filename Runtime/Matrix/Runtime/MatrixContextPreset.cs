@@ -13,8 +13,7 @@ namespace Darklight.UnityExt.Matrix
 
         public override Context ToData()
         {
-            if (!data.IsValid())
-                data.Validate();
+            data.Validate();
             return data;
         }
     }

@@ -41,11 +41,10 @@ namespace Darklight.UnityExt.Matrix
         [Header("Data")]
         [SerializeField, ShowOnly] State _currentState;
         [SerializeField, ShowOnly] Vector3 _position;
-        [SerializeField, ShowOnly] Quaternion _rotation;
         [SerializeField, ShowOnly] Vector3 _normal;
 
         [Header("Context")]
-        [SerializeField, HideIf("HasContextPreset"), AllowNesting] Context _context = new Context(Alignment.MiddleCenter, 3, 3);
+        [SerializeField, HideIf("HasContextPreset"), AllowNesting] Context _context;
         [SerializeField, Expandable] MatrixContextPreset _contextPreset;
 
         [Header("Map")]
@@ -67,6 +66,7 @@ namespace Darklight.UnityExt.Matrix
         });
 
         public State CurrentState => _currentState = _stateMachine.CurrentState;
+        public NodeMap Map => _map;
         public bool HasContextPreset => _contextPreset != null;
 
 
@@ -77,13 +77,15 @@ namespace Darklight.UnityExt.Matrix
         void OnDrawGizmos() => SendVisitorToAllNodes(DrawGizmosVisitor);
         void OnDrawGizmosSelected() => SendVisitorToAllNodes(DrawGizmosSelectedVisitor);
         void OnValidate() => Refresh();
+        void OnEnable() {}
+        void OnDisable() {}
+        void OnDestroy() {}
         #endregion
 
-        #region < NONPUBLIC_METHODS > [[ Internal Runtime ]] ================================================================
-        protected void OnStateChanged(State state)
+        #region < PUBLIC_METHODS > [[ Internal Runtime ]] ================================================================
+        void OnStateChanged(State state)
         {
             _currentState = state;
-            Debug.Log($"OnStateChanged: Current State: {state}");
         }
 
         public void Preload()
@@ -94,7 +96,8 @@ namespace Darklight.UnityExt.Matrix
                 _stateMachine.OnStateChanged += OnStateChanged;
             }
 
-
+            // Set the context parent
+            _context = new Context(this.transform);
 
             // Create a new cell map
             _map = new NodeMap(this);
@@ -115,9 +118,8 @@ namespace Darklight.UnityExt.Matrix
         {
             if (_contextPreset != null && !_context.Equals(_contextPreset.ToData()))
                 _context = _contextPreset.ToData();
-
-            if (_context.IsValid() == false)
-                _context.Validate();
+            
+            _context.Validate();
 
             return _context;
         }
@@ -131,6 +133,9 @@ namespace Darklight.UnityExt.Matrix
         public void Refresh()
         {
             _map.Refresh();
+
+            _position = _context.MatrixPosition;
+            _normal = _context.MatrixNormal;
         }
 
         public void Reset()

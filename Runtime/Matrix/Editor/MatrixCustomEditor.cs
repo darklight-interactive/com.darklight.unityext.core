@@ -50,8 +50,10 @@ namespace Darklight.UnityExt.Matrix.Editor
             DrawButtons();
             DrawPropertiesExcluding(serializedObject, "m_Script");
 
-            _serializedObject.ApplyModifiedProperties();
+            _script = (Matrix)target;
+            _script.Refresh();
 
+            _serializedObject.ApplyModifiedProperties();
         }
     }
 }
