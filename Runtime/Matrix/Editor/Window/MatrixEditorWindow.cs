@@ -25,7 +25,10 @@ public class MatrixEditorWindow : EditorWindow
 
     Matrix.Node.Visitor SceneGUINodeVisitor => new Matrix.Node.Visitor(node =>
     {
-        node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
+        Vector3 position = node.Position;
+        Vector2 dimensions = node.Dimensions;
+        Quaternion rotation = node.Rotation;
+        Vector3 normal = node.Normal;
 
         // << GET COLOR >>
         Color color = _defaultColor;

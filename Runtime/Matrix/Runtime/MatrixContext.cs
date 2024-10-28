@@ -33,6 +33,7 @@ namespace Darklight.UnityExt.Matrix
         {
             MatrixParent = null,
             MatrixPosition = Vector3.zero,
+            MatrixRotation = Vector3.zero,
             MatrixNormal = Vector3.up,
 
             MatrixAlignment = Alignment.MiddleCenter,
@@ -49,7 +50,8 @@ namespace Darklight.UnityExt.Matrix
 
         [Space(5)]
         [SerializeField, HideIf("HasParent"), AllowNesting] public Vector3 MatrixPosition;
-        [SerializeField, HideIf("HasParent"), AllowNesting, Dropdown("_vec3directions")] public Vector3 MatrixNormal;
+        [SerializeField, HideIf("HasParent"), AllowNesting] public Vector3 MatrixRotation;
+        [SerializeField] public Vector3 MatrixNormal;
 
         [Space(5)]
         public Alignment MatrixAlignment;
@@ -71,7 +73,7 @@ namespace Darklight.UnityExt.Matrix
             if (MatrixParent == null)
             {
                 MatrixPosition = parent.position;
-                MatrixNormal = parent.up;
+                MatrixRotation = parent.rotation.eulerAngles;
             }
         }
 
@@ -90,14 +92,15 @@ namespace Darklight.UnityExt.Matrix
 
         public bool Equals(Context other)
         {
-            return MatrixAlignment == other.MatrixAlignment
+            bool transformEquals = MatrixPosition == other.MatrixPosition
+                && MatrixRotation == other.MatrixRotation;
+            bool matrixEquals = MatrixAlignment == other.MatrixAlignment
                 && MatrixRows == other.MatrixRows
-                && MatrixColumns == other.MatrixColumns
-                && MatrixPosition == other.MatrixPosition
-                && MatrixNormal == other.MatrixNormal
-                && NodeDimensions == other.NodeDimensions
+                && MatrixColumns == other.MatrixColumns;
+            bool nodeEquals = NodeDimensions == other.NodeDimensions
                 && NodeSpacing == other.NodeSpacing
                 && NodeBonding == other.NodeBonding;
+            return transformEquals && matrixEquals && nodeEquals;
         }
 
         public void Validate()
@@ -105,7 +108,7 @@ namespace Darklight.UnityExt.Matrix
             if (HasParent)
             {
                 MatrixPosition = MatrixParent.position;
-                MatrixNormal = MatrixParent.up;
+                MatrixRotation = MatrixParent.rotation.eulerAngles;
             }
 
             MatrixRows = MatrixRows > 0 ? MatrixRows : 1;
@@ -116,21 +119,6 @@ namespace Darklight.UnityExt.Matrix
 
             NodeSpacing.x = Mathf.Max(NodeSpacing.x, MIN_NODE_SPACING);
             NodeSpacing.y = Mathf.Max(NodeSpacing.y, MIN_NODE_SPACING);
-        }
-
-        public void SetToDefaults()
-        {
-            MatrixParent = null;
-            MatrixPosition = Vector3.zero;
-            MatrixNormal = Vector3.up;
-
-            MatrixRows = 3;
-            MatrixColumns = 3;
-            MatrixAlignment = Alignment.MiddleCenter;
-
-            NodeDimensions = new Vector2(1, 1);
-            NodeSpacing = new Vector2(0, 0);
-            NodeBonding = new Vector2(0, 0);
         }
 
         #region ---- < PUBLIC_METHODS > ( Calculations ) --------------------------------- 
@@ -151,43 +139,22 @@ namespace Darklight.UnityExt.Matrix
         /// Calculates the alignment offset of the matrix in world space,
         /// based on the alignment setting and the dimensions of the matrix.
         /// </summary>
-        /// <returns></returns>
         public Vector2 CalculateMatrixAlignmentOffset()
         {
-            Vector2 matrixDimensions = CalculateMatrixDimensions();
-            matrixDimensions -= NodeDimensions; // Subtract the dimensions of the origin cell
-
+            Vector2 matrixDimensions = CalculateMatrixDimensions() - NodeDimensions;
             Vector2 alignmentOffset = Vector2.zero;
 
             switch (MatrixAlignment)
             {
-                case Alignment.BottomLeft:
-                    alignmentOffset = new Vector2(0, 0);
-                    break;
-                case Alignment.BottomCenter:
-                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, 0);
-                    break;
-                case Alignment.BottomRight:
-                    alignmentOffset = new Vector2(-matrixDimensions.x, 0);
-                    break;
-                case Alignment.MiddleLeft:
-                    alignmentOffset = new Vector2(0, -matrixDimensions.y / 2);
-                    break;
-                case Alignment.MiddleCenter:
-                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y / 2);
-                    break;
-                case Alignment.MiddleRight:
-                    alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y / 2);
-                    break;
-                case Alignment.TopLeft:
-                    alignmentOffset = new Vector2(0, -matrixDimensions.y);
-                    break;
-                case Alignment.TopCenter:
-                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y);
-                    break;
-                case Alignment.TopRight:
-                    alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y);
-                    break;
+                case Alignment.BottomLeft: alignmentOffset = Vector2.zero; break;
+                case Alignment.BottomCenter: alignmentOffset = new Vector2(-matrixDimensions.x / 2, 0); break;
+                case Alignment.BottomRight: alignmentOffset = new Vector2(-matrixDimensions.x, 0); break;
+                case Alignment.MiddleLeft: alignmentOffset = new Vector2(0, -matrixDimensions.y / 2); break;
+                case Alignment.MiddleCenter: alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y / 2); break;
+                case Alignment.MiddleRight: alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y / 2); break;
+                case Alignment.TopLeft: alignmentOffset = new Vector2(0, -matrixDimensions.y); break;
+                case Alignment.TopCenter: alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y); break;
+                case Alignment.TopRight: alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y); break;
             }
             return alignmentOffset;
         }
@@ -246,9 +213,9 @@ namespace Darklight.UnityExt.Matrix
         }
 
         /// <summary>
-        /// Calculates the world position of a node based on its key.
+        /// Calculates the world position and rotation of a node based on its key.
         /// </summary>
-        public Vector3 CalculateNodePositionFromKey(Vector2Int key)
+        public void CalculateNodeTransformFromKey(Vector2Int key, out Vector3 position, out Quaternion rotation)
         {
             // Calculate the node position offset in world space based on dimensions
             Vector2 keyOffsetPos = key * NodeDimensions;
@@ -258,8 +225,8 @@ namespace Darklight.UnityExt.Matrix
 
             // Calculate the spacing offset and clamp to avoid overlapping cells
             Vector2 spacingOffsetPos = NodeSpacing + Vector2.one;
-            spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 0.5f, float.MaxValue);
-            spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 0.5f, float.MaxValue);
+            spacingOffsetPos.x = Mathf.Max(spacingOffsetPos.x, 0.5f);
+            spacingOffsetPos.y = Mathf.Max(spacingOffsetPos.y, 0.5f);
 
             // Calculate bonding offsets
             Vector2 bondingOffset = Vector2.zero;
@@ -268,18 +235,37 @@ namespace Darklight.UnityExt.Matrix
             if (key.x % 2 == 0)
                 bondingOffset.y = NodeBonding.y;
 
-            Vector2 cellPosition = keyOffsetPos + originOffset;
-            cellPosition *= spacingOffsetPos;
-            cellPosition += bondingOffset;
+            // Combine offsets and apply spacing
+            Vector2 localPosition2D = keyOffsetPos + originOffset;
+            localPosition2D *= spacingOffsetPos;
+            localPosition2D += bondingOffset;
 
-            // Apply a scale transformation that flips the x-axis
-            Vector3 scale = new Vector3(-1, 1, 1);  // Inverts the x-axis
-            Vector3 transformedPosition = Vector3.Scale(new Vector3(cellPosition.x, cellPosition.y, 0), scale);
+            // Convert the 2D local position to 3D and apply matrix rotation
+            Vector3 localPosition = new Vector3(localPosition2D.x, 0, localPosition2D.y);
+            Quaternion matrixRotation = Quaternion.Euler(MatrixRotation);
+            Vector3 rotatedPosition = matrixRotation * localPosition;
 
-            // Apply rotation based on grid's normal and return the final world position
-            Quaternion rotation = Quaternion.LookRotation(MatrixNormal, Vector3.forward);
-            return MatrixPosition + (rotation * transformedPosition);
+            // Final world position by adding rotated local position to MatrixPosition
+            position = MatrixPosition + rotatedPosition;
+
+            // Apply the same rotation to each node
+            rotation = matrixRotation;
         }
+
+        /// <summary>
+        /// Calculates the normal vector from the current MatrixRotation.
+        /// </summary>
+        public Vector3 CalculateNormal()
+        {
+            // Convert the Euler rotation to a Quaternion
+            Quaternion rotation = Quaternion.Euler(MatrixRotation);
+
+            // Use the rotation to transform the default "up" direction
+            Vector3 normal = rotation * Vector3.up;
+
+            return normal;
+        }
+
 
         /// <summary>
         /// Calculates the node coordinate of a node based on its key.

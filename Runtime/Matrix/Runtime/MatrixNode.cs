@@ -25,6 +25,7 @@ namespace Darklight.UnityExt.Matrix
 
             [Header("World Space Values")]
             [SerializeField, ShowOnly] Vector3 _position = Vector3.zero;
+            [SerializeField, ShowOnly] Quaternion _rotation;
             [SerializeField, ShowOnly] Vector3 _normal = Vector3.up;
             [SerializeField, ShowOnly] Vector2 _dimensions = Vector2.one;
 
@@ -33,6 +34,7 @@ namespace Darklight.UnityExt.Matrix
             public Vector2Int Key => _key;
             public Vector2Int Coordinate => _coordinate;
             public Vector3 Position => _position;
+            public Quaternion Rotation => _rotation;
             public Vector3 Normal => _normal;
             public Vector2 Dimensions => _dimensions;
 
@@ -66,19 +68,13 @@ namespace Darklight.UnityExt.Matrix
 
             public void Refresh()
             {
-                _position = _ctx.CalculateNodePositionFromKey(_key);
                 _coordinate = _ctx.CalculateNodeCoordinateFromKey(_key);
+
+                _ctx.CalculateNodeTransformFromKey(_key, out _position, out _rotation);
+                _normal = _ctx.CalculateNormal();
+                
                 _dimensions = _ctx.NodeDimensions;
             }
-
-            // (( GETTERS )) -------- ))
-            public void GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal)
-            {
-                position = _position;
-                dimensions = _dimensions;
-                normal = _normal;
-            }
-
 
             #region < PUBLIC_CLASS > [[ Visitor ]] ================================================================ 
 

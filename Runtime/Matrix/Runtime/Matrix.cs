@@ -41,6 +41,7 @@ namespace Darklight.UnityExt.Matrix
         [Header("SerializeData")]
         [SerializeField, ShowOnly] State _currentState;
         [SerializeField, ShowOnly] Vector3 _position;
+        [SerializeField, ShowOnly] Vector3 _rotation;
         [SerializeField, ShowOnly] Vector3 _normal;
 
         [Space(5)]
@@ -66,9 +67,8 @@ namespace Darklight.UnityExt.Matrix
         Node.Visitor DrawGizmosVisitor;
         Node.Visitor DrawGizmosSelectedVisitor = new Node.Visitor(node =>
         {
-            node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
-            CustomGizmos.DrawWireRect(position, dimensions, normal, Color.white);
-            CustomGizmos.DrawLabel(node.Key.ToString(), position, CustomGUIStyles.CenteredStyle);
+            CustomGizmos.DrawWireRect(node.Position, node.Dimensions, node.Rotation, Color.white);
+            CustomGizmos.DrawLabel(node.Key.ToString(), node.Position, CustomGUIStyles.CenteredStyle);
             return true;
         });
 
@@ -142,12 +142,12 @@ namespace Darklight.UnityExt.Matrix
             _map.Refresh();
 
             _position = _context.MatrixPosition;
+            _rotation = _context.MatrixRotation;
             _normal = _context.MatrixNormal;
 
             _alignmentOffset = _context.CalculateMatrixAlignmentOffset();
 
             _originKey = _context.CalculateMatrixOriginKey();
-            _originPosition = _context.CalculateNodePositionFromKey(_originKey);
         }
 
         public void Reset()
