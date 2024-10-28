@@ -1,10 +1,13 @@
-using UnityEngine;
-using Darklight.UnityExt.Input;
-using Darklight.UnityExt.Editor;
-using System.Collections;
-using Darklight.UnityExt.Behaviour;
-using UnityEditorInternal;
 using System;
+using System.Collections;
+
+using Darklight.UnityExt.Behaviour;
+using Darklight.UnityExt.Editor;
+using Darklight.UnityExt.Input;
+
+using UnityEditorInternal;
+
+using UnityEngine;
 
 namespace Darklight.UnityExt.Core2D.Player
 {
@@ -139,7 +142,7 @@ namespace Darklight.UnityExt.Core2D.Player
                 {
                     if (controller.MoveInput != Vector2.zero)
                     {
-                        StateMachine.GoToState(PlayerState.MOVING);
+                        stateMachine.GoToState(PlayerState.MOVING);
                     }
                 }
             }
@@ -180,7 +183,7 @@ namespace Darklight.UnityExt.Core2D.Player
                 IEnumerator ReturnToIdle()
                 {
                     yield return new WaitForSeconds(0.25f);
-                    StateMachine.GoToState(PlayerState.IDLE);
+                    stateMachine.GoToState(PlayerState.IDLE);
                 }
             }
 

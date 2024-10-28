@@ -16,7 +16,11 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
- * 
+    This script defines a finite state machine (FSM) framework. 
+    It provides an abstract base class for creating FSMs and an interface for defining states.
+    The FSM stores a dictionary of possible states, where each state is represented by an enum key 
+    and an instance of the corresponding state class as the value. 
+    The FSM allows transitioning between states and executing the current state's logic.
  * ------------------------------------------------------------------ >>
  * MAJOR AUTHORS: 
  * Sky Casey
@@ -27,46 +31,43 @@
 using System;
 using System.Collections.Generic;
 
+using Darklight.UnityExt.Editor;
+
+using UnityEngine;
+
 namespace Darklight.UnityExt.Behaviour
 {
-    /// <summary>
-    /// An abstract version of a Simple State Machine.
-    /// This is intended to be inherited and expanded upon by a child class.
-    /// </summary>
-    /// <typeparam name="TState">The corresponding Enum definition</typeparam>
-    public abstract class SimpleStateMachine<TState> where TState : Enum
-    {
-        private TState _currentState;
-        public TState CurrentState
-        {
-            get => _currentState;
-            private set
-            {
-                if (!EqualityComparer<TState>.Default.Equals(_currentState, value))
-                {
-                    TState previousState = _currentState;
-                    _currentState = value;
-                    OnStateChanged(previousState, _currentState);
-                }
-            }
-        }
+   /// <summary>
+   /// Defines the basic operations needed for a Automaton to store and retrieve states
+   /// </summary>
+   public interface IStateStack<TEnum>
+   {
+      /// <summary>
+      /// Number of states stored
+      /// </summary>
+      int Count { get; }
 
-        /// <summary>
-        /// Assigns the initial state when the class is created
-        /// </summary>
-        public SimpleStateMachine(TState initialState)
-        {
-            GoToState(initialState);
-        }
-        /// <summary>
-        /// Update the current state of the machine
-        /// </summary>
-        public virtual void GoToState(TState newState)
-        {
-            if (newState.Equals(CurrentState)) return;
-            CurrentState = newState;
-        }
+      /// <summary>
+      /// Peek at the top of the stack
+      /// </summary>
+      /// <returns></returns>
+      IState<TEnum> Peek();
 
-        public virtual void OnStateChanged(TState previousState, TState newState) { }
-    }
+      /// <summary>
+      /// Pop the top of the stack
+      /// </summary>
+      /// <returns></returns>
+      IState<TEnum> Pop();
+
+      /// <summary>
+      /// Push a new state
+      /// </summary>
+      /// <param name="state"></param>
+      void Push(IState<TEnum> state);
+
+      /// <summary>
+      /// Clear the stack
+      /// </summary>
+      void Clear();
+   }
 }

@@ -22,28 +22,23 @@ namespace Darklight.UnityExt.Matrix
     {
         const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
 
-        [SerializeField] Context _context;
+        StateMachine _stateMachine = new StateMachine();
 
-        [Header("Data")]
+        [SerializeField, ShowOnly] State _currentState;
         [SerializeField, ShowOnly] Vector3 _position;
         [SerializeField, ShowOnly] Quaternion _rotation;
         [SerializeField, ShowOnly] Vector3 _normal;
 
 
-        [Header("Matrix Config")]
+        [Header("Context")]
+        [SerializeField, DisableIf("HasConfigPreset"), AllowNesting]
+        Context _context = new Context(Alignment.MiddleCenter, 3, 3);
         [SerializeField, Expandable] MatrixContextPreset _contextPreset;
-        [SerializeField, HideIf("HasConfigPreset"), AllowNesting] SerializedConfig _config = new SerializedConfig();
 
         [Header("Map")]
         [SerializeField] NodeMap _map;
 
-
-        [ShowOnly] public bool isPreloaded;
-        [ShowOnly] public bool isInitialized;
-
-
         public bool HasConfigPreset => _contextPreset != null;
-        public SerializedConfig InternalConfig => _config;
 
         Node.Visitor UpdateNodeVisitor => new Node.Visitor(node =>
         {
@@ -73,26 +68,29 @@ namespace Darklight.UnityExt.Matrix
         #region < PROTECTED_METHODS > [[ Internal Runtime ]] ================================================================
         protected void Preload()
         {
-            isPreloaded = false;
-            isInitialized = false;
-
-            // Create a new config if none exists
-            if (_config == null)
-                _config = new SerializedConfig();
+            if (_stateMachine == null)
+            {
+                _stateMachine = new StateMachine();
+                _stateMachine.OnStateChanged += OnStateChanged;
+            }
+            _stateMachine.GoToState(State.INVALID);
 
             // Create a new cell map
-            _map = new NodeMap(new Context(this));
+            _map = new NodeMap(_context);
+
 
             // Determine if the grid was preloaded
-            isPreloaded = true;
+            _stateMachine.GoToState(State.PRELOADED);
         }
 
         protected void Initialize()
         {
-            if (!isPreloaded)
-                Preload();
+            _stateMachine.GoToState(State.INITIALIZED);
+        }
 
-            isInitialized = true;
+        protected void OnStateChanged(State state)
+        {
+            _currentState = state;
         }
         #endregion
 
@@ -100,7 +98,6 @@ namespace Darklight.UnityExt.Matrix
 
         public Context GetContext()
         {
-            _context = new Context(this);
             _context.MatrixNormal = transform.up;
             return _context;
         }
@@ -113,14 +110,12 @@ namespace Darklight.UnityExt.Matrix
 
         public void Refresh()
         {
-            if (!isPreloaded)
+            if (_stateMachine.CurrentState == State.INVALID)
             {
                 Preload();
                 return;
             }
-
-            // Initialize if not already
-            if (!isInitialized || _config == null)
+            else if (_stateMachine.CurrentState == State.PRELOADED)
             {
                 Initialize();
                 return;
@@ -138,7 +133,6 @@ namespace Darklight.UnityExt.Matrix
 
         public void Reset()
         {
-            _config = new SerializedConfig();
             Preload();
         }
 
@@ -167,7 +161,13 @@ namespace Darklight.UnityExt.Matrix
         #endregion
 
 
+
         public enum State { INVALID, PRELOADED, INITIALIZED }
+        class StateMachine : SimpleStateMachine<State>
+        {
+            public StateMachine() : base(State.INVALID) { }
+        }
+
         public enum Alignment
         {
             TopLeft, TopCenter, TopRight,
@@ -175,34 +175,5 @@ namespace Darklight.UnityExt.Matrix
             BottomLeft, BottomCenter, BottomRight
         }
 
-        [Serializable]
-        public struct Context
-        {
-            public Matrix Matrix;
-            public Alignment MatrixAlignment;
-            public int MatrixRows;
-            public int MatrixColumns;
-            public Vector3 MatrixPosition => Matrix.transform.position;
-            public Vector3 MatrixNormal;
-            public Vector2 NodeDimensions;
-            public Vector2 NodeSpacing;
-            public Vector2 NodeBonding;
-
-            public Context(Matrix matrix)
-            {
-                Matrix = matrix;
-
-                MatrixAlignment = Alignment.MiddleCenter;
-
-                MatrixRows = 3;
-                MatrixColumns = 3;
-
-                MatrixNormal = Vector2.up;
-
-                NodeDimensions = new Vector2(1, 1);
-                NodeSpacing = new Vector2(0, 0);
-                NodeBonding = new Vector2(0, 0);
-            }
-        }
     }
 }

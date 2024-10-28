@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using NaughtyAttributes;
+
 using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix
@@ -12,6 +14,9 @@ namespace Darklight.UnityExt.Matrix
         {
             Context _ctx;
             Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
+
+            [SerializeField] List<Node> _nodes = new List<Node>();
+
             public List<Vector2Int> Keys
             {
                 get
@@ -112,6 +117,8 @@ namespace Darklight.UnityExt.Matrix
                     _map = new Dictionary<Vector2Int, Node>();
 
                 if (IsDirty()) Clean();
+
+                _nodes = new List<Node>(_map.Values);
             }
 
 
