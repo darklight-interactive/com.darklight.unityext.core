@@ -4,6 +4,8 @@ using System.Linq;
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
 
+using NaughtyAttributes;
+
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -17,10 +19,22 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix : MonoBehaviour
     {
         protected const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
-
         protected Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
-        [SerializeField] InternalConfig _config = new InternalConfig();
-        [SerializeField] InternalData _data = new InternalData();
+
+        [SerializeField] Config _config = new Config();
+        [SerializeField] Data _data;
+
+        [ShowOnly] public bool isPreloaded;
+        [ShowOnly] public bool isInitialized;
+
+        public Vector3 Position {
+            get{
+                if (_config.LockPosToTransform)
+                    return transform.position;
+                else
+                    return _config.MatrixPosition;
+            }
+        }
 
         Node.Visitor UpdateNodeVisitor => new Node.Visitor(node =>
         {
@@ -35,8 +49,6 @@ namespace Darklight.UnityExt.Matrix
             return true;
         });
 
-        public InternalConfig Config => _config;
-        public InternalData Data => _data;
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
         void Awake() => Preload();
@@ -49,45 +61,35 @@ namespace Darklight.UnityExt.Matrix
         #region < PROTECTED_METHODS > [[ Internal Runtime ]] ================================================================
         protected void Preload()
         {
-            _data.isPreloaded = false;
-            _data.isInitialized = false;
+            isPreloaded = false;
+            isInitialized = false;
 
             // Create a new config if none exists
             if (_config == null)
-                _config = new InternalConfig();
+                _config = new Config();
 
             // Create a new cell map
             _map = new Dictionary<Vector2Int, Node>();
 
             // Determine if the grid was preloaded
-            _data.isPreloaded = true;
+            isPreloaded = true;
         }
 
         protected void Initialize()
         {
-            if (!_data.isPreloaded)
+            if (!isPreloaded)
                 Preload();
 
             // Generate a new grid from the config
             bool mapGenerated = Generate();
 
             // Determine if the grid was initialized
-            _data.isInitialized = mapGenerated;
+            isInitialized = mapGenerated;
 
             // Return if the grid was not initialized
-            if (!_data.isInitialized)
+            if (!isInitialized)
                 return;
         }
-
-        protected void Clear()
-        {
-            _data.Reset();
-
-            if (_map != null)
-                _map.Clear(); // << Clear the map
-        }
-
-
         #endregion
 
         #region < PRIVATE_METHODS > [[ Node Generation ]] ================================================================
@@ -113,17 +115,16 @@ namespace Darklight.UnityExt.Matrix
         bool Generate()
         {
             // Skip if already initialized
-            if (_data.isInitialized)
+            if (isInitialized)
                 return false;
 
             // Clear the map
             _map.Clear();
 
             // Iterate through the grid dimensions and create cells
-            Vector2Int dimensions = _config.MatrixDimensions;
-            for (int x = 0; x < dimensions.x; x++)
+            for (int x = 0; x < _config.MatrixColumns; x++)
             {
-                for (int y = 0; y < dimensions.y; y++)
+                for (int y = 0; y < _config.MatrixRows; y++)
                 {
                     Vector2Int gridKey = new Vector2Int(x, y);
                     CreateNode(gridKey);
@@ -137,13 +138,11 @@ namespace Darklight.UnityExt.Matrix
 
         void Resize()
         {
-            if (!_data.isInitialized)
+            if (!isInitialized)
                 return;
 
-            Vector2Int newDimensions = _config.MatrixDimensions;
-
             // Check if the dimensions have changed
-            int newGridArea = newDimensions.x * newDimensions.y;
+            int newGridArea = _config.MatrixColumns * _config.MatrixRows;
             int oldGridArea = _map.Count;
             if (newGridArea == oldGridArea)
                 return;
@@ -152,14 +151,14 @@ namespace Darklight.UnityExt.Matrix
             List<Vector2Int> keys = new List<Vector2Int>(_map.Keys);
             foreach (Vector2Int key in keys)
             {
-                if (key.x >= newDimensions.x || key.y >= newDimensions.y)
+                if (key.x >= _config.MatrixColumns || key.y >= _config.MatrixRows)
                     RemoveNode(key);
             }
 
             // Add cells that are in bounds
-            for (int x = 0; x < newDimensions.x; x++)
+            for (int x = 0; x < _config.MatrixColumns; x++)
             {
-                for (int y = 0; y < newDimensions.y; y++)
+                for (int y = 0; y < _config.MatrixRows; y++)
                 {
                     Vector2Int gridKey = new Vector2Int(x, y);
                     CreateNode(gridKey);
@@ -220,7 +219,9 @@ namespace Darklight.UnityExt.Matrix
 
         protected Vector2Int CalculateOriginKey()
         {
-            Vector2Int gridDimensions = _config.MatrixDimensions - Vector2Int.one;
+            int rows = _config.MatrixRows - 1;
+            int columns = _config.MatrixColumns - 1;
+
             Vector2Int originKey = Vector2Int.zero;
 
             switch (_config.MatrixAlignment)
@@ -229,39 +230,39 @@ namespace Darklight.UnityExt.Matrix
                     originKey = new Vector2Int(0, 0);
                     break;
                 case Matrix.Alignment.BottomCenter:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x / 2), 0);
+                    originKey = new Vector2Int(Mathf.FloorToInt(columns / 2), 0);
                     break;
                 case Matrix.Alignment.BottomRight:
-                    originKey = new Vector2Int(Mathf.FloorToInt(gridDimensions.x), 0);
+                    originKey = new Vector2Int(Mathf.FloorToInt(columns), 0);
                     break;
                 case Matrix.Alignment.MiddleLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y / 2));
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(rows / 2));
                     break;
                 case Matrix.Alignment.Center:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
+                        Mathf.FloorToInt(columns / 2),
+                        Mathf.FloorToInt(rows / 2)
                     );
                     break;
                 case Matrix.Alignment.MiddleRight:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y / 2)
+                        Mathf.FloorToInt(columns),
+                        Mathf.FloorToInt(rows / 2)
                     );
                     break;
                 case Matrix.Alignment.TopLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(gridDimensions.y));
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(rows));
                     break;
                 case Matrix.Alignment.TopCenter:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x / 2),
-                        Mathf.FloorToInt(gridDimensions.y)
+                        Mathf.FloorToInt(columns / 2),
+                        Mathf.FloorToInt(rows)
                     );
                     break;
                 case Matrix.Alignment.TopRight:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(gridDimensions.x),
-                        Mathf.FloorToInt(gridDimensions.y)
+                        Mathf.FloorToInt(columns),
+                        Mathf.FloorToInt(rows)
                     );
                     break;
             }
@@ -271,8 +272,8 @@ namespace Darklight.UnityExt.Matrix
 
         protected Vector2 CalculateOriginPositionOffset()
         {
-            Vector2Int gridDimensions = _config.MatrixDimensions - Vector2Int.one;
-            Vector2 originOffset = Vector2.zero;
+            int rows = _config.MatrixRows - 1;
+            int columns = _config.MatrixColumns - 1; Vector2 originOffset = Vector2.zero;
 
             switch (_config.MatrixAlignment)
             {
@@ -281,50 +282,50 @@ namespace Darklight.UnityExt.Matrix
                     break;
                 case Matrix.Alignment.BottomCenter:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x / 2,
+                        -columns * _config.NodeDimensions.x / 2,
                         0
                     );
                     break;
                 case Matrix.Alignment.BottomRight:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x,
+                        -columns * _config.NodeDimensions.x,
                         0
                     );
                     break;
                 case Matrix.Alignment.MiddleLeft:
                     originOffset = new Vector2(
                         0,
-                        -gridDimensions.y * _config.NodeDimensions.y / 2
+                        -rows * _config.NodeDimensions.y / 2
                     );
                     break;
                 case Matrix.Alignment.Center:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x / 2,
-                        -gridDimensions.y * _config.NodeDimensions.y / 2
+                        -columns * _config.NodeDimensions.x / 2,
+                        -rows * _config.NodeDimensions.y / 2
                     );
                     break;
                 case Matrix.Alignment.MiddleRight:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x,
-                        -gridDimensions.y * _config.NodeDimensions.y / 2
+                        -columns * _config.NodeDimensions.x,
+                        -rows * _config.NodeDimensions.y / 2
                     );
                     break;
                 case Matrix.Alignment.TopLeft:
                     originOffset = new Vector2(
                         0,
-                        -gridDimensions.y * _config.NodeDimensions.y
+                        -rows * _config.NodeDimensions.y
                     );
                     break;
                 case Matrix.Alignment.TopCenter:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x / 2,
-                        -gridDimensions.y * _config.NodeDimensions.y
+                        -columns * _config.NodeDimensions.x / 2,
+                        -rows * _config.NodeDimensions.y
                     );
                     break;
                 case Matrix.Alignment.TopRight:
                     originOffset = new Vector2(
-                        -gridDimensions.x * _config.NodeDimensions.x,
-                        -gridDimensions.y * _config.NodeDimensions.y
+                        -columns * _config.NodeDimensions.x,
+                        -rows * _config.NodeDimensions.y
                     );
                     break;
             }
@@ -335,17 +336,28 @@ namespace Darklight.UnityExt.Matrix
         #endregion
 
         #region < PUBLIC_METHODS > [[ Matrix Handlers ]] ================================================================ 
-
+        /*************  ✨ Codeium Command ⭐  *************/
+        /// <summary>
+        /// Refreshes the matrix by reinitializing the grid if needed, resizing if needed, and updating all cells.
+        /// </summary>
+        /// <remarks>
+        /// If the matrix is not preloaded, it will be preloaded.
+        /// If the matrix is not initialized, it will be initialized.
+        /// If the matrix dimensions have changed, the grid will be resized.
+        /// The origin key will be recalculated.
+        /// All cells will be updated.
+        /// </remarks>
+        /******  76bc5546-b1d4-40fd-90b1-ba852bcf2eda  *******/
         public void Refresh()
         {
-            if (!_data.isPreloaded)
+            if (!isPreloaded)
             {
                 Preload();
                 return;
             }
 
             // Initialize if not already
-            if (!_data.isInitialized || _config == null)
+            if (!isInitialized || _config == null)
             {
                 Initialize();
                 return;
@@ -355,7 +367,6 @@ namespace Darklight.UnityExt.Matrix
             Resize();
 
             _data.nodes = _map.Values.ToArray();
-            _data.originKey = CalculateOriginKey();
 
             // Update the cells
             SendVisitorToAllCells(UpdateNodeVisitor);
@@ -363,8 +374,9 @@ namespace Darklight.UnityExt.Matrix
 
         public void Reset()
         {
-            Clear();
-            _config.SetToDefaults();
+            _config = new Config();
+            _data = new Data(this);
+
             Preload();
         }
 
@@ -466,7 +478,7 @@ namespace Darklight.UnityExt.Matrix
         #region < PUBLIC_METHODS > [[ Draw Gizmos ]] ================================================================
         public void DrawGizmos()
         {
-            if (!_data.isInitialized) return;
+            if (!isInitialized) return;
             SendVisitorToAllCells(DrawDefaultGizmosVisitor);
         }
         #endregion

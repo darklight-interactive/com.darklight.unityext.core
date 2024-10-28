@@ -30,7 +30,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             }
 
             // Display default inspector properties
-            DrawDefaultInspector();
+            base.OnInspectorGUI();
 
             _serializedObject.ApplyModifiedProperties();
         }

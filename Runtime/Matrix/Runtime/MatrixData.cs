@@ -7,17 +7,23 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public class InternalData
+        public class Data
         {
-            [ShowOnly] public bool isPreloaded;
-            [ShowOnly] public bool isInitialized;
-            [ShowOnly] public Vector2Int originKey;
+            Matrix _matrix;
+
+
+            [Header("World Space Values")]
+            [ShowOnly] public Vector3 WorldPosition;
+
             public Node[] nodes;
+
+            public Data(Matrix matrix)
+            {
+
+            }
 
             public void Reset()
             {
-                isPreloaded = false;
-                isInitialized = false;
                 nodes = new Node[0];
             }
         }
