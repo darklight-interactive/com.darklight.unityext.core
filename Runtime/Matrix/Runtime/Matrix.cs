@@ -38,10 +38,17 @@ namespace Darklight.UnityExt.Matrix
 
         StateMachine _stateMachine = new StateMachine();
 
-        [Header("Data")]
+        [Header("SerializeData")]
         [SerializeField, ShowOnly] State _currentState;
         [SerializeField, ShowOnly] Vector3 _position;
         [SerializeField, ShowOnly] Vector3 _normal;
+
+        [Space(5)]
+        [SerializeField, ShowOnly] Vector2 _alignmentOffset;
+
+        [Space(5)]
+        [SerializeField, ShowOnly] Vector2Int _originKey;
+        [SerializeField, ShowOnly] Vector3 _originPosition;
 
         [Header("Context")]
         [SerializeField, HideIf("HasContextPreset"), AllowNesting] Context _context;
@@ -136,6 +143,11 @@ namespace Darklight.UnityExt.Matrix
 
             _position = _context.MatrixPosition;
             _normal = _context.MatrixNormal;
+
+            _alignmentOffset = _context.CalculateMatrixAlignmentOffset();
+
+            _originKey = _context.CalculateMatrixOriginKey();
+            _originPosition = _context.CalculateNodePositionFromKey(_originKey);
         }
 
         public void Reset()

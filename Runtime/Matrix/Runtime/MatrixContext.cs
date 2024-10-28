@@ -81,7 +81,6 @@ namespace Darklight.UnityExt.Matrix
             Validate();
         }
 
-
         public Context(int rows, int columns, Transform parent = null) : this(parent)
         {
             MatrixRows = rows > 0 ? rows : 1;
@@ -134,75 +133,72 @@ namespace Darklight.UnityExt.Matrix
             NodeBonding = new Vector2(0, 0);
         }
 
-        #region ---- < METHODS > ( Calculations ) --------------------------------- 
-        Vector2 CalculateAlignmentOffset()
+        #region ---- < PUBLIC_METHODS > ( Calculations ) --------------------------------- 
+
+        /// <summary>
+        /// Calculates the dimensions of the matrix in world space.
+        /// </summary>
+        /// <returns></returns>
+        public Vector2 CalculateMatrixDimensions()
         {
-            int rows = MatrixRows - 1;
-            int columns = MatrixColumns - 1;
-            Vector2 originOffset = Vector2.zero;
+            return new Vector2(
+                MatrixColumns * NodeDimensions.x,
+                MatrixRows * NodeDimensions.y
+            );
+        }
+
+        /// <summary>
+        /// Calculates the alignment offset of the matrix in world space,
+        /// based on the alignment setting and the dimensions of the matrix.
+        /// </summary>
+        /// <returns></returns>
+        public Vector2 CalculateMatrixAlignmentOffset()
+        {
+            Vector2 matrixDimensions = CalculateMatrixDimensions();
+            matrixDimensions -= NodeDimensions; // Subtract the dimensions of the origin cell
+
+            Vector2 alignmentOffset = Vector2.zero;
 
             switch (MatrixAlignment)
             {
                 case Alignment.BottomLeft:
-                    originOffset = Vector2.zero;
+                    alignmentOffset = new Vector2(0, 0);
                     break;
                 case Alignment.BottomCenter:
-                    originOffset = new Vector2(
-                        -columns * rows / 2,
-                        0
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, 0);
                     break;
                 case Alignment.BottomRight:
-                    originOffset = new Vector2(
-                        -columns * rows,
-                        0
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x, 0);
                     break;
                 case Alignment.MiddleLeft:
-                    originOffset = new Vector2(
-                        0,
-                        -rows * rows / 2
-                    );
+                    alignmentOffset = new Vector2(0, -matrixDimensions.y / 2);
                     break;
                 case Alignment.MiddleCenter:
-                    originOffset = new Vector2(
-                        -columns * rows / 2,
-                        -rows * rows / 2
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y / 2);
                     break;
                 case Alignment.MiddleRight:
-                    originOffset = new Vector2(
-                        -columns * rows,
-                        -rows * rows / 2
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y / 2);
                     break;
                 case Alignment.TopLeft:
-                    originOffset = new Vector2(
-                        0,
-                        -rows * rows
-                    );
+                    alignmentOffset = new Vector2(0, -matrixDimensions.y);
                     break;
                 case Alignment.TopCenter:
-                    originOffset = new Vector2(
-                        -columns * rows / 2,
-                        -rows * rows
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x / 2, -matrixDimensions.y);
                     break;
                 case Alignment.TopRight:
-                    originOffset = new Vector2(
-                        -columns * rows,
-                        -rows * rows
-                    );
+                    alignmentOffset = new Vector2(-matrixDimensions.x, -matrixDimensions.y);
                     break;
             }
-
-            return originOffset;
+            return alignmentOffset;
         }
 
-        public Vector2Int CalculateOriginKey()
+        /// <summary>
+        /// Calculates the origin node key of the matrix, based on the alignment setting.
+        /// </summary>
+        public Vector2Int CalculateMatrixOriginKey()
         {
-            int rows = MatrixRows - 1;
-            int columns = MatrixColumns - 1;
+            int maxRowIndex = MatrixRows - 1;
+            int maxColumnIndex = MatrixColumns - 1;
             Vector2Int originKey = Vector2Int.zero;
             switch (MatrixAlignment)
             {
@@ -210,52 +206,55 @@ namespace Darklight.UnityExt.Matrix
                     originKey = new Vector2Int(0, 0);
                     break;
                 case Alignment.BottomCenter:
-                    originKey = new Vector2Int(Mathf.FloorToInt(columns / 2), 0);
+                    originKey = new Vector2Int(Mathf.FloorToInt(maxColumnIndex / 2), 0);
                     break;
                 case Alignment.BottomRight:
-                    originKey = new Vector2Int(Mathf.FloorToInt(columns), 0);
+                    originKey = new Vector2Int(Mathf.FloorToInt(maxColumnIndex), 0);
                     break;
                 case Alignment.MiddleLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(rows / 2));
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(maxRowIndex / 2));
                     break;
                 case Alignment.MiddleCenter:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(columns / 2),
-                        Mathf.FloorToInt(rows / 2)
+                        Mathf.FloorToInt(maxColumnIndex / 2),
+                        Mathf.FloorToInt(maxRowIndex / 2)
                     );
                     break;
                 case Alignment.MiddleRight:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(columns),
-                        Mathf.FloorToInt(rows / 2)
+                        Mathf.FloorToInt(maxColumnIndex),
+                        Mathf.FloorToInt(maxRowIndex / 2)
                     );
                     break;
                 case Alignment.TopLeft:
-                    originKey = new Vector2Int(0, Mathf.FloorToInt(rows));
+                    originKey = new Vector2Int(0, Mathf.FloorToInt(maxRowIndex));
                     break;
                 case Alignment.TopCenter:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(columns / 2),
-                        Mathf.FloorToInt(rows)
+                        Mathf.FloorToInt(maxColumnIndex / 2),
+                        Mathf.FloorToInt(maxRowIndex)
                     );
                     break;
                 case Alignment.TopRight:
                     originKey = new Vector2Int(
-                        Mathf.FloorToInt(columns),
-                        Mathf.FloorToInt(rows)
+                        Mathf.FloorToInt(maxColumnIndex),
+                        Mathf.FloorToInt(maxRowIndex)
                     );
                     break;
             }
             return originKey;
         }
 
+        /// <summary>
+        /// Calculates the world position of a node based on its key.
+        /// </summary>
         public Vector3 CalculateNodePositionFromKey(Vector2Int key)
         {
             // Calculate the node position offset in world space based on dimensions
             Vector2 keyOffsetPos = key * NodeDimensions;
 
             // Calculate the origin position offset in world space based on alignment
-            Vector2 originOffset = CalculateAlignmentOffset();
+            Vector2 originOffset = CalculateMatrixAlignmentOffset();
 
             // Calculate the spacing offset and clamp to avoid overlapping cells
             Vector2 spacingOffsetPos = NodeSpacing + Vector2.one;
@@ -282,9 +281,12 @@ namespace Darklight.UnityExt.Matrix
             return MatrixPosition + (rotation * transformedPosition);
         }
 
+        /// <summary>
+        /// Calculates the node coordinate of a node based on its key.
+        /// </summary>
         public Vector2Int CalculateNodeCoordinateFromKey(Vector2Int key)
         {
-            Vector2Int originKey = CalculateOriginKey();
+            Vector2Int originKey = CalculateMatrixOriginKey();
             return key - originKey;
         }
         #endregion
