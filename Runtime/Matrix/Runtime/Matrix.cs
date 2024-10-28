@@ -17,36 +17,47 @@ using UnityEditor;
 
 namespace Darklight.UnityExt.Matrix
 {
+    public enum Alignment
+    {
+        TopLeft, TopCenter, TopRight,
+        MiddleLeft, MiddleCenter, MiddleRight,
+        BottomLeft, BottomCenter, BottomRight
+    }
+
+    public enum State { INVALID, PRELOADED, INITIALIZED }
+
     [ExecuteAlways]
     public partial class Matrix : MonoBehaviour
     {
         const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
 
+        class StateMachine : SimpleStateMachine<State>
+        {
+            public StateMachine() : base(State.INVALID) { }
+        }
+
         StateMachine _stateMachine = new StateMachine();
 
+        [Header("Data")]
         [SerializeField, ShowOnly] State _currentState;
         [SerializeField, ShowOnly] Vector3 _position;
         [SerializeField, ShowOnly] Quaternion _rotation;
         [SerializeField, ShowOnly] Vector3 _normal;
 
-
         [Header("Context")]
-        [SerializeField, DisableIf("HasConfigPreset"), AllowNesting]
-        Context _context = new Context(Alignment.MiddleCenter, 3, 3);
+        [SerializeField, HideIf("HasContextPreset"), AllowNesting] Context _context = new Context(Alignment.MiddleCenter, 3, 3);
         [SerializeField, Expandable] MatrixContextPreset _contextPreset;
 
         [Header("Map")]
         [SerializeField] NodeMap _map;
 
-        public bool HasConfigPreset => _contextPreset != null;
-
-        Node.Visitor UpdateNodeVisitor => new Node.Visitor(node =>
+        Node.Visitor UpdateNodeContextVisitor => new Node.Visitor(node =>
         {
+            node.UpdateContext(GetContext());
             return true;
         });
 
         Node.Visitor DrawGizmosVisitor;
-
         Node.Visitor DrawGizmosSelectedVisitor = new Node.Visitor(node =>
         {
             node.GetWorldSpaceValues(out Vector3 position, out Vector2 dimensions, out Vector3 normal);
@@ -54,6 +65,9 @@ namespace Darklight.UnityExt.Matrix
             CustomGizmos.DrawLabel(node.Key.ToString(), position, CustomGUIStyles.CenteredStyle);
             return true;
         });
+
+        public State CurrentState => _currentState = _stateMachine.CurrentState;
+        public bool HasContextPreset => _contextPreset != null;
 
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
@@ -65,32 +79,33 @@ namespace Darklight.UnityExt.Matrix
         void OnValidate() => Refresh();
         #endregion
 
-        #region < PROTECTED_METHODS > [[ Internal Runtime ]] ================================================================
-        protected void Preload()
+        #region < NONPUBLIC_METHODS > [[ Internal Runtime ]] ================================================================
+        protected void OnStateChanged(State state)
+        {
+            _currentState = state;
+            Debug.Log($"OnStateChanged: Current State: {state}");
+        }
+
+        public void Preload()
         {
             if (_stateMachine == null)
             {
                 _stateMachine = new StateMachine();
                 _stateMachine.OnStateChanged += OnStateChanged;
             }
-            _stateMachine.GoToState(State.INVALID);
+
+
 
             // Create a new cell map
-            _map = new NodeMap(_context);
-
+            _map = new NodeMap(this);
 
             // Determine if the grid was preloaded
             _stateMachine.GoToState(State.PRELOADED);
         }
 
-        protected void Initialize()
+        public void Initialize()
         {
             _stateMachine.GoToState(State.INITIALIZED);
-        }
-
-        protected void OnStateChanged(State state)
-        {
-            _currentState = state;
         }
         #endregion
 
@@ -98,7 +113,12 @@ namespace Darklight.UnityExt.Matrix
 
         public Context GetContext()
         {
-            _context.MatrixNormal = transform.up;
+            if (_contextPreset != null && !_context.Equals(_contextPreset.ToData()))
+                _context = _contextPreset.ToData();
+
+            if (_context.IsValid() == false)
+                _context.Validate();
+
             return _context;
         }
 
@@ -110,25 +130,7 @@ namespace Darklight.UnityExt.Matrix
 
         public void Refresh()
         {
-            if (_stateMachine.CurrentState == State.INVALID)
-            {
-                Preload();
-                return;
-            }
-            else if (_stateMachine.CurrentState == State.PRELOADED)
-            {
-                Initialize();
-                return;
-            }
-
-            if (_contextPreset != null)
-                _context = _contextPreset.ToData();
-
-            // Resize the grid if the dimensions have changed
             _map.Refresh();
-
-            // Update the cells
-            SendVisitorToAllNodes(UpdateNodeVisitor);
         }
 
         public void Reset()
@@ -160,20 +162,20 @@ namespace Darklight.UnityExt.Matrix
         }
         #endregion
 
-
-
-        public enum State { INVALID, PRELOADED, INITIALIZED }
-        class StateMachine : SimpleStateMachine<State>
+        public static void SendVisitorToNode(Node node, IVisitor<Node> visitor)
         {
-            public StateMachine() : base(State.INVALID) { }
+            if (node == null) return;
+            if (visitor == null) return;
+
+            node.Accept(visitor);
         }
 
-        public enum Alignment
+        public static void SendVisitorToNodes(List<Node> nodes, IVisitor<Node> visitor)
         {
-            TopLeft, TopCenter, TopRight,
-            MiddleLeft, MiddleCenter, MiddleRight,
-            BottomLeft, BottomCenter, BottomRight
-        }
+            if (nodes == null || nodes.Count == 0) return;
+            if (visitor == null) return;
 
+            foreach (Node node in nodes) node.Accept(visitor);
+        }
     }
 }

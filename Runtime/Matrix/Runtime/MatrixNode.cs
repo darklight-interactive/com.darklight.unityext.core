@@ -49,12 +49,26 @@ namespace Darklight.UnityExt.Matrix
             {
                 _ctx = ctx;
                 _key = key;
+                Refresh();
             }
 
             // (( INTERFACE )) : IVisitable -------- ))
             public void Accept(IVisitor<Node> visitor)
             {
                 visitor.Visit(this);
+            }
+
+            public void UpdateContext(Context context)
+            {
+                _ctx = context;
+                Refresh();
+            }
+
+            public void Refresh()
+            {
+                _position = _ctx.CalculateNodePositionFromKey(_key);
+                _coordinate = _ctx.CalculateNodeCoordinateFromKey(_key);
+                _dimensions = _ctx.NodeDimensions;
             }
 
             // (( GETTERS )) -------- ))

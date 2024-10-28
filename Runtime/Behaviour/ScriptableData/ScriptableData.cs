@@ -9,18 +9,23 @@ namespace Darklight.UnityExt.Behaviour
     public abstract class ScriptableData<T> : ScriptableDataBase
         where T : new()
     {
-        [SerializeField] private T _data = default;
-
-        public virtual void SetData(T data) => _data = data;
-        public virtual T ToData() => _data;
+        [SerializeField] protected T data = default;
+        public virtual void SetData(T data) => this.data = data;
+        public virtual T ToData() => data;
 
         public virtual void Refresh()
         {
             // Ensure the data is initialized. Structs are never null; classes can be initialized here.
-            if (typeof(T).IsClass && _data == null)
+            if (typeof(T).IsClass && data == null)
             {
-                _data = new T();
+                data = new T();
             }
+        }
+
+        // Implicit conversion to T
+        public static implicit operator T(ScriptableData<T> scriptableData)
+        {
+            return scriptableData.ToData();
         }
     }
 }

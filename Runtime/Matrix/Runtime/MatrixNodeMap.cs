@@ -12,6 +12,7 @@ namespace Darklight.UnityExt.Matrix
         [System.Serializable]
         public class NodeMap
         {
+            Matrix _matrix;
             Context _ctx;
             Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
 
@@ -36,9 +37,10 @@ namespace Darklight.UnityExt.Matrix
 
             public Action OnUpdate;
 
-            public NodeMap(Context context)
+            public NodeMap(Matrix matrix)
             {
-                _ctx = context;
+                _matrix = matrix;
+                _ctx = _matrix.GetContext();
                 _map = new Dictionary<Vector2Int, Node>();
                 Refresh();
             }
@@ -105,175 +107,26 @@ namespace Darklight.UnityExt.Matrix
                 return nodes;
             }
 
-            public void UpdateContext(Context context)
-            {
-                _ctx = context;
-                Refresh();
-            }
-
             public void Refresh()
             {
                 if (_map == null)
                     _map = new Dictionary<Vector2Int, Node>();
+                if (_matrix == null) return;
 
-                if (IsDirty()) Clean();
-
-                _nodes = new List<Node>(_map.Values);
-            }
-
-
-            static Vector2 CalculateAlignmentOffset(Context ctx)
-            {
-                int rows = ctx.MatrixRows - 1;
-                int columns = ctx.MatrixColumns - 1;
-                Vector2 originOffset = Vector2.zero;
-
-                switch (ctx.MatrixAlignment)
+                if (_matrix.GetContext().Equals(_ctx) == false)
                 {
-                    case Matrix.Alignment.BottomLeft:
-                        originOffset = Vector2.zero;
-                        break;
-                    case Matrix.Alignment.BottomCenter:
-                        originOffset = new Vector2(
-                            -columns * rows / 2,
-                            0
-                        );
-                        break;
-                    case Matrix.Alignment.BottomRight:
-                        originOffset = new Vector2(
-                            -columns * rows,
-                            0
-                        );
-                        break;
-                    case Matrix.Alignment.MiddleLeft:
-                        originOffset = new Vector2(
-                            0,
-                            -rows * rows / 2
-                        );
-                        break;
-                    case Matrix.Alignment.MiddleCenter:
-                        originOffset = new Vector2(
-                            -columns * rows / 2,
-                            -rows * rows / 2
-                        );
-                        break;
-                    case Matrix.Alignment.MiddleRight:
-                        originOffset = new Vector2(
-                            -columns * rows,
-                            -rows * rows / 2
-                        );
-                        break;
-                    case Matrix.Alignment.TopLeft:
-                        originOffset = new Vector2(
-                            0,
-                            -rows * rows
-                        );
-                        break;
-                    case Matrix.Alignment.TopCenter:
-                        originOffset = new Vector2(
-                            -columns * rows / 2,
-                            -rows * rows
-                        );
-                        break;
-                    case Matrix.Alignment.TopRight:
-                        originOffset = new Vector2(
-                            -columns * rows,
-                            -rows * rows
-                        );
-                        break;
+                    _ctx = _matrix.GetContext();
+                    Matrix.SendVisitorToNodes(_nodes, _matrix.UpdateNodeContextVisitor);
+                    _nodes = new List<Node>(_map.Values);
                 }
 
-                return originOffset;
+                if (IsDirty())
+                    Clean();
+
+                Debug.Log("MatrixNodeMap: Refresh: " + _map.Count);
             }
 
-            static Vector2Int CalculateOriginKey(Context ctx)
-            {
-                int rows = ctx.MatrixRows - 1;
-                int columns = ctx.MatrixColumns - 1;
-                Vector2Int originKey = Vector2Int.zero;
-                switch (ctx.MatrixAlignment)
-                {
-                    case Matrix.Alignment.BottomLeft:
-                        originKey = new Vector2Int(0, 0);
-                        break;
-                    case Matrix.Alignment.BottomCenter:
-                        originKey = new Vector2Int(Mathf.FloorToInt(columns / 2), 0);
-                        break;
-                    case Matrix.Alignment.BottomRight:
-                        originKey = new Vector2Int(Mathf.FloorToInt(columns), 0);
-                        break;
-                    case Matrix.Alignment.MiddleLeft:
-                        originKey = new Vector2Int(0, Mathf.FloorToInt(rows / 2));
-                        break;
-                    case Matrix.Alignment.MiddleCenter:
-                        originKey = new Vector2Int(
-                            Mathf.FloorToInt(columns / 2),
-                            Mathf.FloorToInt(rows / 2)
-                        );
-                        break;
-                    case Matrix.Alignment.MiddleRight:
-                        originKey = new Vector2Int(
-                            Mathf.FloorToInt(columns),
-                            Mathf.FloorToInt(rows / 2)
-                        );
-                        break;
-                    case Matrix.Alignment.TopLeft:
-                        originKey = new Vector2Int(0, Mathf.FloorToInt(rows));
-                        break;
-                    case Matrix.Alignment.TopCenter:
-                        originKey = new Vector2Int(
-                            Mathf.FloorToInt(columns / 2),
-                            Mathf.FloorToInt(rows)
-                        );
-                        break;
-                    case Matrix.Alignment.TopRight:
-                        originKey = new Vector2Int(
-                            Mathf.FloorToInt(columns),
-                            Mathf.FloorToInt(rows)
-                        );
-                        break;
-                }
-                return originKey;
-            }
 
-            public static Vector3 CalculateNodePosition(Context ctx, Vector2Int key)
-            {
-                // Calculate the node position offset in world space based on dimensions
-                Vector2 keyOffsetPos = key * ctx.NodeDimensions;
-
-                // Calculate the origin position offset in world space based on alignment
-                Vector2 originOffset = CalculateAlignmentOffset(ctx);
-
-                // Calculate the spacing offset and clamp to avoid overlapping cells
-                Vector2 spacingOffsetPos = ctx.NodeSpacing + Vector2.one;
-                spacingOffsetPos.x = Mathf.Clamp(spacingOffsetPos.x, 0.5f, float.MaxValue);
-                spacingOffsetPos.y = Mathf.Clamp(spacingOffsetPos.y, 0.5f, float.MaxValue);
-
-                // Calculate bonding offsets
-                Vector2 bondingOffset = Vector2.zero;
-                if (key.y % 2 == 0)
-                    bondingOffset.x = ctx.NodeBonding.x;
-                if (key.x % 2 == 0)
-                    bondingOffset.y = ctx.NodeBonding.y;
-
-                Vector2 cellPosition = keyOffsetPos + originOffset;
-                cellPosition *= spacingOffsetPos;
-                cellPosition += bondingOffset;
-
-                // Apply a scale transformation that flips the x-axis
-                Vector3 scale = new Vector3(-1, 1, 1);  // Inverts the x-axis
-                Vector3 transformedPosition = Vector3.Scale(new Vector3(cellPosition.x, cellPosition.y, 0), scale);
-
-                // Apply rotation based on grid's normal and return the final world position
-                Quaternion rotation = Quaternion.LookRotation(ctx.MatrixNormal, Vector3.forward);
-                return ctx.MatrixPosition + (rotation * transformedPosition);
-            }
-
-            public static Vector2Int CalculateNodeCoordinateFromKey(Context ctx, Vector2Int key)
-            {
-                Vector2Int originKey = CalculateOriginKey(ctx);
-                return key - originKey;
-            }
         }
     }
 

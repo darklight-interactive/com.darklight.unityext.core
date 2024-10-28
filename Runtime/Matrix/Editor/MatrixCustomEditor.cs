@@ -20,14 +20,23 @@ namespace Darklight.UnityExt.Matrix.Editor
 
         protected virtual void DrawButtons()
         {
-                        // Add a button to open the Matrix Editor Window
+            // Add a button to open the Matrix Editor Window
             if (GUILayout.Button("Open Matrix Editor"))
             {
                 // Open the MatrixEditorWindow and pass the current Matrix instance
                 MatrixEditorWindow.ShowWindow(_script);
             }
 
-            if (_script.HasConfigPreset == false && GUILayout.Button("ExtractConfigToPreset"))
+            if (_script.CurrentState == State.INVALID && GUILayout.Button("Preload"))
+            {
+                _script.Preload();
+            }
+            else if (_script.CurrentState == State.PRELOADED && GUILayout.Button("Initialize"))
+            {
+                _script.Initialize();
+            }
+
+            if (_script.HasContextPreset == false && GUILayout.Button("Create Context Preset"))
             {
                 _script.ExtractConfigToPreset("DefaultMatrixConfigPreset");
             }
@@ -36,6 +45,8 @@ namespace Darklight.UnityExt.Matrix.Editor
         public override void OnInspectorGUI()
         {
             _serializedObject.Update();
+            _script = (Matrix)target;
+
             DrawButtons();
             DrawPropertiesExcluding(serializedObject, "m_Script");
 
