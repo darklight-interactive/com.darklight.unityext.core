@@ -35,11 +35,6 @@ namespace Darklight.UnityExt.Matrix.Editor
             {
                 _script.Initialize();
             }
-
-            if (_script.HasContextPreset == false && GUILayout.Button("Create Context Preset"))
-            {
-                _script.ExtractConfigToPreset("DefaultMatrixConfigPreset");
-            }
         }
 
         public override void OnInspectorGUI()

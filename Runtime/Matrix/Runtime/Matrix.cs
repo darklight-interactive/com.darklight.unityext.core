@@ -29,8 +29,6 @@ namespace Darklight.UnityExt.Matrix
     [ExecuteAlways]
     public partial class Matrix : MonoBehaviour
     {
-        const string ASSET_PATH = "Assets/Resources/Darklight/Matrix";
-
         class StateMachine : SimpleStateMachine<State>
         {
             public StateMachine() : base(State.INVALID) { }
@@ -51,21 +49,19 @@ namespace Darklight.UnityExt.Matrix
         [SerializeField, ShowOnly] Vector2Int _originKey;
         [SerializeField, ShowOnly] Vector3 _originPosition;
 
-        [Header("Context")]
-        [SerializeField, HideIf("HasContextPreset"), AllowNesting] Context _context;
-        [SerializeField, Expandable] MatrixContextPreset _contextPreset;
+
 
         [Header("Map")]
-        [SerializeField] NodeMap _map;
+        [SerializeField] Map _map;
 
-        Node.Visitor UpdateNodeContextVisitor => new Node.Visitor(node =>
+        public Node.Visitor UpdateNodeContextVisitor => new Node.Visitor(node =>
         {
-            node.UpdateContext(GetContext());
+            node.UpdateContext(_map.Info);
             return true;
         });
 
-        Node.Visitor DrawGizmosVisitor;
-        Node.Visitor DrawGizmosSelectedVisitor = new Node.Visitor(node =>
+        public Node.Visitor DrawGizmosVisitor;
+        public Node.Visitor DrawGizmosSelectedVisitor = new Node.Visitor(node =>
         {
             CustomGizmos.DrawWireRect(node.Position, node.Dimensions, node.Rotation, Color.white);
             CustomGizmos.DrawLabel(node.Key.ToString(), node.Position, CustomGUIStyles.CenteredStyle);
@@ -73,9 +69,7 @@ namespace Darklight.UnityExt.Matrix
         });
 
         public State CurrentState => _currentState = _stateMachine.CurrentState;
-        public NodeMap Map => _map;
-        public bool HasContextPreset => _contextPreset != null;
-
+        public MapInfo MapInfo => _map.Info;
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
         void Awake() => Preload();
@@ -103,11 +97,8 @@ namespace Darklight.UnityExt.Matrix
                 _stateMachine.OnStateChanged += OnStateChanged;
             }
 
-            // Set the context parent
-            _context = new Context(this.transform);
-
             // Create a new cell map
-            _map = new NodeMap(this);
+            _map = new Map();
 
             // Determine if the grid was preloaded
             _stateMachine.GoToState(State.PRELOADED);
@@ -121,33 +112,11 @@ namespace Darklight.UnityExt.Matrix
 
         #region < PUBLIC_METHODS > [[ Matrix Handlers ]] ================================================================ 
 
-        public Context GetContext()
-        {
-            if (_contextPreset != null && !_context.Equals(_contextPreset.ToData()))
-                _context = _contextPreset.ToData();
-            
-            _context.Validate();
 
-            return _context;
-        }
-
-        public void ExtractConfigToPreset(string name)
-        {
-            _contextPreset = ScriptableObjectUtility.CreateOrLoadScriptableObject<MatrixContextPreset>(ASSET_PATH, name);
-            _contextPreset.SetData(_context);
-        }
 
         public void Refresh()
         {
             _map.Refresh();
-
-            _position = _context.MatrixPosition;
-            _rotation = _context.MatrixRotation;
-            _normal = _context.MatrixNormal;
-
-            _alignmentOffset = _context.CalculateMatrixAlignmentOffset();
-
-            _originKey = _context.CalculateMatrixOriginKey();
         }
 
         public void Reset()
