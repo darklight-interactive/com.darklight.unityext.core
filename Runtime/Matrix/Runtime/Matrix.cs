@@ -27,7 +27,7 @@ namespace Darklight.UnityExt.Matrix
     public enum State { INVALID, PRELOADED, INITIALIZED }
 
     [ExecuteAlways]
-    public partial class Matrix : MonoBehaviour
+    public class Matrix : MonoBehaviour
     {
         class StateMachine : SimpleStateMachine<State>
         {
@@ -49,14 +49,12 @@ namespace Darklight.UnityExt.Matrix
         [SerializeField, ShowOnly] Vector2Int _originKey;
         [SerializeField, ShowOnly] Vector3 _originPosition;
 
-
-
         [Header("Map")]
         [SerializeField] Map _map;
 
         public Node.Visitor UpdateNodeContextVisitor => new Node.Visitor(node =>
         {
-            node.UpdateContext(_map.Info);
+            node.Refresh();
             return true;
         });
 
@@ -73,20 +71,25 @@ namespace Darklight.UnityExt.Matrix
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
         void Awake() => Preload();
-        void Start() => Initialize();
-        void Update() => Refresh();
+        void Start() {}
+        void Update() {}
         void OnDrawGizmos() => SendVisitorToAllNodes(DrawGizmosVisitor);
         void OnDrawGizmosSelected() => SendVisitorToAllNodes(DrawGizmosSelectedVisitor);
-        void OnValidate() => Refresh();
+        void OnValidate() {}
         void OnEnable() {}
         void OnDisable() {}
         void OnDestroy() {}
         #endregion
 
-        #region < PUBLIC_METHODS > [[ Internal Runtime ]] ================================================================
         void OnStateChanged(State state)
         {
             _currentState = state;
+        }
+
+        public void OnValueChanged()
+        {
+            _map.Refresh();
+            SendVisitorToAllNodes(UpdateNodeContextVisitor);
         }
 
         public void Preload()
@@ -98,33 +101,11 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // Create a new cell map
-            _map = new Map();
+            _map = new Map(this);
 
             // Determine if the grid was preloaded
             _stateMachine.GoToState(State.PRELOADED);
         }
-
-        public void Initialize()
-        {
-            _stateMachine.GoToState(State.INITIALIZED);
-        }
-        #endregion
-
-        #region < PUBLIC_METHODS > [[ Matrix Handlers ]] ================================================================ 
-
-
-
-        public void Refresh()
-        {
-            _map.Refresh();
-        }
-
-        public void Reset()
-        {
-            Preload();
-        }
-
-        #endregion
 
         #region < PUBLIC_METHODS > [[ Visitor Handlers ]] ================================================================ 
         public void SendVisitorToNode(Vector2Int key, IVisitor<Node> visitor)

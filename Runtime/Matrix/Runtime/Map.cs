@@ -13,12 +13,12 @@ namespace Darklight.UnityExt.Matrix
 {
     [System.Serializable]
     public class Map
-    {        
+    {
+        Matrix _matrix;
         Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
-        bool _keysCacheDirty = true;
-        bool _nodesCacheDirty = true;
+        bool _cacheIsDirty = true;
 
-        [SerializeField] MapInfo _info;
+        [SerializeField, AllowNesting] MapInfo _info;
         [SerializeField] List<Vector2Int> _cachedKeys;
         [SerializeField] List<Node> _cachedNodes;
 
@@ -28,32 +28,20 @@ namespace Darklight.UnityExt.Matrix
         {
             get
             {
-                if (_keysCacheDirty || _cachedKeys == null)
+                if (_cacheIsDirty || _cachedKeys == null)
                 {
                     _cachedKeys = new List<Vector2Int>(_map.Keys);
-                    _keysCacheDirty = false;
+                    _cacheIsDirty = false;
                 }
                 return _cachedKeys;
             }
         }
-        public List<Node> Nodes
-        {
-            get
-            {
-                if (_nodesCacheDirty || _cachedNodes == null)
-                {
-                    _cachedNodes = new List<Node>(_map.Values);
-                    _nodesCacheDirty = false;
-                }
-                return _cachedNodes;
-            }
-        }
+        public List<Node> Nodes => _cachedNodes;
 
-        public Action OnUpdate;
-
-        public Map()
+        public Map(Matrix matrix)
         {
-            _info = MapInfo.GetDefault();
+            _matrix = matrix;
+            _info = MapInfo.GetDefault(_matrix.transform);
             Refresh();
         }
 
@@ -62,18 +50,21 @@ namespace Darklight.UnityExt.Matrix
         {
             if (_map.ContainsKey(key)) return;
             _map[key] = new Node(_info, key);
-            _keysCacheDirty = true;
+            _cacheIsDirty = true;
         }
 
         void RemoveNode(Vector2Int key)
         {
             if (!_map.ContainsKey(key)) return;
             _map.Remove(key);
-            _keysCacheDirty = true;
+            _cacheIsDirty = true;
         }
 
         void Clean()
         {
+            if (_map == null)
+                _map = new Dictionary<Vector2Int, Node>();
+
             // << REMOVE OUT OF BOUNDS NODES >>
             foreach (var key in new List<Vector2Int>(_map.Keys))
             {
@@ -90,6 +81,16 @@ namespace Darklight.UnityExt.Matrix
                 {
                     AddNode(new Vector2Int(x, y));
                 }
+            }
+        }
+        
+        void UpdateCache()
+        {
+            if (_cacheIsDirty || _cachedKeys == null || _cachedNodes == null)
+            {
+                _cachedKeys = new List<Vector2Int>(_map.Keys);
+                _cachedNodes = new List<Node>(_map.Values);
+                _cacheIsDirty = false;
             }
         }
         #endregion
@@ -115,8 +116,10 @@ namespace Darklight.UnityExt.Matrix
 
         public void Refresh()
         {
+            _info.Validate();
+
             Clean();
-            OnUpdate?.Invoke();
+            UpdateCache();
         }
 
         #region < PUBLIC_CLASS > [[ Context Preset ]] ================================================================ 

@@ -116,18 +116,6 @@ namespace Darklight.UnityExt.Matrix.Editor
             {
                 EditorGUILayout.HelpBox("Please assign a target Matrix object.", MessageType.Warning);
             }
-
-            if (GUILayout.Button("Refresh"))
-            {
-                _matrix.Refresh();
-                Repaint();
-            }
-
-            if (GUILayout.Button("Reset"))
-            {
-                _matrix.Reset();
-                Repaint();
-            }
         }
 
         void OnSceneGUI(SceneView sceneView)

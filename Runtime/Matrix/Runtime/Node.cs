@@ -17,7 +17,7 @@ namespace Darklight.UnityExt.Matrix
     [System.Serializable]
     public class Node : IVisitable<Node>
     {
-        MapInfo _ctx;
+        MapInfo _mapInfo;
         [SerializeField, ShowOnly] Vector2Int _key = Vector2Int.zero;
         [SerializeField, ShowOnly] Vector2Int _coordinate = Vector2Int.zero;
 
@@ -47,7 +47,7 @@ namespace Darklight.UnityExt.Matrix
         // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
         public Node(MapInfo ctx, Vector2Int key)
         {
-            _ctx = ctx;
+            _mapInfo = ctx;
             _key = key;
             Refresh();
         }
@@ -58,20 +58,13 @@ namespace Darklight.UnityExt.Matrix
             visitor.Visit(this);
         }
 
-        public void UpdateContext(MapInfo context)
-        {
-            _ctx = context;
-            Refresh();
-        }
-
         public void Refresh()
         {
-            _coordinate = _ctx.CalculateNodeCoordinateFromKey(_key);
-
-            _ctx.CalculateNodeTransformFromKey(_key, out _position, out _rotation);
+            _coordinate = _mapInfo.CalculateNodeCoordinateFromKey(_key);
+            _mapInfo.CalculateNodeTransformFromKey(_key, out _position, out _rotation);
             //_normal = _ctx.CalculateNormal();
 
-            _dimensions = _ctx.NodeDimensions;
+            _dimensions = _mapInfo.NodeDimensions;
         }
 
         #region < PUBLIC_CLASS > [[ Visitor ]] ================================================================ 
