@@ -36,13 +36,11 @@ namespace Darklight.UnityExt.Matrix.Editor
         public override void OnInspectorGUI()
         {
             _serializedObject.Update();
-
             DrawButtons();
-
-            // Display default inspector properties
-            base.OnInspectorGUI();
+            DrawPropertiesExcluding(serializedObject, "m_Script");
 
             _serializedObject.ApplyModifiedProperties();
+
         }
     }
 }

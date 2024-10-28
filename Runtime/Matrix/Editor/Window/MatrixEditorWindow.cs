@@ -36,14 +36,14 @@ public class MatrixEditorWindow : EditorWindow
         CustomGizmos.DrawSolidRect(position, dimensions, normal, color);
 
         // << DRAW BUTTON >>
-        float size = node.Data.SizeAvg * 0.25f;
+        float size = node.AverageSpan;
         CustomGizmos.DrawButtonHandle(position, size, normal, color, () =>
             {
                 SetSelectedNode(node);
             }, Handles.DotHandleCap);
 
         // << DRAW LABEL >>
-        CustomGizmos.DrawLabel($"{node.Data.Key}", position, new GUIStyle()
+        CustomGizmos.DrawLabel($"{node.Key}", position, new GUIStyle()
         {
             normal = new GUIStyleState()
             {
@@ -100,11 +100,11 @@ public class MatrixEditorWindow : EditorWindow
             }
             else
             {
-                EditorGUILayout.LabelField($"Selected Node: {_selectedNode.Data.Key}");
+                EditorGUILayout.LabelField($"Selected Node: {_selectedNode.Key}");
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Node Data");
 
-                CustomInspectorGUI.DrawClassAsShowOnly(_selectedNode.Data, ref _selectedNodeIsExpanded);
+                CustomInspectorGUI.DrawClassAsShowOnly(_selectedNode, ref _selectedNodeIsExpanded);
             }
 
             _serializedMatrixObject.ApplyModifiedProperties(); // Apply any changes made in the GUI
@@ -132,7 +132,7 @@ public class MatrixEditorWindow : EditorWindow
         if (_matrix == null) return;
         if (_matrix.isActiveAndEnabled == false) return;
 
-        _matrix.SendVisitorToAllCells(SceneGUINodeVisitor);
+        _matrix.SendVisitorToAllNodes(SceneGUINodeVisitor);
 
         // Repaint the scene view to update the handles in real-time
         sceneView.Repaint();
@@ -143,7 +143,7 @@ public class MatrixEditorWindow : EditorWindow
         _selectedNode = node;
         Repaint();
 
-        Debug.Log($"{WINDOW_NAME}: SetSelectedNode: " + node.Data.Key);
+        Debug.Log($"{WINDOW_NAME}: SetSelectedNode: " + node.Key);
     }
 }
 #endif

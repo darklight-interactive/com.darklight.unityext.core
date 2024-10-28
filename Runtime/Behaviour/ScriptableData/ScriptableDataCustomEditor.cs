@@ -1,51 +1,51 @@
+using System;
+
+using Darklight.UnityExt.Editor;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour.Editor
 {
-
 #if UNITY_EDITOR
-
-    using System;
-
-    using Darklight.UnityExt.Editor;
-
-    using UnityEditor;
-
-    using UnityEngine;
 
     [CustomEditor(typeof(ScriptableDataBase), true)]
     public class ScriptableDataCustomEditor : UnityEditor.Editor
     {
-        Type _dataType;
-
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            SerializedProperty dataProperty = serializedObject.FindProperty("_data");
-            _dataType = target.GetType().BaseType.GetGenericArguments()[0];
 
+            // Determine if we're dealing with a class or a struct in T
+            Type dataType = target.GetType().BaseType?.GetGenericArguments()[0];
+            bool isClassType = dataType?.IsClass ?? false;
+
+            // Choose the appropriate SerializedProperty based on type
+            SerializedProperty dataProperty = serializedObject.FindProperty(isClassType ? "_dataClass" : "_dataStruct");
             if (dataProperty == null)
             {
-                EditorGUILayout.HelpBox("Could not find _data property.", MessageType.Error);
+                EditorGUILayout.HelpBox("Could not find the correct data property.", MessageType.Error);
                 return;
             }
 
-            // << CREATE DATA >> -------------------------- //
-            if (dataProperty.managedReferenceValue == null)
+            // << Create or Draw Data >>
+            // Check if _data is null and if it's a struct, assign a new instance by default.
+            if (isClassType && dataProperty.managedReferenceValue == null)
             {
-                var newData = Activator.CreateInstance(_dataType);
-                dataProperty.managedReferenceValue = newData;
-                serializedObject.ApplyModifiedProperties();
-                EditorUtility.SetDirty(target);
-            }
-            else
-            {
-                // Draw the data's fields directly
-                CustomInspectorGUI.DrawAllFieldsInProperty(dataProperty);
+                if (dataType.IsValueType || dataType != typeof(UnityEngine.Object))
+                {
+                    dataProperty.managedReferenceValue = Activator.CreateInstance(dataType);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("_data is null and can't be initialized.", MessageType.Warning);
+                }
             }
 
-            Debug.Log("ScriptableDataCustomEditor OnInspectorGUI");
-
+            CustomInspectorGUI.DrawAllFieldsInProperty(dataProperty);
             serializedObject.ApplyModifiedProperties();
+
         }
     }
 #endif

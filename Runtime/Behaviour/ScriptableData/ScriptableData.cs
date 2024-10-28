@@ -2,26 +2,36 @@ using System;
 
 using UnityEngine;
 
-#if UNITY_EDITOR
-
-#endif
-
 namespace Darklight.UnityExt.Behaviour
 {
     public abstract class ScriptableDataBase : ScriptableObject { }
+
     public abstract class ScriptableData<T> : ScriptableDataBase
-        where T : class
+        where T : new()
     {
-        [SerializeReference] T _data = default;
-        
-        public virtual void SetData(T data) => _data = data;
-        public virtual T ToData() => _data;
+        // Use [SerializeReference] only if T is a class
+        [SerializeReference] T _dataClass = default;
+        [SerializeField] T _dataStruct = default;
+        bool IsClassType => typeof(T).IsClass;
+
+        public void SetData(T data)
+        {
+            if (IsClassType) _dataClass = data;
+            else _dataStruct = data;
+        }
+
+        public T ToData() => IsClassType ? _dataClass : _dataStruct;
 
         public virtual void Refresh()
         {
-            if (_data == null)
-                _data = Activator.CreateInstance<T>();
+            if (IsClassType)
+            {
+                if (_dataClass == null) _dataClass = new T();
+            }
+            else
+            {
+                _dataStruct = new T(); // Structs are non-nullable, so this resets to default.
+            }
         }
     }
 }
-

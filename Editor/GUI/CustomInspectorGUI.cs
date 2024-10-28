@@ -19,33 +19,6 @@ namespace Darklight.UnityExt.Editor
 		static Dictionary<string, bool> foldoutStates = new Dictionary<string, bool>();
 
 		/// <summary>
-		/// Draws the default inspector for a SerializedObject, excluding the m_Script property.
-		/// </summary>
-		/// <param name="obj">
-		/// 		The SerializedObject to draw the inspector for.
-		/// </param>
-		public static bool DrawDefaultInspectorWithoutSelfReference(SerializedObject obj)
-		{
-			EditorGUI.BeginChangeCheck();
-			obj.UpdateIfRequiredOrScript();
-			SerializedProperty iterator = obj.GetIterator();
-			iterator.NextVisible(true); // skip first property
-			bool enterChildren = true;
-			while (iterator.NextVisible(enterChildren))
-			{
-				using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath))
-				{
-					EditorGUILayout.PropertyField(iterator, true);
-				}
-
-				enterChildren = false;
-			}
-
-			obj.ApplyModifiedProperties();
-			return EditorGUI.EndChangeCheck();
-		}
-
-		/// <summary>
 		/// Focuses the Scene view on a specific point in 3D space.
 		/// </summary>
 		/// <param name="focusPoint">
@@ -142,10 +115,10 @@ namespace Darklight.UnityExt.Editor
 		/// Draws all fields in the given SerializedProperty.
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
-		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllFieldsInProperty(SerializedProperty property)
+		/// <param name="name">The name of the property to display, or an empty string for no name.</param>
+		public static void DrawAllFieldsInProperty(SerializedProperty property, string name = "")
 		{
-			DrawHeader(property.displayName);
+			DrawHeader(name ?? property.displayName);
 			IterateSerializedProperties(property, (currentProperty) =>
 			{
 				EditorGUILayout.PropertyField(currentProperty, true);
@@ -156,10 +129,10 @@ namespace Darklight.UnityExt.Editor
 		/// Draws all fields in the given SerializedProperty in a disabled (read-only) state.
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
-		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllFieldsInPropertyAsDisabled(SerializedProperty property)
+		/// <param name="name">The name of the property to display, or an empty string for no name.</param>
+		public static void DrawAllFieldsInPropertyAsDisabled(SerializedProperty property, string name = "")
 		{
-			DrawHeader(property.displayName);
+			DrawHeader(name ?? property.displayName);
 			EditorGUI.BeginDisabledGroup(true);
 			IterateSerializedProperties(property, (currentProperty) =>
 			{
@@ -172,10 +145,10 @@ namespace Darklight.UnityExt.Editor
 		/// Draws all fields in the given SerializedProperty as labels, displaying only the field names and their values.
 		/// </summary>
 		/// <param name="property">The SerializedProperty representing the object to draw.</param>
-		/// <param name="header">An optional header label to display before the list of fields.</param>
-		public static void DrawAllFieldsInPropertyAsShowOnly(SerializedProperty property)
+		/// <param name="name">The name of the property to display, or an empty string for no name.</param>
+		public static void DrawAllFieldsInPropertyAsShowOnly(SerializedProperty property, string name = "")
 		{
-			DrawHeader(property.displayName);
+			DrawHeader(name ?? property.displayName);
 			IterateSerializedProperties(property, (currentProperty) =>
 			{
 				EditorGUILayout.LabelField(currentProperty.displayName, SerializedPropertyUtility.ConvertPropertyToString(currentProperty));
