@@ -27,7 +27,7 @@ namespace Darklight.UnityExt.Matrix
     public enum State { INVALID, PRELOADED, INITIALIZED }
 
     [ExecuteAlways]
-    public class Matrix : MonoBehaviour
+    public partial class Matrix : MonoBehaviour
     {
         class StateMachine : SimpleStateMachine<State>
         {
@@ -38,26 +38,15 @@ namespace Darklight.UnityExt.Matrix
 
         [Header("SerializeData")]
         [SerializeField, ShowOnly] State _currentState;
-        [SerializeField, ShowOnly] Vector3 _position;
-        [SerializeField, ShowOnly] Vector3 _rotation;
-        [SerializeField, ShowOnly] Vector3 _normal;
-
-        [Space(5)]
-        [SerializeField, ShowOnly] Vector2 _alignmentOffset;
-
-        [Space(5)]
-        [SerializeField, ShowOnly] Vector2Int _originKey;
-        [SerializeField, ShowOnly] Vector3 _originPosition;
-
-        [Header("Map")]
-        [SerializeField] Map _map;
+        [SerializeField, AllowNesting] Info _info;
+        [SerializeField] NodeMap _map;
 
         public Node.Visitor UpdateNodeContextVisitor => new Node.Visitor(node =>
         {
             node.Refresh();
             return true;
         });
-
+        
         public Node.Visitor DrawGizmosVisitor;
         public Node.Visitor DrawGizmosSelectedVisitor = new Node.Visitor(node =>
         {
@@ -67,7 +56,6 @@ namespace Darklight.UnityExt.Matrix
         });
 
         public State CurrentState => _currentState = _stateMachine.CurrentState;
-        public MapInfo MapInfo => _map.Info;
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
         void Awake() => Preload();
@@ -76,21 +64,17 @@ namespace Darklight.UnityExt.Matrix
         void OnDrawGizmos() => SendVisitorToAllNodes(DrawGizmosVisitor);
         void OnDrawGizmosSelected() => SendVisitorToAllNodes(DrawGizmosSelectedVisitor);
         void OnValidate() {}
-        void OnEnable() {}
+        void OnEnable() => Refresh();
         void OnDisable() {}
         void OnDestroy() {}
         #endregion
 
+        #region < PRIVATE_METHODS > [[ State Machine ]] ================================================================
         void OnStateChanged(State state)
         {
             _currentState = state;
         }
-
-        public void OnValueChanged()
-        {
-            _map.Refresh();
-            SendVisitorToAllNodes(UpdateNodeContextVisitor);
-        }
+        #endregion
 
         public void Preload()
         {
@@ -101,10 +85,17 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // Create a new cell map
-            _map = new Map(this);
+            _info = Info.GetDefault(transform);
+            _map = new NodeMap(this);
 
             // Determine if the grid was preloaded
             _stateMachine.GoToState(State.PRELOADED);
+        }
+
+        public void Refresh()
+        {
+            _map.Refresh();
+            SendVisitorToAllNodes(UpdateNodeContextVisitor);
         }
 
         #region < PUBLIC_METHODS > [[ Visitor Handlers ]] ================================================================ 
@@ -128,6 +119,11 @@ namespace Darklight.UnityExt.Matrix
                 node.Accept(visitor);
         }
         #endregion
+
+        public Info GetInfo()
+        {
+            return _info;
+        }
 
         public static void SendVisitorToNode(Node node, IVisitor<Node> visitor)
         {

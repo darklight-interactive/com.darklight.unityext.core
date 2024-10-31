@@ -1,4 +1,0 @@
-namespace Darklight.UnityExt.Matrix
-{
-    
-}

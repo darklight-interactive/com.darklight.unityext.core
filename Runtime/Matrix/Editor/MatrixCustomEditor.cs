@@ -30,6 +30,8 @@ namespace Darklight.UnityExt.Matrix.Editor
 
             EditorApplication.update += CheckTransformChanges;
             Undo.undoRedoPerformed += OnUndoRedo;
+
+            _script.Preload();
         }
 
         private void OnDisable()
@@ -52,7 +54,7 @@ namespace Darklight.UnityExt.Matrix.Editor
 
                 // Respond to the change
                 //Debug.Log("Transform has changed!");
-                _script.OnValueChanged();
+                _script.Refresh();
 
                 // Refresh the editor if needed
                 Repaint();
@@ -65,7 +67,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             {
                 // Handle undo/redo for the transform changes
                 //Debug.Log("Transform changed due to undo/redo!");
-                _script.OnValueChanged();
+                _script.Refresh();
 
                 // Update last-known transform state in case it has changed
                 _lastPosition = _script.transform.position;
@@ -98,12 +100,12 @@ namespace Darklight.UnityExt.Matrix.Editor
             EditorGUI.BeginChangeCheck();
 
             DrawButtons();
-            DrawDefaultInspector();
+            base.OnInspectorGUI();
 
             if (EditorGUI.EndChangeCheck())
             {
                 _serializedObject.ApplyModifiedProperties();
-                _script.OnValueChanged();
+                _script.Refresh();
             }
         }
     }

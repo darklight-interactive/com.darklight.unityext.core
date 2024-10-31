@@ -19,11 +19,11 @@ namespace Darklight.UnityExt.Matrix.Editor
 
         SerializedObject _serializedMatrixObject;
         Matrix _matrix;
-        Node _selectedNode;
+        Matrix.Node _selectedNode;
         bool _selectedNodeIsExpanded = false;
         Vector2 _scrollPosition;
 
-        Node.Visitor SceneGUINodeVisitor => new Node.Visitor(node =>
+        Matrix.Node.Visitor SceneGUINodeVisitor => new Matrix.Node.Visitor(node =>
         {
             Vector3 position = node.Position;
             Vector2 dimensions = node.Dimensions;
@@ -129,7 +129,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             sceneView.Repaint();
         }
 
-        void SetSelectedNode(Node node)
+        void SetSelectedNode(Matrix.Node node)
         {
             _selectedNode = node;
             Repaint();
