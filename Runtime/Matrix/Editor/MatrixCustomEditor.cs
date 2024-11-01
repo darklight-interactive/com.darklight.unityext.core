@@ -40,6 +40,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             Undo.undoRedoPerformed -= OnUndoRedo;
         }
 
+        #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
         private void CheckTransformChanges()
         {
             if (_script == null) return;
@@ -77,6 +78,7 @@ namespace Darklight.UnityExt.Matrix.Editor
                 Repaint();
             }
         }
+        #endregion
 
         protected virtual void DrawButtons()
         {
@@ -92,6 +94,7 @@ namespace Darklight.UnityExt.Matrix.Editor
                 _script.Preload();
             }
         }
+
         public override void OnInspectorGUI()
         {
             _serializedObject.Update();

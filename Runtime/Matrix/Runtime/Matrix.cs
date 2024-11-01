@@ -98,6 +98,12 @@ namespace Darklight.UnityExt.Matrix
             SendVisitorToAllNodes(UpdateNodeContextVisitor);
         }
 
+        #region < PUBLIC_METHODS > [[ Getters ]] ================================================================
+
+        public Info GetInfo() { return _info; }
+
+        #endregion
+
         #region < PUBLIC_METHODS > [[ Visitor Handlers ]] ================================================================ 
         public void SendVisitorToNode(Vector2Int key, IVisitor<Node> visitor)
         {
@@ -120,25 +126,6 @@ namespace Darklight.UnityExt.Matrix
         }
         #endregion
 
-        public Info GetInfo()
-        {
-            return _info;
-        }
-
-        public static void SendVisitorToNode(Node node, IVisitor<Node> visitor)
-        {
-            if (node == null) return;
-            if (visitor == null) return;
-
-            node.Accept(visitor);
-        }
-
-        public static void SendVisitorToNodes(List<Node> nodes, IVisitor<Node> visitor)
-        {
-            if (nodes == null || nodes.Count == 0) return;
-            if (visitor == null) return;
-
-            foreach (Node node in nodes) node.Accept(visitor);
-        }
+        
     }
 }
