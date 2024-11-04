@@ -1,5 +1,5 @@
 using System;
-
+using Darklight.UnityExt.Editor;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
@@ -9,7 +9,10 @@ namespace Darklight.UnityExt.Behaviour
 		where TEnum : Enum
 	{
 		protected readonly StateMachineBase<TEnum> StateMachineBase;
-		public TEnum StateType { get; protected set; }
+
+		[SerializeField, ShowOnly] TEnum _stateType;
+		
+		public TEnum StateType => _stateType;
 
 		public abstract void Enter();
 		public abstract void Execute();
@@ -18,7 +21,7 @@ namespace Darklight.UnityExt.Behaviour
 		public StateBase(StateMachineBase<TEnum> stateMachineBase, TEnum stateType)
 		{
 			this.StateMachineBase = stateMachineBase;
-			this.StateType = stateType;
+			this._stateType = stateType;
 		}
 	}
 }

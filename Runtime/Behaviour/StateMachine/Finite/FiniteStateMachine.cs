@@ -44,12 +44,12 @@ namespace Darklight.UnityExt.Behaviour
 	{
 		private readonly Dictionary<TEnum, FiniteState<TEnum>> _possibleFiniteStates;
 
-		private FiniteState<TEnum> _currentFiniteState;
 		private FiniteState<TEnum> _previousState;
+		[SerializeField] FiniteState<TEnum> _currentFiniteState;
 
 		// Properties
-		public FiniteState<TEnum> CurrentFiniteState => _currentFiniteState;
 		public FiniteState<TEnum> PreviousFiniteState => _previousState;
+		public FiniteState<TEnum> CurrentFiniteState => _currentFiniteState;
 
 		#region Constructors
 
@@ -87,6 +87,19 @@ namespace Darklight.UnityExt.Behaviour
 			foreach (TEnum state in GetAllStateEnums())
 			{
 				AddState(new FiniteState<TEnum>(this, state));
+			}
+		}
+
+		/// <summary>
+		/// Overrides the finite states with a new set of states
+		/// </summary>
+		/// <param name="states">The new states to use</param>
+		protected void OverrideFiniteStates(IReadOnlyDictionary<TEnum, FiniteState<TEnum>> states)
+		{
+			_possibleFiniteStates.Clear();
+			foreach (var state in states)
+			{
+				AddState(state.Value, false);
 			}
 		}
 
