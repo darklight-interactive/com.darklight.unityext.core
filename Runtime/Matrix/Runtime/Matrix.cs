@@ -55,7 +55,7 @@ namespace Darklight.UnityExt.Matrix
             return true;
         });
 
-        public State CurrentState => _currentState = _stateMachine.CurrentState;
+        public State CurrentState => _currentState = _stateMachine.currentStateEnum;
 
         #region < PRIVATE_METHODS > [[ Unity Runtime ]] ================================================================
         void Awake() => Preload();

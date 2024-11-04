@@ -33,7 +33,7 @@ namespace Darklight.UnityExt.Behaviour
 			get
 			{
 				if (_stateMachine != null)
-					return _stateMachine.CurrentState;
+					return _stateMachine.currentStateEnum;
 				else
 					return State.NULL;
 			}

@@ -42,16 +42,14 @@ namespace Darklight.UnityExt.Behaviour
     public class SimpleStateMachine<TEnum> : StateMachineBase<TEnum>
         where TEnum : Enum
     {
-        public TEnum InitialState => initialState;
-        public TEnum CurrentState => currentState;
-
         public SimpleStateMachine() : base() { }
         public SimpleStateMachine(TEnum initialState) : base(initialState) { }
 
-        public virtual void GoToState(TEnum newState)
+        public override bool GoToState(TEnum newState, bool force = false)
         {
-            if (newState.Equals(CurrentState)) return;
-            currentState = newState;
+            if (!force && newState.Equals(currentStateEnum)) return false;
+            currentStateEnum = newState;
+            return true;
         }
     }
 }

@@ -16,13 +16,13 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
-    This script defines a finite state machine (FSM) framework. 
-    It provides an abstract base class for creating FSMs and an interface for defining states.
-    The FSM stores a dictionary of possible states, where each state is represented by an enum key 
-    and an instance of the corresponding state class as the value. 
-    The FSM allows transitioning between states and executing the current state's logic.
+	This script defines a finite state machine (FSM) framework.
+	It provides an abstract base class for creating FSMs and an interface for defining states.
+	The FSM stores a dictionary of possible states, where each state is represented by an enum key
+	and an instance of the corresponding state class as the value.
+	The FSM allows transitioning between states and executing the current state's logic.
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * Garrett Blake
  * ======================================================================= ]]
@@ -30,102 +30,170 @@
 
 using System;
 using System.Collections.Generic;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
 {
-    /// <summary>
-    /// An abstract base FiniteStateMachine that stores a Dictionary of key value pairs
-    /// relating each defined state. The Key is an enum and the Value is an instance of the corresponding
-    /// state class.
-    /// </summary>
-    /// <typeparam name="TEnum">The enum definition for the state keys</typeparam>
-    [Serializable]
-    public class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
-        where TEnum : Enum
-    {
-        Dictionary<TEnum, FiniteState<TEnum>> _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
-        [SerializeField] FiniteState<TEnum> _currentFiniteState;
+	/// <summary>
+	/// A generic finite state machine implementation that manages state transitions and execution.
+	/// </summary>
+	/// <typeparam name="TEnum">The enum type defining possible states</typeparam>
+	[Serializable]
+	public class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
+		where TEnum : Enum
+	{
+		private readonly Dictionary<TEnum, FiniteState<TEnum>> _possibleFiniteStates;
 
-        // Constructors
-        public FiniteStateMachine() : base() { GenerateDefaultStates(); }
-        public FiniteStateMachine(TEnum initialState) : base(initialState) { GenerateDefaultStates(); }
-        public FiniteStateMachine(Dictionary<TEnum, FiniteState<TEnum>> possibleStates, TEnum initialState) : base(initialState)
-        {
-            this._possibleFiniteStates = possibleStates;
-        }
+		private FiniteState<TEnum> _currentFiniteState;
+		private FiniteState<TEnum> _previousState;
 
-        void GenerateDefaultStates()
-        {
-            _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
-            foreach (TEnum state in GetAllStateEnums())
-                AddState(new FiniteState<TEnum>(this, state));
-        }
+		// Properties
+		public FiniteState<TEnum> CurrentFiniteState => _currentFiniteState;
+		public FiniteState<TEnum> PreviousFiniteState => _previousState;
 
-        /// <summary>
-        /// Add a state to the possibleStates dictionary
-        /// </summary>
-        /// <param name="finiteState">The FiniteState to add to the dictionary.</param>
-        public void AddState(FiniteState<TEnum> finiteState, bool overwrite = true)
-        {
-            if (_possibleFiniteStates == null) { _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>(); }
+		#region Constructors
 
-            if (_possibleFiniteStates.ContainsKey(finiteState.StateType))
-            {
-                if (overwrite)
-                    _possibleFiniteStates[finiteState.StateType] = finiteState;
-                else
-                    Debug.LogWarning($"The state {finiteState.StateType} already exists in the state machine and will not be added.");
-            }
-            else
-            {
-                _possibleFiniteStates.Add(finiteState.StateType, finiteState);
-            }
-        }
+		public FiniteStateMachine()
+			: base()
+		{
+			_possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
+			GenerateDefaultStates();
+		}
 
-        /// <summary>
-        /// Step through the Execution call of the current state. 
-        /// This is typically called from an Update loop.
-        /// </summary>
-        public virtual void Step()
-        {
-            if (_currentFiniteState != null) { _currentFiniteState.Execute(); }
-            else { GoToState(initialState); }
-        }
+		public FiniteStateMachine(TEnum initialState)
+			: base(initialState)
+		{
+			_possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
+			GenerateDefaultStates();
+		}
 
-        /// <summary>
-        /// Move the statemachine to a new current state.
-        /// </summary>
-        /// <param name="newState">The enum type key of the desired state.</param>
-        /// <param name="force">If true, the state will be changed even if it is the same as the current state.</param>
-        public virtual bool GoToState(TEnum newState, bool force = false)
-        {
-            // If the state is the same as the current state, return false
-            if (!force && currentState.Equals(newState)) return false;
+		public FiniteStateMachine(
+			IReadOnlyDictionary<TEnum, FiniteState<TEnum>> possibleStates,
+			TEnum initialState
+		)
+			: base(initialState)
+		{
+			_possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>(possibleStates);
+		}
 
-            // Exit the current state
-            if (_currentFiniteState != null)
-                _currentFiniteState.Exit();
+		#endregion
 
-            // Check if the state exists
-            if (_possibleFiniteStates != null && _possibleFiniteStates.Count > 0 && _possibleFiniteStates.ContainsKey(newState))
-            {
-                // Enter the new state
-                _currentFiniteState = _possibleFiniteStates[newState];
-                _currentFiniteState.Enter();
-            }
-            else
-            {
-                // If the state does not exist, return false
-                Debug.LogError($"The state {newState} does not exist in the state machine.");
-                return false;
-            }
+		/// <summary>
+		/// Generates default state instances for each enum value
+		/// </summary>
+		private void GenerateDefaultStates()
+		{
+			_possibleFiniteStates.Clear();
+			foreach (TEnum state in GetAllStateEnums())
+			{
+				AddState(new FiniteState<TEnum>(this, state));
+			}
+		}
 
-            // Invoke the OnStateChanged event
-            RaiseStateChangedEvent(currentState);
-            return true;
-        }
+		/// <summary>
+		/// Adds or updates a state in the state machine
+		/// </summary>
+		/// <param name="finiteState">The state to add/update</param>
+		/// <param name="overwrite">Whether to overwrite existing state if present</param>
+		/// <returns>True if state was added/updated successfully</returns>
+		public bool AddState(FiniteState<TEnum> finiteState, bool overwrite = true)
+		{
+			if (finiteState == null)
+			{
+				Debug.LogError("Attempted to add null state to FSM");
+				return false;
+			}
 
-    }
+			if (_possibleFiniteStates.ContainsKey(finiteState.StateType))
+			{
+				if (!overwrite)
+				{
+					Debug.LogWarning(
+						$"State {finiteState.StateType} already exists and overwrite is false"
+					);
+					return false;
+				}
+				_possibleFiniteStates[finiteState.StateType] = finiteState;
+				return true;
+			}
+
+			_possibleFiniteStates.Add(finiteState.StateType, finiteState);
+			return true;
+		}
+
+		/// <summary>
+		/// Executes the current state's logic
+		/// </summary>
+		/// <remarks>
+		/// Should be called from Update or FixedUpdate depending on requirements
+		/// </remarks>
+		public virtual void Step()
+		{
+			if (_currentFiniteState != null)
+			{
+				_currentFiniteState.Execute();
+				return;
+			}
+			GoToState(initialStateEnum);
+		}
+
+		/// <summary>
+		/// Transitions to a new state
+		/// </summary>
+		/// <param name="newState">The state to transition to</param>
+		/// <param name="force">Force transition even if already in target state</param>
+		/// <returns>True if transition was successful</returns>
+		public override bool GoToState(TEnum newState, bool force = false)
+		{
+			// If not forcing and already in target state, do nothing
+			if (!force && _currentFiniteState != null && EqualityComparer<TEnum>.Default.Equals(_currentFiniteState.StateType, newState))
+				return false;
+
+			// Ensure target state exists
+			if (!_possibleFiniteStates.TryGetValue(newState, out var targetState))
+			{
+				Debug.LogError($"State {newState} does not exist in the state machine");
+				return false;
+			}
+
+			// Store previous state before transition
+			_previousState = _currentFiniteState;
+
+			// Handle state transition
+			_currentFiniteState?.Exit();
+			_currentFiniteState = targetState;
+			_currentFiniteState.Enter();
+
+			// Notify base class of state change
+			base.GoToState(newState);
+
+			// Notify listeners of state change
+			RaiseStateChangedEvent(_currentFiniteState.StateType);
+
+			return true;
+		}
+
+		/// <summary>
+		/// Checks if a specific state exists in the state machine
+		/// </summary>
+		/// <param name="state">The state to check</param>
+		/// <returns>True if the state exists</returns>
+		public bool HasState(TEnum state) => _possibleFiniteStates.ContainsKey(state);
+
+		/// <summary>
+		/// Removes a state from the state machine
+		/// </summary>
+		/// <param name="state">The state to remove</param>
+		/// <returns>True if the state was removed</returns>
+		public bool RemoveState(TEnum state)
+		{
+			if (EqualityComparer<TEnum>.Default.Equals(_currentFiniteState.StateType, state))
+			{
+				Debug.LogError($"Cannot remove current state {state}");
+				return false;
+			}
+
+			return _possibleFiniteStates.Remove(state);
+		}
+	}
 }

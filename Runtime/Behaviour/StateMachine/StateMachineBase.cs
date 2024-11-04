@@ -26,36 +26,44 @@
 
 using System;
 using System.Collections.Generic;
-
+using Darklight.UnityExt.Editor;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
 {
-    /// <summary>
-    /// An abstract base for state machines to build upon
-    /// </summary>
-    /// <typeparam name="TEnum"></typeparam>
-    [Serializable]
-    public abstract class StateMachineBase<TEnum>
-        where TEnum : Enum
-    {
-        [SerializeField] protected TEnum initialState;
-        [SerializeField] protected TEnum currentState;
+	/// <summary>
+	/// An abstract base for state machines to build upon
+	/// </summary>
+	/// <typeparam name="TEnum"></typeparam>
+	[Serializable]
+	public abstract class StateMachineBase<TEnum>
+		where TEnum : Enum
+	{
+		protected readonly TEnum initialStateEnum;
+		[ShowOnly] public TEnum currentStateEnum;
 
-        public delegate void StateChangeEvent(TEnum state);
-        public event StateChangeEvent OnStateChanged;
+		public delegate void StateChangeEvent(TEnum state);
+		public event StateChangeEvent OnStateChanged;
 
-        public StateMachineBase()
-        {
-            initialState = GetAllStateEnums()[0];
-        }
+		public StateMachineBase()
+		{
+			initialStateEnum = GetAllStateEnums()[0];
+		}
 
-        public StateMachineBase(TEnum initialState)
-        {
-            this.initialState = initialState;
-        }
+		public StateMachineBase(TEnum initialState)
+		{
+			this.initialStateEnum = initialState;
+		}
 
-        protected TEnum[] GetAllStateEnums() => (TEnum[])Enum.GetValues(typeof(TEnum));
-        protected void RaiseStateChangedEvent(TEnum state) => OnStateChanged?.Invoke(state);
-    }
+		protected TEnum[] GetAllStateEnums() => (TEnum[])Enum.GetValues(typeof(TEnum));
+		protected void RaiseStateChangedEvent(TEnum state) => OnStateChanged?.Invoke(state);
+		
+		public virtual bool GoToState(TEnum newState, bool force = false)
+		{
+			if (!force && EqualityComparer<TEnum>.Default.Equals(currentStateEnum, newState))
+				return false;
+			currentStateEnum = newState;
+			return true;
+		}
+	}
 }
