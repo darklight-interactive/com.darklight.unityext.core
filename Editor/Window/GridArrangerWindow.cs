@@ -9,28 +9,44 @@ using UnityEngine;
 public class GridArrangerWindow : EditorWindow
 {
     private const string SettingsPath = "Assets/Editor/GridArrangerSettings.asset";
+    private const double UpdateDelay = 0.05; // 50ms delay for smoother updates
 
-    private GridArrangerSettings settings;
-    private Vector2 scrollPosition;
-    private bool showAdvancedSettings = false;
-    private bool previewEnabled = true;
-    private List<Vector3> previewPositions = new List<Vector3>();
+    private Vector3? cachedRandomCenter;
+    private Color headerColor = new Color(0.2f, 0.2f, 0.2f);
 
     private GUIStyle headerStyle;
-    private GUIStyle sectionStyle;
-    private GUIStyle toggleStyle;
-    private Color headerColor = new Color(0.2f, 0.2f, 0.2f);
-    private Color sectionColor = new Color(0.18f, 0.18f, 0.18f);
-    private bool showPositionSettings = true;
-    private bool showRotationSettings = true;
+
+    private Vector3? lastCenterPosition;
+    private DistributionPlane lastDistributionPlane;
+    private Vector3Int lastGridSize;
 
     private Vector3 lastHitNormal;
 
-    private enum DistributionPlane
+    private GameObject[] lastSelectedObjects;
+    private Vector3 lastSpacing;
+    private double lastUpdateTime;
+    private bool previewEnabled = true;
+    private List<Vector3> previewPositions = new List<Vector3>();
+    private Vector2 scrollPosition;
+    private Color sectionColor = new Color(0.18f, 0.18f, 0.18f);
+    private GUIStyle sectionStyle;
+
+    private GridArrangerSettings settings;
+    private bool showAdvancedSettings = false;
+    private bool showDistributionSettings = true;
+    private bool showPositionSettings = true;
+    private bool showRotationSettings = true;
+
+    private bool showStatistics = true;
+    private GUIStyle toggleStyle;
+
+    private bool updatePending = false;
+
+    public enum DistributionPlane
     {
         XZ, // Ground plane (default)
         XY, // Front plane
-        YZ  // Side plane
+        YZ // Side plane
     }
 
     /// <summary>
@@ -40,257 +56,721 @@ public class GridArrangerWindow : EditorWindow
     public static void ShowWindow()
     {
         var window = GetWindow<GridArrangerWindow>("Darklight Grid Arranger");
-        window.minSize = new Vector2(725, 325); // Fixed size
-        window.maxSize = new Vector2(750, 400); // Same as minSize to lock dimensions
+        window.minSize = new Vector2(400, 500); // Minimum size that works with vertical layout
+        window.maxSize = new Vector2(800, 600); // Maximum size for readability
+        window.position = new Rect(window.position.x, window.position.y, 725, 550); // Default/preferred size
         window.LoadOrCreateSettings();
     }
 
-    private void LoadOrCreateSettings()
-    {
-        settings = AssetDatabase.LoadAssetAtPath<GridArrangerSettings>(SettingsPath);
-        if (settings == null)
-        {
-            settings = CreateInstance<GridArrangerSettings>();
-            if (!AssetDatabase.IsValidFolder("Assets/Editor"))
-                AssetDatabase.CreateFolder("Assets", "Editor");
-            AssetDatabase.CreateAsset(settings, SettingsPath);
-            AssetDatabase.SaveAssets();
-        }
-    }
-
-    private void OnEnable()
-    {
-        LoadOrCreateSettings();
-        SceneView.duringSceneGui += OnSceneGUI;
-        Selection.selectionChanged += OnSelectionChange;
-        UpdatePreview(); // Initial preview
-    }
-
-    private void OnDisable()
-    {
-        SceneView.duringSceneGui -= OnSceneGUI;
-        Selection.selectionChanged -= OnSelectionChange;
-    }
-
+    #region < PRIVATE_METHODS > [[ Internal Calculations ]] ================================================================ 
+    
     /// <summary>
-    /// Draws the editor window GUI
+    /// Arranges the selected objects in a grid pattern based on the specified settings
     /// </summary>
-    private void OnGUI()
+    private void ArrangeSelectedObjects()
     {
-        if (settings == null)
+        GameObject[] selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
         {
-            LoadOrCreateSettings();
+            EditorUtility.DisplayDialog(
+                "Grid Arranger",
+                "Please select at least one object to arrange.",
+                "OK"
+            );
             return;
         }
 
-        InitializeStyles();
-        EditorGUI.BeginChangeCheck();
+        UpdateAutoCalculations();
+        Undo.RecordObjects(
+            selectedObjects.Select(obj => obj.transform).ToArray(),
+            "Arrange Objects in Grid"
+        );
 
-        // Full-width header with more height
-        DrawHeader("Grid Arranger");
-
-        EditorGUILayout.Space(10); // Space after header
-
-        // Main content layout with margins
-        EditorGUILayout.BeginHorizontal();
+        if (settings.positionType == GridArrangerSettings.PositionType.Randomize)
         {
-            GUILayout.Space(15); // Left margin
+            Vector3 randomCenter = CalculateRandomizeCenter();
+            float range = settings.randomRange.y;
 
-            // Left side - Settings container (2/3 width)
-            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.Width(position.width * 0.60f))) // Adjusted width for margins
+            foreach (GameObject obj in selectedObjects)
             {
-                // Position Settings
-                showPositionSettings = EditorGUILayout.Foldout(
-                    showPositionSettings,
-                    "Position Settings",
-                    true,
-                    toggleStyle
-                );
-                if (showPositionSettings)
+                Vector3 randomPos = Vector3.zero;
+                switch (settings.distributionPlane)
                 {
-                    EditorGUI.indentLevel++;
-                    DrawPositionSettings();
-                    EditorGUI.indentLevel--;
+                    case DistributionPlane.XZ:
+                        randomPos = new Vector3(
+                            Random.Range(-range, range),
+                            0,
+                            Random.Range(-range, range)
+                        );
+                        break;
+                    case DistributionPlane.XY:
+                        randomPos = new Vector3(
+                            Random.Range(-range, range),
+                            Random.Range(-range, range),
+                            0
+                        );
+                        break;
+                    case DistributionPlane.YZ:
+                        randomPos = new Vector3(
+                            0,
+                            Random.Range(-range, range),
+                            Random.Range(-range, range)
+                        );
+                        break;
                 }
 
-                EditorGUILayout.Space(5);
-
-                // Rotation Settings
-                showRotationSettings = EditorGUILayout.Foldout(
-                    showRotationSettings,
-                    "Rotation Settings",
-                    true,
-                    toggleStyle
-                );
-                if (showRotationSettings)
+                if (settings.snapToGrid)
                 {
-                    EditorGUI.indentLevel++;
-                    DrawRotationSettings();
-                    EditorGUI.indentLevel--;
+                    float gridSize = EditorSnapSettings.move.x;
+                    randomPos = new Vector3(
+                        Mathf.Round(randomPos.x / gridSize) * gridSize,
+                        Mathf.Round(randomPos.y / gridSize) * gridSize,
+                        Mathf.Round(randomPos.z / gridSize) * gridSize
+                    );
                 }
+
+                obj.transform.position = randomCenter + randomPos;
             }
-
-            GUILayout.Space(15); // Space between columns
-
-            // Right side - Preview and Action (1/3 width)
-            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.Width(position.width * 0.27f))) // Adjusted width for margins
-            {
-                previewEnabled = EditorGUILayout.ToggleLeft(
-                    new GUIContent("Show Preview", "Show preview of object positions in Scene view"), 
-                    previewEnabled
-                );
-
-                EditorGUILayout.Space(5);
-
-                // Arrange Objects button
-                using (new EditorGUI.DisabledGroupScope(Selection.gameObjects.Length == 0))
-                {
-                    if (GUILayout.Button("Arrange Objects", GUILayout.Height(30)))
-                    {
-                        ArrangeSelectedObjects();
-                    }
-                }
-
-                // Reset Settings button
-                if (GUILayout.Button("Reset Settings", EditorStyles.miniButton))
-                {
-                    if (EditorUtility.DisplayDialog(
-                        "Reset Settings",
-                        "Are you sure you want to reset all settings to their default values?",
-                        "Reset",
-                        "Cancel"))
-                    {
-                        ResetSettings();
-                        UpdatePreview();
-                    }
-                }
-
-                EditorGUILayout.Space(5);
-
-                // Stats Box
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    var selectedObjects = Selection.gameObjects;
-                    EditorGUILayout.LabelField("Statistics:", EditorStyles.boldLabel);
-                    
-                    EditorGUILayout.Space(2);
-                    
-                    // Selected Objects
-                    EditorGUILayout.LabelField($"Selected Objects: {selectedObjects.Length}");
-                    
-                    // Grid Dimensions
-                    EditorGUILayout.LabelField($"Grid Dimensions: {settings.gridSize.x}x{settings.gridSize.y}x{settings.gridSize.z}");
-                    
-                    // Spacing (multi-line)
-                    EditorGUILayout.LabelField("Current Spacing:");
-                    EditorGUI.indentLevel++;
-                    EditorGUILayout.LabelField($"X: {settings.spacing.x:F2} Y: {settings.spacing.y:F2} Z: {settings.spacing.z:F2}");
-                    EditorGUI.indentLevel--;
-                    
-                    if (settings.autoCalculate)
-                    {
-                        EditorGUILayout.LabelField($"Spacing Multiplier: {settings.spacingMultiplier:F2}x");
-                    }
-
-                    if (settings.centerInGrid)
-                    {
-                        Vector3 offset = CalculateCenterOffset(selectedObjects.Length);
-                        EditorGUILayout.LabelField("Center Offset:");
-                        EditorGUI.indentLevel++;
-                        EditorGUILayout.LabelField($"X: {offset.x:F1}");
-                        EditorGUILayout.LabelField($"Y: {offset.y:F1}");
-                        EditorGUILayout.LabelField($"Z: {offset.z:F1}");
-                        EditorGUI.indentLevel--;
-                    }
-                }
-            }
-
-            GUILayout.Space(15); // Right margin
         }
-        EditorGUILayout.EndHorizontal();
+        else
+        {
+            CalculateGridPositions(selectedObjects.Length, out var positions);
+            for (int i = 0; i < selectedObjects.Length && i < positions.Count; i++)
+            {
+                Transform transform = selectedObjects[i].transform;
+                transform.position = positions[i];
+            }
+        }
+
+        // Handle rotation based on rotation type
+        foreach (GameObject obj in selectedObjects)
+        {
+            switch (settings.rotationType)
+            {
+                case GridArrangerSettings.RotationType.Align:
+                    obj.transform.rotation = Quaternion.Euler(settings.targetRotation);
+                    break;
+
+                case GridArrangerSettings.RotationType.Random:
+                    float randomRotation = Random.Range(
+                        settings.randomRotationRange.x,
+                        settings.randomRotationRange.y
+                    );
+                    obj.transform.rotation = Quaternion.Euler(0, randomRotation, 0);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Calculates the average size of selected objects including their children
+    /// </summary>
+    private Vector3 CalculateAverageObjectSize()
+    {
+        GameObject[] selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
+            return Vector3.one;
+
+        Vector3 totalSize = Vector3.zero;
+        int validObjects = 0;
+
+        // Cache component queries
+        var bounds = new Dictionary<GameObject, Bounds?>();
+
+        foreach (GameObject obj in selectedObjects)
+        {
+            if (!bounds.TryGetValue(obj, out var objBounds))
+            {
+                objBounds = null;
+                var renderers = obj.GetComponentsInChildren<Renderer>();
+                foreach (var renderer in renderers)
+                {
+                    if (objBounds.HasValue)
+                        objBounds.Value.Encapsulate(renderer.bounds);
+                    else
+                        objBounds = renderer.bounds;
+                }
+
+                if (!objBounds.HasValue)
+                {
+                    var colliders = obj.GetComponentsInChildren<Collider>();
+                    foreach (var collider in colliders)
+                    {
+                        if (objBounds.HasValue)
+                            objBounds.Value.Encapsulate(collider.bounds);
+                        else
+                            objBounds = collider.bounds;
+                    }
+                }
+                bounds[obj] = objBounds;
+            }
+
+            Vector3 objSize = objBounds?.size ?? obj.transform.lossyScale;
+            if (objSize != Vector3.zero)
+            {
+                totalSize += objSize;
+                validObjects++;
+            }
+        }
+
+        return validObjects == 0
+            ? Vector3.one
+            : (totalSize / validObjects) * settings.spacingMultiplier;
+    }
+
+    private Vector3 CalculateCenterOffset(int objectCount)
+    {
+        Vector3 totalSize = new Vector3(
+            (settings.gridSize.x - 1) * settings.spacing.x,
+            (settings.gridSize.y - 1) * settings.spacing.y,
+            (settings.gridSize.z - 1) * settings.spacing.z
+        );
+        return -totalSize * 0.5f;
+    }
+
+    private Vector3 CalculateCenterPosition()
+    {
+        var selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
+            return Vector3.zero;
+
+        Vector3 center =
+            selectedObjects.Aggregate(Vector3.zero, (sum, obj) => sum + obj.transform.position)
+            / selectedObjects.Length;
+
+        // Snap to Unity's grid settings
+        float gridSize = EditorSnapSettings.move.x;
+        center.x = Mathf.Round(center.x / gridSize) * gridSize;
+        center.y = Mathf.Round(center.y / gridSize) * gridSize;
+        center.z = Mathf.Round(center.z / gridSize) * gridSize;
+
+        // Zero out the non-distributed axis based on plane
+        switch (settings.distributionPlane)
+        {
+            case DistributionPlane.XZ:
+                center.y = 0;
+                break;
+            case DistributionPlane.XY:
+                center.z = 0;
+                break;
+            case DistributionPlane.YZ:
+                center.x = 0;
+                break;
+        }
+
+        return center;
+    }
+
+    /// <summary>
+    /// Calculates grid positions based on current settings
+    /// </summary>
+    private void CalculateGridPositions(int objectCount, out List<Vector3> positions)
+    {
+        positions = new List<Vector3>();
+        if (objectCount == 0)
+            return;
+
+        switch (settings.positionType)
+        {
+            case GridArrangerSettings.PositionType.Randomize:
+                // For preview, show current positions of objects
+                positions.AddRange(Selection.gameObjects.Select(obj => obj.transform.position));
+                break;
+
+            default:
+                // Get all possible grid positions
+                var indices = GetArrangementIndices().ToList();
+
+                // For preview, show all positions in the grid
+                if (previewEnabled)
+                {
+                    foreach (var index in indices)
+                    {
+                        positions.Add(GetPositionForAxis(index));
+                    }
+                }
+                // For actual arrangement, only use needed positions
+                else
+                {
+                    for (int i = 0; i < Mathf.Min(objectCount, indices.Count); i++)
+                    {
+                        positions.Add(GetPositionForAxis(indices[i]));
+                    }
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Calculates the minimum grid size needed to accommodate all selected objects
+    /// </summary>
+    private Vector3Int CalculateMinimumGridSize(int objectCount)
+    {
+        if (objectCount <= 0)
+            return Vector3Int.one;
+
+        // Calculate the size of the square grid
+        int gridSize = Mathf.CeilToInt(Mathf.Sqrt(objectCount));
+
+        // Set the appropriate dimensions based on the distribution plane
+        return settings.distributionPlane switch
+        {
+            DistributionPlane.XZ => new Vector3Int(gridSize, 1, gridSize),
+            DistributionPlane.XY => new Vector3Int(gridSize, gridSize, 1),
+            DistributionPlane.YZ => new Vector3Int(1, gridSize, gridSize),
+            _ => new Vector3Int(gridSize, 1, gridSize)
+        };
+    }
+
+    private Vector3 CalculateRandomizeCenter()
+    {
+        // Return cached center if it exists
+        if (cachedRandomCenter.HasValue)
+            return cachedRandomCenter.Value;
+
+        var selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
+            return Vector3.zero;
+
+        Vector3 roughCenter =
+            selectedObjects.Aggregate(Vector3.zero, (sum, obj) => sum + obj.transform.position)
+            / selectedObjects.Length;
+
+        float gridSize = EditorSnapSettings.move.x;
+        Vector3 snappedCenter = new Vector3(
+            Mathf.Round(roughCenter.x / gridSize) * gridSize,
+            Mathf.Round(roughCenter.y / gridSize) * gridSize,
+            Mathf.Round(roughCenter.z / gridSize) * gridSize
+        );
+
+        Vector3 center = settings.distributionPlane switch
+        {
+            DistributionPlane.XZ => new Vector3(snappedCenter.x, 0, snappedCenter.z),
+            DistributionPlane.XY => new Vector3(snappedCenter.x, snappedCenter.y, 0),
+            DistributionPlane.YZ => new Vector3(0, snappedCenter.y, snappedCenter.z),
+            _ => new Vector3(snappedCenter.x, 0, snappedCenter.z)
+        };
+
+        cachedRandomCenter = center;
+        return center;
+    }
+
+    private Bounds CalculateSelectionBounds()
+    {
+        GameObject[] selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
+            return new Bounds(Vector3.zero, Vector3.one);
+
+        Bounds bounds = new Bounds(selectedObjects[0].transform.position, Vector3.zero);
+        foreach (GameObject obj in selectedObjects)
+        {
+            bounds.Encapsulate(obj.transform.position);
+        }
+        return bounds;
+    }
+    #endregion
+
+    #region < PRIVATE_METHODS > [[ Draw UI ]] ================================================================== 
+    private void DrawActionButtons()
+    {
+        previewEnabled = EditorGUILayout.ToggleLeft(
+            new GUIContent("Show Preview", "Show preview of object positions in Scene view"),
+            previewEnabled
+        );
+
+        EditorGUILayout.Space(5);
+
+        if (Selection.gameObjects.Length <= 1)
+        {
+            EditorGUILayout.HelpBox(
+                "Select multiple objects in the scene to arrange them",
+                MessageType.Warning
+            );
+        }
+        else if (
+            GUILayout.Button(
+                settings.positionType == GridArrangerSettings.PositionType.Randomize
+                    ? "Randomize Objects"
+                    : "Arrange Objects",
+                GUILayout.Height(30)
+            )
+        )
+        {
+            ArrangeSelectedObjects();
+        }
+
+        if (GUILayout.Button("Reset Settings", EditorStyles.miniButton))
+        {
+            if (
+                EditorUtility.DisplayDialog(
+                    "Reset Settings",
+                    "Are you sure you want to reset all settings to their default values?",
+                    "Reset",
+                    "Cancel"
+                )
+            )
+            {
+                ResetSettings();
+                UpdatePreview();
+            }
+        }
+
+        using (new EditorGUI.DisabledGroupScope(true))
+        {
+            EditorGUILayout.ObjectField(
+                new GUIContent("Settings Asset", "Location of the settings asset"),
+                settings,
+                typeof(GridArrangerSettings),
+                false
+            );
+        }
+    }
+
+    private void DrawDistributionPlaneSettings()
+    {
+        EditorGUILayout.LabelField("Distribution Plane", EditorStyles.boldLabel);
+        EditorGUI.indentLevel++;
+
+        settings.distributionPlane = (DistributionPlane)
+            EditorGUILayout.EnumPopup(
+                new GUIContent("Distribution Plane", "Choose which plane to arrange objects on"),
+                settings.distributionPlane
+            );
+
+        settings.snapToGrid = EditorGUILayout.Toggle(
+            new GUIContent("Snap to Grid", "Snap object positions to Unity's grid settings"),
+            settings.snapToGrid
+        );
+
+        EditorGUI.indentLevel--;
+    }
+
+    private void DrawGridSizeControls()
+    {
+        int objectCount = Selection.gameObjects.Length;
+        Vector2Int gridSize2D = GetGridSize2D();
+        Vector2Int newGridSize = gridSize2D;
+
+        // Calculate min/max values for rows and columns
+        int minDimension = Mathf.CeilToInt(Mathf.Sqrt(objectCount));
+        int maxDimension = objectCount;
+
+        // Validate current values before displaying
+        if (
+            gridSize2D.x < minDimension
+            || gridSize2D.x > maxDimension
+            || gridSize2D.y < Mathf.CeilToInt((float)objectCount / gridSize2D.x)
+            || gridSize2D.y > maxDimension
+        )
+        {
+            ValidateAndUpdateGridSize();
+            gridSize2D = GetGridSize2D();
+            newGridSize = gridSize2D;
+        }
+
+        EditorGUI.BeginChangeCheck();
+        switch (settings.distributionPlane)
+        {
+            case DistributionPlane.XZ:
+                // Columns
+                EditorGUILayout.LabelField(
+                    $"Columns (X) - Min: {minDimension}, Max: {maxDimension}"
+                );
+                newGridSize.x = EditorGUILayout.IntSlider(gridSize2D.x, minDimension, maxDimension);
+
+                // Calculate row constraints based on column selection
+                int minRows = Mathf.CeilToInt((float)objectCount / newGridSize.x);
+                int maxRows = Mathf.Min(maxDimension, minRows * 2);
+
+                EditorGUILayout.LabelField($"Rows (Z) - Min: {minRows}, Max: {maxRows}");
+                newGridSize.y = EditorGUILayout.IntSlider(
+                    Mathf.Clamp(gridSize2D.y, minRows, maxRows),
+                    minRows,
+                    maxRows
+                );
+                settings.gridSize = new Vector3Int(newGridSize.x, 1, newGridSize.y);
+                break;
+
+            case DistributionPlane.XY:
+                // Columns
+                EditorGUILayout.LabelField(
+                    $"Columns (X) - Min: {minDimension}, Max: {maxDimension}"
+                );
+                newGridSize.x = EditorGUILayout.IntSlider(gridSize2D.x, minDimension, maxDimension);
+
+                // Calculate row constraints based on column selection
+                minRows = Mathf.CeilToInt((float)objectCount / newGridSize.x);
+                maxRows = Mathf.Min(maxDimension, minRows * 2);
+
+                EditorGUILayout.LabelField($"Rows (Y) - Min: {minRows}, Max: {maxRows}");
+                newGridSize.y = EditorGUILayout.IntSlider(
+                    Mathf.Clamp(gridSize2D.y, minRows, maxRows),
+                    minRows,
+                    maxRows
+                );
+                settings.gridSize = new Vector3Int(newGridSize.x, newGridSize.y, 1);
+                break;
+
+            case DistributionPlane.YZ:
+                // Columns
+                EditorGUILayout.LabelField(
+                    $"Columns (Y) - Min: {minDimension}, Max: {maxDimension}"
+                );
+                newGridSize.x = EditorGUILayout.IntSlider(gridSize2D.x, minDimension, maxDimension);
+
+                // Calculate row constraints based on column selection
+                minRows = Mathf.CeilToInt((float)objectCount / newGridSize.x);
+                maxRows = Mathf.Min(maxDimension, minRows * 2);
+
+                EditorGUILayout.LabelField($"Rows (Z) - Min: {minRows}, Max: {maxRows}");
+                newGridSize.y = EditorGUILayout.IntSlider(
+                    Mathf.Clamp(gridSize2D.y, minRows, maxRows),
+                    minRows,
+                    maxRows
+                );
+                settings.gridSize = new Vector3Int(1, newGridSize.x, newGridSize.y);
+                break;
+        }
 
         if (EditorGUI.EndChangeCheck())
         {
-            EditorUtility.SetDirty(settings);
-            if (previewEnabled)
+            // Only update when the slider drag is complete
+            if (Event.current.type == EventType.Used)
             {
-                UpdateAutoCalculations();
+                ValidateAndUpdateGridSize();
                 UpdatePreview();
                 SceneView.RepaintAll();
             }
         }
     }
 
-    private void InitializeStyles()
-    {
-        if (headerStyle == null)
-        {
-            headerStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 14,
-                alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(15, 10, 15, 15),
-                margin = new RectOffset(0, 0, 5, 5),
-                normal = { textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black }
-            };
-        }
-
-        if (sectionStyle == null)
-        {
-            sectionStyle = new GUIStyle(EditorStyles.helpBox)
-            {
-                padding = new RectOffset(15, 15, 10, 10),
-                margin = new RectOffset(0, 0, 5, 5)
-            };
-        }
-
-        if (toggleStyle == null)
-        {
-            toggleStyle = new GUIStyle(EditorStyles.foldout)
-            {
-                fontStyle = FontStyle.Bold,
-                fontSize = 12
-            };
-        }
-    }
-
     private void DrawHeader(string title)
     {
-        EditorGUILayout.Space(5);
-        var rect = EditorGUILayout.GetControlRect(false, 50); // Increased from 40 to 50
-        EditorGUI.DrawRect(rect, headerColor);
-        EditorGUI.LabelField(rect, title, headerStyle);
-        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField(title, headerStyle, GUILayout.ExpandWidth(true));
+    }
+
+    private void DrawHorizontalLayout()
+    {
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(15);
+
+        // Left side - Settings
+        using (new EditorGUILayout.VerticalScope(GUILayout.Width(position.width * 0.60f)))
+        {
+            using (new EditorGUILayout.VerticalScope(sectionStyle))
+            {
+                DrawDistributionPlaneSettings();
+            }
+
+            EditorGUILayout.Space(5);
+
+            using (new EditorGUILayout.VerticalScope(sectionStyle))
+            {
+                DrawPositionSettings();
+            }
+
+            EditorGUILayout.Space(5);
+
+            using (new EditorGUILayout.VerticalScope(sectionStyle))
+            {
+                DrawRotationSettings();
+            }
+        }
+
+        GUILayout.Space(15);
+
+        // Right side - Preview and Actions
+        EditorGUILayout.BeginVertical(GUILayout.Width(position.width * 0.27f));
+
+        using (new EditorGUILayout.VerticalScope(sectionStyle))
+        {
+            DrawActionButtons();
+        }
+
+        EditorGUILayout.Space(10);
+
+        // Statistics Section
+        using (new EditorGUILayout.VerticalScope(sectionStyle))
+        {
+            showStatistics = EditorGUILayout.Foldout(showStatistics, "Statistics", true);
+            if (showStatistics)
+            {
+                DrawStatsBox();
+            }
+        }
+
+        EditorGUILayout.EndVertical();
+
+        GUILayout.Space(15);
+        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawPositionSettings()
     {
-        settings.distributionPlane = (DistributionPlane)EditorGUILayout.EnumPopup(
-            new GUIContent("Distribution Plane", "Choose which plane to arrange objects on"),
-            settings.distributionPlane
+        showPositionSettings = EditorGUILayout.Foldout(
+            showPositionSettings,
+            "Position Settings",
+            true
         );
+        if (!showPositionSettings)
+            return;
 
-        settings.autoCalculate = EditorGUILayout.Toggle(
-            new GUIContent("Auto Calculate", "Automatically calculate spacing and grid size based on object bounds"),
-            settings.autoCalculate
-        );
+        EditorGUI.indentLevel++;
+        settings.positionType = (GridArrangerSettings.PositionType)
+            EditorGUILayout.EnumPopup(
+                new GUIContent("Position Type", "How to arrange object positions"),
+                settings.positionType
+            );
 
-        // Start Position on one line
-        using (new EditorGUILayout.HorizontalScope())
+        EditorGUI.indentLevel++;
+        switch (settings.positionType)
         {
-            EditorGUILayout.LabelField(new GUIContent("Start Position", "Starting position for the grid arrangement"), GUILayout.Width(EditorGUIUtility.labelWidth - 15));
-            settings.startPosition = EditorGUILayout.Vector3Field("", settings.startPosition);
+            case GridArrangerSettings.PositionType.Auto:
+                settings.spacingMultiplier = EditorGUILayout.Slider(
+                    new GUIContent(
+                        "Spacing Multiplier",
+                        "Multiplier for automatically calculated spacing"
+                    ),
+                    settings.spacingMultiplier,
+                    1f,
+                    10f
+                );
+                break;
+
+            case GridArrangerSettings.PositionType.ManualGrid:
+            case GridArrangerSettings.PositionType.ManualGridAndSpacing:
+                DrawGridSizeControls();
+
+                if (settings.positionType == GridArrangerSettings.PositionType.ManualGrid)
+                {
+                    // Calculate and show best spacing
+                    Vector3 averageSize = CalculateAverageObjectSize();
+                    float bestSpacing = settings.distributionPlane switch
+                    {
+                        DistributionPlane.XZ => Mathf.Max(averageSize.x, averageSize.z),
+                        DistributionPlane.XY => Mathf.Max(averageSize.x, averageSize.y),
+                        DistributionPlane.YZ => Mathf.Max(averageSize.y, averageSize.z),
+                        _ => averageSize.x
+                    };
+
+                    settings.spacing = settings.distributionPlane switch
+                    {
+                        DistributionPlane.XZ => new Vector3(bestSpacing, 0, bestSpacing),
+                        DistributionPlane.XY => new Vector3(bestSpacing, bestSpacing, 0),
+                        DistributionPlane.YZ => new Vector3(0, bestSpacing, bestSpacing),
+                        _ => new Vector3(bestSpacing, 0, bestSpacing)
+                    };
+
+                    using (new EditorGUI.DisabledGroupScope(true))
+                    {
+                        EditorGUILayout.FloatField(
+                            new GUIContent(
+                                "Calculated Spacing",
+                                "Automatically calculated based on object sizes"
+                            ),
+                            bestSpacing
+                        );
+                    }
+                }
+                else // ManualGridAndSpacing
+                {
+                    EditorGUILayout.Space(5);
+                    EditorGUILayout.LabelField("Spacing", EditorStyles.boldLabel);
+
+                    EditorGUI.BeginChangeCheck();
+                    float spacing = EditorGUILayout.Slider(
+                        new GUIContent("Grid Spacing", "Distance between objects in the grid"),
+                        settings.spacing.x,
+                        0.1f,
+                        10f
+                    );
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        // Only update when the slider drag is complete
+                        if (Event.current.type == EventType.Used)
+                        {
+                            settings.spacing = settings.distributionPlane switch
+                            {
+                                DistributionPlane.XZ => new Vector3(spacing, 0, spacing),
+                                DistributionPlane.XY => new Vector3(spacing, spacing, 0),
+                                DistributionPlane.YZ => new Vector3(0, spacing, spacing),
+                                _ => new Vector3(spacing, 0, spacing)
+                            };
+                            UpdatePreview();
+                            SceneView.RepaintAll();
+                        }
+                    }
+                }
+                break;
+
+            case GridArrangerSettings.PositionType.Randomize:
+                EditorGUI.BeginChangeCheck();
+                float range = EditorGUILayout.Slider(
+                    new GUIContent(
+                        "Random Range",
+                        "Maximum distance from center for random distribution"
+                    ),
+                    settings.randomRange.y,
+                    0.1f,
+                    100f
+                );
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (Event.current.type == EventType.Used)
+                    {
+                        settings.randomRange = new Vector2(-range, range);
+                        UpdatePreview();
+                        SceneView.RepaintAll();
+                    }
+                }
+                break;
+        }
+        EditorGUI.indentLevel -= 2;
+    }
+
+    private void DrawPreviewPoints()
+    {
+        if (previewPositions.Count == 0)
+            return;
+
+        // Draw thicker outline first
+        Handles.color = new Color(0.2f, 0.5f, 1f, 1f);
+        float size = HandleUtility.GetHandleSize(previewPositions[0]) * 0.15f;
+
+        foreach (var position in previewPositions)
+        {
+            Handles.SphereHandleCap(0, position, Quaternion.identity, size, EventType.Repaint);
         }
 
-        settings.centerInGrid = EditorGUILayout.Toggle("Center In Grid", settings.centerInGrid);
+        // Draw inner sphere
+        Handles.color = new Color(0.2f, 0.5f, 1f, 0.8f);
+        size = HandleUtility.GetHandleSize(previewPositions[0]) * 0.1f;
+
+        foreach (var position in previewPositions)
+        {
+            Handles.SphereHandleCap(0, position, Quaternion.identity, size, EventType.Repaint);
+        }
     }
 
     private void DrawRotationSettings()
     {
-        settings.rotationType = (GridArrangerSettings.RotationType)EditorGUILayout.EnumPopup(
-            new GUIContent("Rotation Type", "How to handle object rotation"),
-            settings.rotationType
+        showRotationSettings = EditorGUILayout.Foldout(
+            showRotationSettings,
+            "Rotation Settings",
+            true
         );
+        if (!showRotationSettings)
+            return;
+
+        EditorGUI.indentLevel++;
+
+        settings.rotationType = (GridArrangerSettings.RotationType)
+            EditorGUILayout.EnumPopup(
+                new GUIContent("Rotation Type", "How to handle object rotation"),
+                settings.rotationType
+            );
 
         EditorGUI.indentLevel++;
         switch (settings.rotationType)
@@ -298,16 +778,14 @@ public class GridArrangerWindow : EditorWindow
             case GridArrangerSettings.RotationType.Random:
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PrefixLabel("Rotation Range");
-                
-                // Min value
+
                 float roundedMin = Mathf.Round(settings.randomRotationRange.x * 100f) / 100f;
                 settings.randomRotationRange.x = EditorGUILayout.FloatField(
                     roundedMin,
                     GUILayout.Width(75)
                 );
-                GUILayout.Space(-5); // Reduce space before slider
-                
-                // Slider
+                GUILayout.Space(-5);
+
                 EditorGUILayout.MinMaxSlider(
                     ref settings.randomRotationRange.x,
                     ref settings.randomRotationRange.y,
@@ -315,15 +793,14 @@ public class GridArrangerWindow : EditorWindow
                     360f,
                     GUILayout.ExpandWidth(true)
                 );
-                GUILayout.Space(-5); // Reduce space after slider
-                
-                // Max value
+                GUILayout.Space(-5);
+
                 float roundedMax = Mathf.Round(settings.randomRotationRange.y * 100f) / 100f;
                 settings.randomRotationRange.y = EditorGUILayout.FloatField(
                     roundedMax,
                     GUILayout.Width(75)
                 );
-                
+
                 EditorGUILayout.EndHorizontal();
                 break;
 
@@ -358,137 +835,421 @@ public class GridArrangerWindow : EditorWindow
                 }
                 break;
         }
+        EditorGUI.indentLevel -= 2;
+    }
+
+    private void DrawStatsBox()
+    {
+        var selectedObjects = Selection.gameObjects;
+        EditorGUILayout.Space(2);
+        EditorGUILayout.LabelField($"Selected Objects:", EditorStyles.boldLabel);
+        EditorGUI.indentLevel++;
+        EditorGUILayout.LabelField($"{selectedObjects.Length}");
+        EditorGUI.indentLevel--;
+
+        EditorGUILayout.LabelField($"Grid Dimensions:", EditorStyles.boldLabel);
+        EditorGUI.indentLevel++;
+        EditorGUILayout.LabelField(
+            $"{settings.gridSize.x}x{settings.gridSize.y}x{settings.gridSize.z}"
+        );
+        EditorGUI.indentLevel--;
+
+        EditorGUILayout.LabelField("Current Spacing:", EditorStyles.boldLabel);
+        EditorGUI.indentLevel++;
+        EditorGUILayout.LabelField($"X: {settings.spacing.x:F2}");
+        EditorGUILayout.LabelField($"Y: {settings.spacing.y:F2}");
+        EditorGUILayout.LabelField($"Z: {settings.spacing.z:F2}");
+        EditorGUI.indentLevel--;
+
+        if (settings.autoCalculate)
+        {
+            EditorGUILayout.LabelField("Spacing Multiplier:", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField($"{settings.spacingMultiplier:F2}x");
+            EditorGUI.indentLevel--;
+        }
+
+        EditorGUILayout.LabelField("Center Offset:", EditorStyles.boldLabel);
+        Vector3 offset = CalculateCenterOffset(selectedObjects.Length);
+        EditorGUI.indentLevel++;
+        EditorGUILayout.LabelField($"X: {offset.x:F1}");
+        EditorGUILayout.LabelField($"Y: {offset.y:F1}");
+        EditorGUILayout.LabelField($"Z: {offset.z:F1}");
         EditorGUI.indentLevel--;
     }
 
-    private void DrawActionButtons()
+    private void DrawVerticalLayout()
     {
-        EditorGUILayout.Space(5);
+        EditorGUILayout.BeginVertical();
+        GUILayout.Space(15);
+
+        // Distribution Plane Section
         using (new EditorGUILayout.HorizontalScope())
         {
-            previewEnabled = EditorGUILayout.ToggleLeft(
-                new GUIContent("Show Preview", "Show preview of object positions in Scene view"), 
-                previewEnabled
-            );
-
-            GUILayout.FlexibleSpace();
-
-            using (new EditorGUI.DisabledGroupScope(Selection.gameObjects.Length == 0))
+            GUILayout.Space(15); // Left margin
+            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.ExpandWidth(true)))
             {
-                if (GUILayout.Button("Arrange Objects", GUILayout.Height(30)))
+                DrawDistributionPlaneSettings();
+            }
+            GUILayout.Space(15); // Right margin
+        }
+
+        EditorGUILayout.Space(5);
+
+        // Position Settings Section
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Space(15);
+            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.ExpandWidth(true)))
+            {
+                DrawPositionSettings();
+            }
+            GUILayout.Space(15);
+        }
+
+        EditorGUILayout.Space(5);
+
+        // Rotation Settings Section
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Space(15);
+            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.ExpandWidth(true)))
+            {
+                DrawRotationSettings();
+            }
+            GUILayout.Space(15);
+        }
+
+        EditorGUILayout.Space(10);
+
+        // Preview and Actions Section
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Space(15);
+            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.ExpandWidth(true)))
+            {
+                DrawActionButtons();
+            }
+            GUILayout.Space(15);
+        }
+
+        EditorGUILayout.Space(10);
+
+        // Statistics Section
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.Space(15);
+            using (new EditorGUILayout.VerticalScope(sectionStyle, GUILayout.ExpandWidth(true)))
+            {
+                showStatistics = EditorGUILayout.Foldout(showStatistics, "Statistics", true);
+                if (showStatistics)
                 {
-                    ArrangeSelectedObjects();
+                    DrawStatsBox();
                 }
             }
+            GUILayout.Space(15);
         }
+
+        GUILayout.Space(15);
+        EditorGUILayout.EndVertical();
     }
 
-    private void ResetSettings()
-    {
-        settings = CreateInstance<GridArrangerSettings>();
-        EditorUtility.SetDirty(settings);
-    }
+    #endregion
 
+    #region < PRIVATE_METHODS > [[ Grid Calculations ]] ================================================================ 
     /// <summary>
-    /// Calculates the minimum grid size needed to accommodate all selected objects
+    /// Gets the indices for grid positions, including empty spaces for uniform grid
     /// </summary>
-    private Vector3Int CalculateMinimumGridSize(int objectCount)
+    private IEnumerable<Vector3Int> GetArrangementIndices()
     {
-        if (objectCount <= 0) return Vector3Int.one;
+        List<Vector3Int> indices = new List<Vector3Int>();
+        int totalObjects = Selection.gameObjects.Length;
+        if (totalObjects == 0)
+            return indices;
 
-        // Calculate the size of the square grid
-        int gridSize = Mathf.CeilToInt(Mathf.Sqrt(objectCount));
-        
-        // Set the appropriate dimensions based on the distribution plane
+        switch (settings.distributionPlane)
+        {
+            case DistributionPlane.XZ:
+                for (int z = 0; z < settings.gridSize.z; z++)
+                for (int x = 0; x < settings.gridSize.x; x++)
+                    indices.Add(new Vector3Int(x, 0, z));
+                break;
+
+            case DistributionPlane.XY:
+                for (int y = 0; y < settings.gridSize.y; y++)
+                for (int x = 0; x < settings.gridSize.x; x++)
+                    indices.Add(new Vector3Int(x, y, 0));
+                break;
+
+            case DistributionPlane.YZ:
+                for (int z = 0; z < settings.gridSize.z; z++)
+                for (int y = 0; y < settings.gridSize.y; y++)
+                    indices.Add(new Vector3Int(0, y, z));
+                break;
+        }
+
+        return indices;
+    }
+
+    private Vector2Int GetGridSize2D()
+    {
         return settings.distributionPlane switch
         {
-            DistributionPlane.XZ => new Vector3Int(gridSize, 1, gridSize),
-            DistributionPlane.XY => new Vector3Int(gridSize, gridSize, 1),
-            DistributionPlane.YZ => new Vector3Int(1, gridSize, gridSize),
-            _ => new Vector3Int(gridSize, 1, gridSize)
+            DistributionPlane.XZ => new Vector2Int(settings.gridSize.x, settings.gridSize.z),
+            DistributionPlane.XY => new Vector2Int(settings.gridSize.x, settings.gridSize.y),
+            DistributionPlane.YZ => new Vector2Int(settings.gridSize.y, settings.gridSize.z),
+            _ => new Vector2Int(settings.gridSize.x, settings.gridSize.z)
         };
     }
 
-    /// <summary>
-    /// Calculates the average size of selected objects including their children
-    /// </summary>
-    private Vector3 CalculateAverageObjectSize()
+    private Vector3 GetPositionForAxis(Vector3Int index)
     {
-        GameObject[] selectedObjects = Selection.gameObjects;
-        if (selectedObjects.Length == 0)
-            return Vector3.one;
+        Vector3 position = new Vector3(
+            index.x * settings.spacing.x,
+            index.y * settings.spacing.y,
+            index.z * settings.spacing.z
+        );
 
-        Vector3 totalSize = Vector3.zero;
-        int validObjects = 0;
+        Vector3 centerOffset = CalculateCenterOffset(Selection.gameObjects.Length);
+        Vector3 centerPosition = CalculateCenterPosition();
+        Vector3 finalPosition = centerPosition + position + centerOffset;
 
-        foreach (GameObject obj in selectedObjects)
+        // Only snap if enabled
+        if (settings.snapToGrid)
         {
-            // Get bounds including all children
-            Bounds? bounds = null;
-
-            // Check Renderers (including children)
-            var renderers = obj.GetComponentsInChildren<Renderer>();
-            foreach (var renderer in renderers)
-            {
-                if (bounds.HasValue)
-                    bounds.Value.Encapsulate(renderer.bounds);
-                else
-                    bounds = renderer.bounds;
-            }
-
-            // Check Colliders if no renderers found
-            if (!bounds.HasValue)
-            {
-                var colliders = obj.GetComponentsInChildren<Collider>();
-                foreach (var collider in colliders)
-                {
-                    if (bounds.HasValue)
-                        bounds.Value.Encapsulate(collider.bounds);
-                    else
-                        bounds = collider.bounds;
-                }
-            }
-
-            // Use transform scale as fallback
-            Vector3 objSize = bounds?.size ?? obj.transform.lossyScale;
-
-            if (objSize != Vector3.zero)
-            {
-                totalSize += objSize;
-                validObjects++;
-            }
+            float gridSize = EditorSnapSettings.move.x;
+            finalPosition.x = Mathf.Round(finalPosition.x / gridSize) * gridSize;
+            finalPosition.y = Mathf.Round(finalPosition.y / gridSize) * gridSize;
+            finalPosition.z = Mathf.Round(finalPosition.z / gridSize) * gridSize;
         }
 
-        if (validObjects == 0)
-            return Vector3.one;
-
-        // Calculate base spacing
-        Vector3 averageSize = totalSize / validObjects;
-
-        // Apply multiplier and handle distribution plane
-        Vector3 spacing = averageSize * settings.spacingMultiplier;
-
-        // Ensure minimum spacing
-        spacing.x = Mathf.Max(spacing.x, 0.01f);
-        spacing.y = Mathf.Max(spacing.y, 0.01f);
-        spacing.z = Mathf.Max(spacing.z, 0.01f);
-
-        // Handle 2D distribution planes
-        switch (settings.distributionPlane)
-        {
-            case DistributionPlane.XY:
-                spacing.z = 0;
-                break;
-            case DistributionPlane.XZ:
-                spacing.y = 0;
-                break;
-            case DistributionPlane.YZ:
-                spacing.x = 0;
-                break;
-        }
-
-        return spacing;
+        return finalPosition;
     }
+
+    // Call ResetRandomizeCenter() when position type or distribution plane changes
+    #endregion
+
+    #region < PRIVATE_METHODS > [[ Setup UI ]] ====================================================================== 
+    private void InitializeStyles()
+    {
+        headerStyle = new GUIStyle(EditorStyles.boldLabel)
+        {
+            fontSize = 16,
+            alignment = TextAnchor.MiddleCenter,
+            padding = new RectOffset(10, 10, 10, 10)
+        };
+
+        sectionStyle = new GUIStyle(GUI.skin.box)
+        {
+            padding = new RectOffset(10, 10, 10, 10),
+            margin = new RectOffset(0, 0, 5, 5)
+        };
+
+        toggleStyle = new GUIStyle(EditorStyles.toggle) { padding = new RectOffset(5, 5, 5, 5) };
+    }
+
+    private void LoadOrCreateSettings()
+    {
+        settings = AssetDatabase.LoadAssetAtPath<GridArrangerSettings>(SettingsPath);
+        if (settings == null)
+        {
+            settings = CreateInstance<GridArrangerSettings>();
+            if (!AssetDatabase.IsValidFolder("Assets/Editor"))
+                AssetDatabase.CreateFolder("Assets", "Editor");
+            AssetDatabase.CreateAsset(settings, SettingsPath);
+            AssetDatabase.SaveAssets();
+        }
+    }
+    #endregion
+
+    #region < PRIVATE_METHODS > [[ Unity Editor Events ]] ====================================================================== 
+    private void OnDisable()
+    {
+        SceneView.duringSceneGui -= OnSceneGUI;
+        Selection.selectionChanged -= OnSelectionChange;
+        EditorApplication.update -= OnEditorUpdate;
+    }
+
+    private void OnEditorUpdate()
+    {
+        if (!previewEnabled || Selection.gameObjects.Length == 0)
+            return;
+
+        // Track position changes
+        Vector3 currentCenter =
+            Selection.gameObjects.Aggregate(
+                Vector3.zero,
+                (sum, obj) => sum + obj.transform.position
+            ) / Selection.gameObjects.Length;
+
+        if (
+            !lastCenterPosition.HasValue
+            || Vector3.Distance(currentCenter, lastCenterPosition.Value) > 0.001f
+        )
+        {
+            RequestUpdate();
+            lastCenterPosition = currentCenter;
+        }
+
+        if (updatePending && EditorApplication.timeSinceStartup - lastUpdateTime >= UpdateDelay)
+        {
+            //Debug.Log($"[GridArranger] Executing delayed update after {EditorApplication.timeSinceStartup - lastUpdateTime:F3}s");
+            updatePending = false;
+            if (settings.positionType == GridArrangerSettings.PositionType.Randomize)
+            {
+                ResetRandomizeCenter();
+            }
+            UpdatePreview();
+            SceneView.RepaintAll();
+        }
+    }
+
+    private void OnEnable()
+    {
+        LoadOrCreateSettings();
+        SceneView.duringSceneGui += OnSceneGUI;
+        Selection.selectionChanged += OnSelectionChange;
+        EditorApplication.update += OnEditorUpdate;
+        RequestUpdate();
+    }
+
+    /// <summary>
+    /// Draws the editor window GUI
+    /// </summary>
+    private void OnGUI()
+    {
+        if (settings == null)
+        {
+            LoadOrCreateSettings();
+            return;
+        }
+
+        if (headerStyle == null)
+            InitializeStyles();
+
+        EditorGUI.BeginChangeCheck();
+
+        DrawHeader("Grid Arranger");
+        EditorGUILayout.Space(10);
+
+        // Determine layout based on window width
+        bool useVerticalLayout = position.width < 650; // Threshold for switching layouts
+
+        if (useVerticalLayout)
+        {
+            DrawVerticalLayout();
+        }
+        else
+        {
+            DrawHorizontalLayout();
+        }
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorUtility.SetDirty(settings);
+            RequestUpdate();
+        }
+    }
+
+    /// <summary>
+    /// Draws preview gizmos in the scene view
+    /// </summary>
+    private void OnSceneGUI(SceneView sceneView)
+    {
+        if (!previewEnabled)
+            return;
+
+        var selectedObjects = Selection.gameObjects;
+        if (selectedObjects.Length == 0)
+            return;
+
+        // Draw preview points and connections
+        DrawPreviewPoints();
+
+        // Draw random distribution range visualization
+        if (settings.positionType == GridArrangerSettings.PositionType.Randomize)
+        {
+            Vector3 center = CalculateRandomizeCenter();
+            float range = settings.randomRange.y;
+
+            Color fillColor = new Color(0.2f, 0.5f, 1f, 0.1f);
+            Color outlineColor = new Color(0.2f, 0.5f, 1f, 0.3f);
+
+            Vector3[] squareCorners = new Vector3[4];
+            switch (settings.distributionPlane)
+            {
+                case DistributionPlane.XZ:
+                    squareCorners[0] = center + new Vector3(-range, 0, -range);
+                    squareCorners[1] = center + new Vector3(range, 0, -range);
+                    squareCorners[2] = center + new Vector3(range, 0, range);
+                    squareCorners[3] = center + new Vector3(-range, 0, range);
+                    break;
+
+                case DistributionPlane.XY:
+                    squareCorners[0] = center + new Vector3(-range, -range, 0);
+                    squareCorners[1] = center + new Vector3(range, -range, 0);
+                    squareCorners[2] = center + new Vector3(range, range, 0);
+                    squareCorners[3] = center + new Vector3(-range, range, 0);
+                    break;
+
+                case DistributionPlane.YZ:
+                    squareCorners[0] = center + new Vector3(0, -range, -range);
+                    squareCorners[1] = center + new Vector3(0, range, -range);
+                    squareCorners[2] = center + new Vector3(0, range, range);
+                    squareCorners[3] = center + new Vector3(0, -range, range);
+                    break;
+            }
+
+            Handles.color = fillColor;
+            Handles.DrawSolidRectangleWithOutline(squareCorners, fillColor, outlineColor);
+
+            // Draw thicker outline
+            Handles.color = outlineColor;
+            float thickness = 3f;
+            for (int i = 0; i < thickness; i++)
+            {
+                Handles.DrawPolyLine(
+                    squareCorners[0],
+                    squareCorners[1],
+                    squareCorners[2],
+                    squareCorners[3],
+                    squareCorners[0]
+                );
+            }
+        }
+    }
+
+    // Update the preview when selection changes
+    private void OnSelectionChange()
+    {
+        if (!previewEnabled)
+            return;
+
+        if (settings.positionType != GridArrangerSettings.PositionType.Auto)
+        {
+            ValidateAndUpdateGridSize();
+        }
+
+        UpdateAutoCalculations();
+        RequestUpdate();
+    }
+    #endregion
+
+    #region < PRIVATE_METHODS > [[ Update Request ]] ====================================================================== 
+    private void RequestUpdate()
+    {
+        if (!updatePending)
+        {
+            Debug.Log("[GridArranger] Requesting update");
+            updatePending = true;
+            lastUpdateTime = EditorApplication.timeSinceStartup;
+        }
+        else
+        {
+            //Debug.Log("[GridArranger] Update already pending");
+        }
+    }
+
 
     /// <summary>
     /// Updates spacing and grid size based on selected objects
@@ -499,16 +1260,33 @@ public class GridArrangerWindow : EditorWindow
         if (selectedObjects.Length == 0 || !settings.autoCalculate)
             return;
 
-        // Reset spacing and grid size before recalculating
-        settings.spacing = Vector3.one * 2f;
-        settings.gridSize = Vector3Int.one;
-
         // Calculate spacing based on object bounds
         Vector3 averageSize = CalculateAverageObjectSize();
-        settings.spacing = averageSize * settings.spacingMultiplier;
+        float maxPlanarSize = settings.distributionPlane switch
+        {
+            DistributionPlane.XZ => Mathf.Max(averageSize.x, averageSize.z),
+            DistributionPlane.XY => Mathf.Max(averageSize.x, averageSize.y),
+            DistributionPlane.YZ => Mathf.Max(averageSize.y, averageSize.z),
+            _ => averageSize.x
+        };
 
-        // Calculate grid size based on object count
-        settings.gridSize = CalculateMinimumGridSize(selectedObjects.Length);
+        // Set uniform spacing for the distribution plane, zero for the unused axis
+        settings.spacing = settings.distributionPlane switch
+        {
+            DistributionPlane.XZ
+                => new Vector3(maxPlanarSize, 0, maxPlanarSize) * settings.spacingMultiplier,
+            DistributionPlane.XY
+                => new Vector3(maxPlanarSize, maxPlanarSize, 0) * settings.spacingMultiplier,
+            DistributionPlane.YZ
+                => new Vector3(0, maxPlanarSize, maxPlanarSize) * settings.spacingMultiplier,
+            _ => new Vector3(maxPlanarSize, 0, maxPlanarSize) * settings.spacingMultiplier
+        };
+
+        // Only update grid size in Auto mode
+        if (settings.positionType == GridArrangerSettings.PositionType.Auto)
+        {
+            settings.gridSize = CalculateMinimumGridSize(selectedObjects.Length);
+        }
     }
 
     /// <summary>
@@ -524,237 +1302,130 @@ public class GridArrangerWindow : EditorWindow
 
         GameObject[] selectedObjects = Selection.gameObjects;
         if (selectedObjects.Length == 0)
-        {
-            previewPositions.Clear();
             return;
-        }
 
-        // Ensure we have current calculations
-        UpdateAutoCalculations();
+        // Calculate current center for position change detection
+        Vector3 currentCenter =
+            selectedObjects.Aggregate(Vector3.zero, (sum, obj) => sum + obj.transform.position)
+            / selectedObjects.Length;
+
+        lastSelectedObjects = selectedObjects;
+        lastGridSize = settings.gridSize;
+        lastSpacing = settings.spacing;
+        lastDistributionPlane = settings.distributionPlane;
+        lastCenterPosition = currentCenter;
+
         CalculateGridPositions(selectedObjects.Length, out previewPositions);
+        SceneView.RepaintAll();
     }
 
-    /// <summary>
-    /// Draws preview gizmos in the scene view
-    /// </summary>
-    private void OnSceneGUI(SceneView sceneView)
+    private void ValidateAndUpdateGridSize()
     {
-        if (!previewEnabled || previewPositions == null || previewPositions.Count == 0) 
-            return;
-
-        // Draw preview spheres
-        Handles.color = new Color(0, 1, 0, 0.5f); // Semi-transparent green
-        foreach (var position in previewPositions)
-        {
-            Handles.SphereHandleCap(
-                0,
-                position,
-                Quaternion.identity,
-                0.25f, // Size of preview sphere
-                EventType.Repaint
-            );
-        }
-
-        // Draw connecting lines to show grid structure
-        Handles.color = new Color(0, 1, 0, 0.2f); // More transparent green
-        for (int i = 0; i < previewPositions.Count; i++)
-        {
-            for (int j = i + 1; j < previewPositions.Count; j++)
-            {
-                // Only draw lines between adjacent positions based on the distribution plane
-                bool shouldDrawLine = settings.distributionPlane switch
-                {
-                    DistributionPlane.XZ => 
-                        Mathf.Approximately(previewPositions[i].y, previewPositions[j].y) &&
-                        (Mathf.Approximately(previewPositions[i].x, previewPositions[j].x) ||
-                         Mathf.Approximately(previewPositions[i].z, previewPositions[j].z)),
-                    DistributionPlane.XY => 
-                        Mathf.Approximately(previewPositions[i].z, previewPositions[j].z) &&
-                        (Mathf.Approximately(previewPositions[i].x, previewPositions[j].x) ||
-                         Mathf.Approximately(previewPositions[i].y, previewPositions[j].y)),
-                    DistributionPlane.YZ => 
-                        Mathf.Approximately(previewPositions[i].x, previewPositions[j].x) &&
-                        (Mathf.Approximately(previewPositions[i].y, previewPositions[j].y) ||
-                         Mathf.Approximately(previewPositions[i].z, previewPositions[j].z)),
-                    _ => false
-                };
-
-                if (shouldDrawLine)
-                {
-                    Handles.DrawLine(previewPositions[i], previewPositions[j]);
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Calculates grid positions based on current settings
-    /// </summary>
-    private void CalculateGridPositions(int objectCount, out List<Vector3> positions)
-    {
-        positions = new List<Vector3>();
+        int objectCount = Selection.gameObjects.Length;
         if (objectCount == 0)
             return;
 
-        // Get arrangement indices based on current settings
-        foreach (Vector3Int index in GetArrangementIndices())
+        Vector2Int currentSize = GetGridSize2D();
+
+        // Calculate base constraints
+        int minDimension = Mathf.CeilToInt(Mathf.Sqrt(objectCount));
+
+        // Clamp columns first
+        int newColumns = Mathf.Clamp(currentSize.x, minDimension, objectCount);
+
+        // Calculate row constraints based on column count
+        int minRows = Mathf.CeilToInt((float)objectCount / newColumns);
+        int maxRows = Mathf.Min(objectCount, minRows * 2); // Limit max rows to double the minimum
+
+        // Clamp rows to valid range
+        int newRows = Mathf.Clamp(currentSize.y, minRows, maxRows);
+
+        // Check if total grid size is too large
+        int totalGridSpaces = newColumns * newRows;
+        if (totalGridSpaces > objectCount * 2)
         {
-            Vector3 position = GetPositionForAxis(index);
-            positions.Add(position);
-        }
-    }
-
-    private Vector3 CalculateCenterOffset(int objectCount)
-    {
-        Vector3 totalSize = new Vector3(
-            (settings.gridSize.x - 1) * settings.spacing.x,
-            (settings.gridSize.y - 1) * settings.spacing.y,
-            (settings.gridSize.z - 1) * settings.spacing.z
-        );
-        return -totalSize * 0.5f;
-    }
-
-    private IEnumerable<Vector3Int> GetArrangementIndices()
-    {
-        List<Vector3Int> indices = new List<Vector3Int>();
-        int totalObjects = Selection.gameObjects.Length;
-        if (totalObjects == 0) return indices;
-
-        switch (settings.distributionPlane)
-        {
-            case DistributionPlane.XZ:
-                for (int z = 0; z < settings.gridSize.z; z++)
-                    for (int x = 0; x < settings.gridSize.x; x++)
-                        if (indices.Count < totalObjects)
-                            indices.Add(new Vector3Int(x, 0, z));
-                break;
-
-            case DistributionPlane.XY:
-                for (int y = 0; y < settings.gridSize.y; y++)
-                    for (int x = 0; x < settings.gridSize.x; x++)
-                        if (indices.Count < totalObjects)
-                            indices.Add(new Vector3Int(x, y, 0));
-                break;
-
-            case DistributionPlane.YZ:
-                for (int z = 0; z < settings.gridSize.z; z++)
-                    for (int y = 0; y < settings.gridSize.y; y++)
-                        if (indices.Count < totalObjects)
-                            indices.Add(new Vector3Int(0, y, z));
-                break;
+            // Recalculate to get closer to a square grid
+            newColumns = Mathf.CeilToInt(Mathf.Sqrt(objectCount));
+            minRows = Mathf.CeilToInt((float)objectCount / newColumns);
+            newRows = Mathf.Min(maxRows, minRows * 2);
         }
 
-        return indices;
+        // Update grid size based on distribution plane
+        settings.gridSize = settings.distributionPlane switch
+        {
+            DistributionPlane.XZ => new Vector3Int(newColumns, 1, newRows),
+            DistributionPlane.XY => new Vector3Int(newColumns, newRows, 1),
+            DistributionPlane.YZ => new Vector3Int(1, newColumns, newRows),
+            _ => new Vector3Int(newColumns, 1, newRows)
+        };
+    }
+    #endregion
+
+    #region < PRIVATE_METHODS > [[ Reset ]] ====================================================================== 
+    // Add this to reset the cached center when needed
+    private void ResetRandomizeCenter()
+    {
+        cachedRandomCenter = null;
     }
 
-    private Vector3 GetPositionForAxis(Vector3Int index)
+    private void ResetSettings()
     {
-        Vector3 position = new Vector3(
-            index.x * settings.spacing.x,
-            index.y * settings.spacing.y,
-            index.z * settings.spacing.z
-        );
-
-        if (settings.centerInGrid)
-        {
-            position += CalculateCenterOffset(Selection.gameObjects.Length);
-        }
-
-        return settings.startPosition + position;
+        settings = CreateInstance<GridArrangerSettings>();
+        EditorUtility.SetDirty(settings);
     }
+    #endregion
 
-    private Bounds CalculateSelectionBounds()
+    #region < NESTED_TYPE > [[ Settings ]] ====================================================================== 
+    [CreateAssetMenu(fileName = "GridArrangerSettings", menuName = "Grid Arranger/Settings")]
+    public class GridArrangerSettings : ScriptableObject
     {
-        GameObject[] selectedObjects = Selection.gameObjects;
-        if (selectedObjects.Length == 0)
-            return new Bounds(Vector3.zero, Vector3.one);
-
-        Bounds bounds = new Bounds(selectedObjects[0].transform.position, Vector3.zero);
-        foreach (GameObject obj in selectedObjects)
-        {
-            bounds.Encapsulate(obj.transform.position);
-        }
-        return bounds;
-    }
-
-    /// <summary>
-    /// Arranges the selected objects in a grid pattern based on the specified settings
-    /// </summary>
-    private void ArrangeSelectedObjects()
-    {
-        GameObject[] selectedObjects = Selection.gameObjects;
-        if (selectedObjects.Length == 0)
-        {
-            EditorUtility.DisplayDialog(
-                "Grid Arranger",
-                "Please select at least one object to arrange.",
-                "OK"
-            );
-            return;
-        }
-
-        UpdateAutoCalculations();
-        Undo.RecordObjects(
-            selectedObjects.Select(obj => obj.transform).ToArray(),
-            "Arrange Objects in Grid"
-        );
-
-        CalculateGridPositions(selectedObjects.Length, out var positions);
-
-        for (int i = 0; i < selectedObjects.Length && i < positions.Count; i++)
-        {
-            Transform transform = selectedObjects[i].transform;
-            transform.position = positions[i];
-
-            // Handle rotation based on rotation type
-            switch (settings.rotationType)
-            {
-                case GridArrangerSettings.RotationType.Align:
-                    transform.rotation = Quaternion.Euler(settings.targetRotation);
-                    break;
-
-                case GridArrangerSettings.RotationType.Random:
-                    float randomRotation = Random.Range(
-                        settings.randomRotationRange.x,
-                        settings.randomRotationRange.y
-                    );
-                    transform.rotation = Quaternion.Euler(0, randomRotation, 0);
-                    break;
-            }
-        }
-    }
-
-    [System.Serializable]
-    private class GridArrangerSettings : ScriptableObject
-    {
-        public DistributionPlane distributionPlane = DistributionPlane.XZ;
+        [SerializeField]
         public bool autoCalculate = true;
-        public float spacingMultiplier = 1.1f;
-        public Vector3 spacing = new Vector3(2f, 2f, 2f);
+
+        [SerializeField]
+        public DistributionPlane distributionPlane = DistributionPlane.XZ;
+
+        [SerializeField]
         public Vector3Int gridSize = new Vector3Int(3, 3, 3);
-        public Vector3 startPosition = Vector3.zero;
-        public bool centerInGrid = false;
-        
-        // Rotation settings as enum instead of booleans
+
+        [SerializeField]
+        public PositionType positionType = PositionType.Auto;
+
+        [SerializeField]
+        public Vector2 randomRange = new Vector2(0, 10);
+
+        [SerializeField]
+        public Vector2 randomRotationRange = new Vector2(0, 360);
+
+        [SerializeField]
+        public RotationType rotationType = RotationType.None;
+
+        [SerializeField]
+        public bool snapToGrid = true;
+
+        [SerializeField]
+        public Vector3 spacing = new Vector3(2f, 2f, 2f);
+
+        [SerializeField]
+        public float spacingMultiplier = 1.1f;
+
+        [SerializeField]
+        public Vector3 targetRotation = Vector3.zero;
+
+        public enum PositionType
+        {
+            Auto,
+            ManualGrid,
+            ManualGridAndSpacing,
+            Randomize
+        }
+
         public enum RotationType
         {
             None,
             Align,
             Random
         }
-        public RotationType rotationType = RotationType.None;
-        public Vector3 targetRotation = Vector3.zero;
-        public Vector2 randomRotationRange = new Vector2(0, 360);
     }
-
-    // Update the preview when selection changes
-    private void OnSelectionChange()
-    {
-        if (previewEnabled)
-        {
-            UpdatePreview();
-            Repaint();
-            SceneView.RepaintAll();
-        }
-    }
+    #endregion
 }

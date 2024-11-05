@@ -81,7 +81,7 @@ public class CompilationWindow : EditorWindow
 
                 if (lastCompileTime > 0)
                 {
-                    EditorGUILayout.LabelField($"Last Compile Time: {lastCompileTime:F2} seconds");
+                    EditorGUILayout.LabelField($"Last Compile Time: {FormatCompileTime(lastCompileTime)}");
                 }
             }
 
@@ -99,6 +99,7 @@ public class CompilationWindow : EditorWindow
                         UpdateAssemblyCache();
                     }
 
+                    if (cachedAssemblies == null || cachedAssemblies.Length == 0) return;
                     var sortedAssemblies = cachedAssemblies.OrderByDescending(a => a.allReferences.Length);
                     
                     foreach (var assembly in sortedAssemblies)
@@ -160,5 +161,19 @@ public class CompilationWindow : EditorWindow
     {
         lastCompileTime = EditorApplication.timeSinceStartup - lastCompileTime;
         Repaint();
+    }
+
+    private string FormatCompileTime(double seconds)
+    {
+        int minutes = (int)(seconds / 60);
+        seconds = seconds % 60;
+        int milliseconds = (int)((seconds % 1) * 1000);
+        int wholeSeconds = (int)seconds;
+
+        if (minutes > 0)
+            return $"{minutes}m {wholeSeconds}s {milliseconds}ms";
+        if (wholeSeconds > 0)
+            return $"{wholeSeconds}s {milliseconds}ms";
+        return $"{milliseconds}ms";
     }
 }
