@@ -11,7 +11,7 @@ namespace DarkLight.UnityExt.Collection
     /// Generic implementation of Library that supports key-value pairs with thread-safe operations.
     /// </summary>
     [Serializable]
-    public class Library<TKey, TValue>
+    public class LibraryGeneric<TKey, TValue>
         : Library,
             IDictionary<TKey, TValue>,
             IEnumerator<KeyValuePair<TKey, TValue>>
@@ -37,6 +37,9 @@ namespace DarkLight.UnityExt.Collection
         [SerializeField]
         protected List<LibraryItem<TKey, TValue>> _items = new();
 
+        [SerializeField]
+        protected List<LibraryItem<TKey, TValue>> _testList = new();
+
         /// <summary>
         /// The list of buckets for the library. Each bucket contains an index into the _items list,
         /// forming a hash table structure. A value of -1 indicates an empty bucket. When adding items,
@@ -55,7 +58,7 @@ namespace DarkLight.UnityExt.Collection
         #endregion
         #region Constructors
 
-        public Library()
+        public LibraryGeneric()
         {
             _buckets = new List<int>(INITIAL_BUCKET_COUNT);
             for (int i = 0; i < INITIAL_BUCKET_COUNT; i++)
@@ -65,7 +68,7 @@ namespace DarkLight.UnityExt.Collection
             InternalReset();
         }
 
-        public Library(bool defaultToAllKeys)
+        public LibraryGeneric(bool defaultToAllKeys)
             : this()
         {
             _defaultToAllKeys = defaultToAllKeys;
@@ -143,31 +146,48 @@ namespace DarkLight.UnityExt.Collection
 
         public override void Refresh() => InternalRefresh();
 
-        public override void OnBeforeSerialize() { }
+        public override void OnBeforeSerialize()
+        {
+            return;
+
+            Debug.Log($"[{GetType().Name}] OnBeforeSerialize - Items count: {_items.Count}, Valid items: {_items.Count(i => i.IsOccupied)}");
+            LogItemsState();
+        }
 
         public override void OnAfterDeserialize()
         {
+            return;
+
+            Debug.Log($"[{GetType().Name}] Starting deserialization...");
+            Debug.Log($"Before processing - Items count: {_items.Count}, Valid items: {_items.Count(i => i.IsOccupied)}");
+            
             ExecuteWrite(() =>
             {
+                // Store existing items without clearing
                 var validItems = _items.Where(i => i.IsOccupied).ToList();
-                _items.Clear();
-                _count = 0;
-                _freeList = -1;
+                Debug.Log($"Valid items found: {validItems.Count}");
 
+                // Don't clear _items here, just update/add as needed
                 foreach (var item in validItems)
                 {
                     if (!_items.Any(i => EqualityComparer<TKey>.Default.Equals(i.Key, item.Key)))
                     {
                         InternalKeyValueAdd(item.Key, item.Value);
                     }
-                    else
-                    {
-                        Debug.LogWarning(
-                            $"Duplicate key '{item.Key}' found during deserialization."
-                        );
-                    }
+                }
+
+                // Update count
+                _count = _items.Count(i => i.IsOccupied);
+                
+                // Rebuild buckets if needed
+                if (_buckets.Count < INITIAL_BUCKET_COUNT)
+                {
+                    ResizeBuckets(Math.Max(INITIAL_BUCKET_COUNT, _items.Count * 2));
                 }
             });
+
+            Debug.Log($"After processing - Items count: {_items.Count}, Valid items: {_items.Count(i => i.IsOccupied)}");
+            LogItemsState();
         }
 
         public new void Dispose()
@@ -354,7 +374,7 @@ namespace DarkLight.UnityExt.Collection
             if (!IsValidId(id))
                 return;
 
-            _items[id] = LibraryItem<TKey, TValue>.CreateFree(_freeList);
+            //_items[id] = LibraryItem<TKey, TValue>.CreateFree(_freeList);
             _freeList = id;
             _count--;
         }
@@ -415,42 +435,40 @@ namespace DarkLight.UnityExt.Collection
         /// <summary>
         /// Adds a key-value pair to the library.
         /// </summary>
-        /// <param name="key">The key to add.</param>
-        /// <param name="value">The value to add.</param>
+        /// <param name="key">The key to add. If null, uses default key.</param>
+        /// <param name="value">The value to add. If null, uses default value.</param>
         protected virtual void InternalKeyValueAdd(TKey key, TValue value)
         {
-            if (_items.Any(i => EqualityComparer<TKey>.Default.Equals(i.Key, key)))
+            // Handle null key
+            key ??= CreateDefaultKey();
+            
+            // Handle null value
+            value ??= CreateDefaultValue();
+
+            // Check for existing key
+            if (_items.Any(i => i.IsOccupied && EqualityComparer<TKey>.Default.Equals(i.Key, key)))
+            {
+                Debug.LogWarning($"Key '{key}' already exists in the library. Skipping add.");
                 return;
-
-            int hashCode = key.GetHashCode() & 0x7FFFFFFF;
-            int targetBucket = hashCode % _buckets.Count;
-
-            int index;
-            if (_freeList >= 0)
-            {
-                index = _freeList;
-                _freeList = _items[index].Next;
-            }
-            else
-            {
-                if (_items.Count >= _buckets.Count)
-                {
-                    ResizeBuckets(_buckets.Count * 2);
-                    targetBucket = hashCode % _buckets.Count;
-                }
-                index = _items.Count;
-                _items.Add(default); // Add placeholder
             }
 
-            var newItem = new LibraryItem<TKey, TValue>(index, key, value).WithNext(
-                _buckets[targetBucket]
-            );
+            Debug.Log($"Adding key '{key}' to the {GetType().Name} library with value '{value}'. Current items: {_items.Count}");
 
-            _items[index] = newItem;
-            _buckets[targetBucket] = index;
-            _count++;
+            try
+            {
+                var newItem = new LibraryItem<TKey, TValue>(_items.Count, key, value);
+                
+                _items.Add(newItem);
+                _count++;
 
-            ItemAdded?.Invoke(key, value);
+                Debug.Log($"Successfully added item with key '{key}'. Total items: {_items.Count}, Occupied items: {_items.Count(i => i.IsOccupied)}");
+                LogItemsState();
+                ItemAdded?.Invoke(key, value);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to add item with key '{key}': {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -473,6 +491,7 @@ namespace DarkLight.UnityExt.Collection
 
             while (current >= 0)
             {
+                Debug.Log($"Checking item at index {current} with key '{_items[current].Key}'");
                 if (EqualityComparer<TKey>.Default.Equals(_items[current].Key, key))
                 {
                     if (last < 0)
@@ -485,12 +504,14 @@ namespace DarkLight.UnityExt.Collection
                         _items[last] = lastItem;
                     }
 
-                    var freeItem = LibraryItem<TKey, TValue>.CreateFree(_freeList);
-                    _items[current] = freeItem;
+                    //var freeItem = LibraryItem<TKey, TValue>.CreateFree(_freeList);
+                    //_items[current] = freeItem;
                     _freeList = current;
                     _count--;
 
                     ItemRemoved?.Invoke(key);
+
+                    Debug.Log($"Confirmed that the key '{key}' was removed from the {GetType().Name} library.");
                     return true;
                 }
                 last = current;
@@ -505,6 +526,8 @@ namespace DarkLight.UnityExt.Collection
         /// </summary>
         protected virtual void InternalRefresh()
         {
+            Debug.Log($"[{GetType().Name}] InternalRefresh - Items count: {_items.Count}, Valid items: {_items.Count(i => i.IsOccupied)}");
+
             HandleTypeSpecificRefresh();
 
             int index = 0;
@@ -530,6 +553,7 @@ namespace DarkLight.UnityExt.Collection
         /// </summary>
         protected virtual void HandleTypeSpecificRefresh()
         {
+            Debug.Log($"[{GetType().Name}] HandleTypeSpecificRefresh - Default to all keys: {_defaultToAllKeys}");
             if (typeof(TKey).IsEnum && _defaultToAllKeys)
             {
                 SetRequiredKeys(GetAllPossibleKeys());
@@ -541,6 +565,7 @@ namespace DarkLight.UnityExt.Collection
         /// </summary>
         protected virtual void HandleTypeSpecificReset()
         {
+            Debug.Log($"[{GetType().Name}] HandleTypeSpecificReset - Default to all keys: {_defaultToAllKeys}");
             if (typeof(TKey) == typeof(int) || typeof(TKey) == typeof(string))
             {
                 var keys = GetAllPossibleKeys();
@@ -556,11 +581,13 @@ namespace DarkLight.UnityExt.Collection
         /// </summary>
         protected virtual void InternalReset()
         {
+            Debug.Log($"[{GetType().Name}] InternalReset - Items count: {_items.Count}, Valid items: {_items.Count(i => i.IsOccupied)}");
             _items = new List<LibraryItem<TKey, TValue>>();
             _count = 0;
             _freeList = -1;
             InternalRefresh();
             HandleTypeSpecificReset();
+            LogItemsState();
         }
 
         /// <summary>
@@ -569,6 +596,7 @@ namespace DarkLight.UnityExt.Collection
         /// <returns>An enumerable collection of keys.</returns>
         protected virtual IEnumerable<TKey> GetAllPossibleKeys()
         {
+            Debug.Log($"[{GetType().Name}] GetAllPossibleKeys - Type: {typeof(TKey)}");
             if (typeof(TKey).IsEnum)
             {
                 return Enum.GetValues(typeof(TKey)).Cast<TKey>();
@@ -591,6 +619,7 @@ namespace DarkLight.UnityExt.Collection
         /// <returns>The default key.</returns>
         protected virtual TKey GetDefaultKey()
         {
+            Debug.Log($"[{GetType().Name}] GetDefaultKey - Type: {typeof(TKey)}");
             if (typeof(TKey).IsEnum)
             {
                 var allKeys = GetAllPossibleKeys();
@@ -611,6 +640,7 @@ namespace DarkLight.UnityExt.Collection
         /// <param name="newSize">The new size of the buckets.</param>
         protected void ResizeBuckets(int newSize)
         {
+            Debug.Log($"[{GetType().Name}] ResizeBuckets - New size: {newSize}");
             var newBuckets = new List<int>(newSize);
             for (int i = 0; i < newSize; i++)
             {
@@ -637,6 +667,7 @@ namespace DarkLight.UnityExt.Collection
         /// <param name="value">The value to validate.</param>
         protected virtual void ValidateValue(TValue value)
         {
+            Debug.Log($"[{GetType().Name}] ValidateValue - Value: {value}");
             if (typeof(TValue).IsSubclassOf(typeof(UnityEngine.Object)))
             {
                 if (value == null)
@@ -658,15 +689,12 @@ namespace DarkLight.UnityExt.Collection
         }
         #endregion
 
-        #region ISerializationCallbackReceiver Implementation
-
-        #endregion
-
         /// <summary>
         /// Ensures that all required keys are present in the library.
         /// </summary>
         private void EnsureRequiredKeys()
         {
+            Debug.Log($"[{GetType().Name}] EnsureRequiredKeys - Required keys count: {(_requiredKeys?.Count ?? 0)}");
             if (_requiredKeys == null || _requiredKeys.Count == 0)
                 return;
 
@@ -675,12 +703,25 @@ namespace DarkLight.UnityExt.Collection
                 AddItemWithDefaultValue(key);
             }
         }
+
+        /// <summary>
+        /// Debug method to verify serialization
+        /// </summary>
+        protected void LogItemsState()
+        {
+            Debug.Log($"[{GetType().Name}] Items count: {_items.Count}");
+            foreach (var item in _items.Where(i => i.IsOccupied))
+            {
+                Debug.Log($"Key: {item.Key}, Value: {item.Value}");
+            }
+        }
         #endregion
     }
 
-    public class Library<TValue> : Library<int, TValue>
+    [Serializable]
+    public class LibraryGeneric<TValue> : LibraryGeneric<int, TValue>
     {
-        public Library(bool defaultToAllKeys = false)
+        public LibraryGeneric(bool defaultToAllKeys = false)
             : base(defaultToAllKeys) { }
     }
 }

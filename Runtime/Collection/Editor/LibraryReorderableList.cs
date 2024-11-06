@@ -1,392 +1,214 @@
-using UnityEngine;
+using System;
 using System.Linq;
 using System.Reflection;
-
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditorInternal;
 using UnityEditor;
 #endif
-
-using NaughtyAttributes.Editor;
 
 namespace Darklight.UnityExt.Collection.Editor
 {
 #if UNITY_EDITOR
     public class LibraryReorderableList : ReorderableList
     {
-        // Layout constants
-        private const float DEFAULT_INDENT = 15f;
-        private const float MIN_COLUMN_WIDTH = 50f;
-        private const bool DRAGGABLE = false;
+        private const float PADDING = 2f;
+        private const float KEY_WIDTH_PERCENT = 0.3f;
+        private const float VALUE_WIDTH_PERCENT = 0.7f;
 
-        // Column configuration
-        private struct ColumnInfo
-        {
-            public string Label;
-            public float MinWidth;
-            public float Weight;
+        private readonly SerializedObject _serializedObject;
+        private readonly bool _showKeys;
+        private GUIStyle _headerStyle;
+        private GUIStyle _cellStyle;
 
-            public ColumnInfo(string label, float minWidth, float weight)
-            {
-                Label = label;
-                MinWidth = minWidth;
-                Weight = weight;
-            }
-        }
-
-        private bool _isKeyValueLibrary;
-        private readonly ColumnInfo[] _columnsWithKey;
-        private readonly ColumnInfo[] _columnsWithoutKey;
-
-        // GUI Styles
-        private readonly GUIStyle _centeredLabel;
-        private readonly GUIStyle _expandedContentStyle;
-
-        // Properties
+    
         private FieldInfo _fieldInfo;
         private SerializedProperty _itemsProperty;
-        private SerializedProperty _readOnlyKeyProperty;
-        private SerializedProperty _readOnlyValueProperty;
 
         public LibraryReorderableList(
-            SerializedObject serializedObject, 
+            SerializedObject serializedObject,
+            FieldInfo fieldInfo,
             SerializedProperty itemsProperty,
-            SerializedProperty readOnlyKeyProperty, 
-            SerializedProperty readOnlyValueProperty, 
-            FieldInfo fieldInfo) : base(serializedObject, itemsProperty, DRAGGABLE, true, true, true)
+            bool showKeys = true
+        ) : base(serializedObject, itemsProperty, false, true, true, true)
         {
-            // Initialize fields
+            _serializedObject = serializedObject;
             _fieldInfo = fieldInfo;
             _itemsProperty = itemsProperty;
-            _readOnlyKeyProperty = readOnlyKeyProperty;
-            _readOnlyValueProperty = readOnlyValueProperty;
-
-            _isKeyValueLibrary = fieldInfo.FieldType.GetGenericArguments().Length > 1;
+            _showKeys = showKeys;
             
-            _columnsWithKey = new[]
-            {
-                new ColumnInfo("ID", 30f, 0.1f),
-                new ColumnInfo("Key", 100f, 0.4f),
-                new ColumnInfo("Value", 150f, 0.5f)
-            };
-
-            _columnsWithoutKey = new[]
-            {
-                new ColumnInfo("ID", 50f, 0.2f),
-                new ColumnInfo("Value", 200f, 0.8f)
-            };
-
-            // Initialize styles
-            _centeredLabel = new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter };
-            _expandedContentStyle = new GUIStyle(EditorStyles.label) { padding = new RectOffset(15, 0, 0, 0) };
-
-            // Setup callbacks
+            SetupStyles();
             SetupCallbacks();
+        }
+
+        private void SetupStyles()
+        {
+            _headerStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(5, 0, 0, 0)
+            };
+
+            _cellStyle = new GUIStyle(EditorStyles.label)
+            {
+                padding = new RectOffset(5, 0, 0, 0)
+            };
         }
 
         private void SetupCallbacks()
         {
-            drawHeaderCallback = DrawHeaderInternal;
-            drawElementCallback = DrawElementInternal;
-            elementHeightCallback = GetElementHeightInternal;
-            onRemoveCallback = OnRemoveElementInternal;
-            drawElementBackgroundCallback = DrawElementBackgroundInternal;
+            drawHeaderCallback = DrawHeaderHandler;
+            drawElementCallback = DrawElementHandler;
+            elementHeightCallback = ElementHeightHandler;
         }
+        
 
-        private void DrawHeaderInternal(Rect rect)
+        private void DrawHeaderHandler(Rect rect)
         {
-            var columnRects = CalculateColumnRects(rect);
-            for (int i = 0; i < (_isKeyValueLibrary ? _columnsWithKey.Length : _columnsWithoutKey.Length); i++)
+            if (_showKeys)
             {
-                EditorGUI.LabelField(columnRects[i], (_isKeyValueLibrary ? _columnsWithKey[i].Label : _columnsWithoutKey[i].Label), _centeredLabel);
-            }
-        }
-
-        private void DrawElementInternal(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            var element = GetElementProperties(index);
-            bool isExpandable = IsExpandableProperty(element.Value);
-
-            EditorGUI.BeginChangeCheck();
-
-            if (isExpandable && element.Value.isExpanded)
-            {
-                DrawExpandedElement(rect, element);
+                var keyRect = new Rect(rect.x, rect.y, rect.width * KEY_WIDTH_PERCENT, rect.height);
+                var valueRect = new Rect(keyRect.xMax + PADDING, rect.y, rect.width * VALUE_WIDTH_PERCENT - PADDING, rect.height);
+                
+                EditorGUI.LabelField(keyRect, "Key", _headerStyle);
+                EditorGUI.LabelField(valueRect, "Value", _headerStyle);
             }
             else
             {
-                DrawCompactElement(rect, element);
+                EditorGUI.LabelField(rect, "Value", _headerStyle);
+            }
+        }
+
+        private void DrawElementHandler(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            if (index >= serializedProperty.arraySize) return;
+
+            var element = serializedProperty.GetArrayElementAtIndex(index);
+            if (element == null) return;
+
+            var keyProp = element.FindPropertyRelative("_key");
+            var valueProp = element.FindPropertyRelative("_value");
+
+            if (_showKeys)
+            {
+                var keyRect = new Rect(rect.x, rect.y, rect.width * KEY_WIDTH_PERCENT, rect.height);
+                var valueRect = new Rect(keyRect.xMax + PADDING, rect.y, rect.width * VALUE_WIDTH_PERCENT - PADDING, rect.height);
+
+                DrawKeyField(keyRect, keyProp);
+                DrawValueField(valueRect, valueProp);
+            }
+            else
+            {
+                DrawValueField(rect, valueProp);
+            }
+        }
+
+        private void DrawKeyField(Rect rect, SerializedProperty keyProp)
+        {
+            if (keyProp == null) return;
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.PropertyField(rect, keyProp, GUIContent.none);
+            if (EditorGUI.EndChangeCheck())
+            {
+                _serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private void DrawValueField(Rect rect, SerializedProperty valueProp)
+        {
+            if (valueProp == null) return;
+
+            EditorGUI.BeginChangeCheck();
+            
+            if (valueProp.propertyType == SerializedPropertyType.ObjectReference)
+            {
+                DrawObjectReferenceField(rect, valueProp);
+            }
+            else
+            {
+                EditorGUI.PropertyField(rect, valueProp, GUIContent.none);
             }
 
             if (EditorGUI.EndChangeCheck())
             {
-                ApplyChanges();
+                _serializedObject.ApplyModifiedProperties();
             }
         }
 
-        private void DrawCompactElement(Rect rect, (SerializedProperty Id, SerializedProperty Key, SerializedProperty Value) element)
+        private void DrawObjectReferenceField(Rect rect, SerializedProperty valueProp)
         {
-            var columnRects = CalculateColumnRects(rect);
-
-            EditorGUI.LabelField(columnRects[0], element.Id.intValue.ToString(), _centeredLabel);
-            
-            if (_isKeyValueLibrary)
+            var obj = valueProp.objectReferenceValue;
+            if (obj is ScriptableObject)
             {
-                DrawPropertyField(columnRects[1], element.Key, _readOnlyKeyProperty.boolValue);
-                DrawPropertyField(columnRects[2], element.Value, _readOnlyValueProperty.boolValue);
+                var foldoutRect = new Rect(rect.x, rect.y, 15, EditorGUIUtility.singleLineHeight);
+                var objectRect = new Rect(rect.x + 15, rect.y, rect.width - 15, EditorGUIUtility.singleLineHeight);
+
+                valueProp.isExpanded = EditorGUI.Foldout(foldoutRect, valueProp.isExpanded, GUIContent.none);
+                EditorGUI.ObjectField(objectRect, valueProp, GUIContent.none);
+
+                if (valueProp.isExpanded && obj != null)
+                {
+                    EditorGUI.indentLevel++;
+                    var serializedObject = new SerializedObject(obj);
+                    serializedObject.Update();
+                    
+                    var iterator = serializedObject.GetIterator();
+                    var yOffset = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                    
+                    while (iterator.NextVisible(true))
+                    {
+                        if (iterator.name == "m_Script") continue;
+                        
+                        var propertyRect = new Rect(rect.x, rect.y + yOffset, rect.width, EditorGUI.GetPropertyHeight(iterator));
+                        EditorGUI.PropertyField(propertyRect, iterator, true);
+                        yOffset += EditorGUI.GetPropertyHeight(iterator) + EditorGUIUtility.standardVerticalSpacing;
+                    }
+                    
+                    serializedObject.ApplyModifiedProperties();
+                    EditorGUI.indentLevel--;
+                }
             }
             else
             {
-                DrawPropertyField(columnRects[1], element.Value, _readOnlyValueProperty.boolValue);
+                EditorGUI.ObjectField(rect, valueProp, GUIContent.none);
             }
         }
 
-        private void DrawExpandedElement(Rect rect, (SerializedProperty Id, SerializedProperty Key, SerializedProperty Value) element)
+        private float ElementHeightHandler(int index)
         {
-            float yPos = rect.y;
-            float contentIndent = DEFAULT_INDENT * 2;
+            if (index >= serializedProperty.arraySize) return EditorGUIUtility.singleLineHeight;
 
-            // Header row with ID and Key
-            var headerRect = new Rect(rect.x, yPos, rect.width, EditorGUIUtility.singleLineHeight);
-            var idRect = new Rect(headerRect.x, headerRect.y, 30f, headerRect.height);
-            var keyRect = new Rect(idRect.xMax + 5f, headerRect.y, headerRect.width - idRect.width - 5f, headerRect.height);
+            var element = serializedProperty.GetArrayElementAtIndex(index);
+            if (element == null) return EditorGUIUtility.singleLineHeight;
 
-            EditorGUI.LabelField(idRect, element.Id.intValue.ToString(), _centeredLabel);
-            DrawPropertyField(keyRect, element.Key, _readOnlyKeyProperty.boolValue);
+            var valueProp = element.FindPropertyRelative("_value");
+            if (valueProp == null) return EditorGUIUtility.singleLineHeight;
 
-            // Value section
-            yPos += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-            var valueRect = new Rect(rect.x + contentIndent, yPos, rect.width - contentIndent, EditorGUIUtility.singleLineHeight);
-            DrawExpandablePropertyField(valueRect, element.Value);
-        }
-
-        private void DrawExpandablePropertyField(Rect rect, SerializedProperty property)
-        {
-            if (property.objectReferenceValue == null)
+            if (valueProp.propertyType == SerializedPropertyType.ObjectReference && 
+                valueProp.objectReferenceValue is ScriptableObject && 
+                valueProp.isExpanded)
             {
-                EditorGUI.PropertyField(rect, property, GUIContent.none);
-                return;
-            }
-
-            var serializedObject = new SerializedObject(property.objectReferenceValue);
-            serializedObject.Update();
-
-            // Object field with foldout
-            var foldoutRect = new Rect(rect.x, rect.y, 15f, EditorGUIUtility.singleLineHeight);
-            var objectFieldRect = new Rect(rect.x + 15f, rect.y, rect.width - 15f, EditorGUIUtility.singleLineHeight);
-
-            property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, GUIContent.none);
-            EditorGUI.PropertyField(objectFieldRect, property, GUIContent.none);
-
-            if (property.isExpanded)
-            {
-                EditorGUI.indentLevel++;
-                DrawSerializedObjectProperties(rect, serializedObject);
-                EditorGUI.indentLevel--;
-            }
-
-            serializedObject.ApplyModifiedProperties();
-        }
-
-        private void DrawSerializedObjectProperties(Rect rect, SerializedObject serializedObject)
-        {
-            var iterator = serializedObject.GetIterator();
-            bool enterChildren = true;
-            float yOffset = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-
-            while (iterator.NextVisible(enterChildren))
-            {
-                enterChildren = false;
-                if (iterator.name == "m_Script") continue;
-
-                float propertyHeight = EditorGUI.GetPropertyHeight(iterator);
-                var propertyRect = new Rect(rect.x, rect.y + yOffset, rect.width, propertyHeight);
-                EditorGUI.PropertyField(propertyRect, iterator, true);
-                yOffset += propertyHeight + EditorGUIUtility.standardVerticalSpacing;
-            }
-        }
-
-        private float GetElementHeightInternal(int index)
-        {
-            var element = GetElementProperties(index);
-            if (!IsExpandableProperty(element.Value) || !element.Value.isExpanded)
-                return EditorGUIUtility.singleLineHeight;
-
-            float height = EditorGUIUtility.singleLineHeight * 2 + EditorGUIUtility.standardVerticalSpacing;
-            
-            if (element.Value.objectReferenceValue != null)
-            {
-                var serializedObject = new SerializedObject(element.Value.objectReferenceValue);
+                var obj = valueProp.objectReferenceValue;
+                var serializedObject = new SerializedObject(obj);
                 var iterator = serializedObject.GetIterator();
-                bool enterChildren = true;
+                float height = EditorGUIUtility.singleLineHeight;
 
-                while (iterator.NextVisible(enterChildren))
+                while (iterator.NextVisible(true))
                 {
-                    enterChildren = false;
                     if (iterator.name == "m_Script") continue;
                     height += EditorGUI.GetPropertyHeight(iterator) + EditorGUIUtility.standardVerticalSpacing;
                 }
+
+                return height;
             }
 
-            return height;
-        }
-
-        private (SerializedProperty Id, SerializedProperty Key, SerializedProperty Value) GetElementProperties(int index)
-        {
-            var element = _itemsProperty.GetArrayElementAtIndex(index);
-            return (
-                element.FindPropertyRelative("_id"),
-                element.FindPropertyRelative("_key"),
-                element.FindPropertyRelative("_value")
-            );
-        }
-
-        private bool IsExpandableProperty(SerializedProperty property)
-        {
-            return property.propertyType == SerializedPropertyType.ObjectReference && 
-                   property.objectReferenceValue is ScriptableObject;
-        }
-
-        private Rect[] CalculateColumnRects(Rect totalRect)
-        {
-            var columns = _isKeyValueLibrary ? _columnsWithKey : _columnsWithoutKey;
-            float totalWeight = columns.Sum(c => c.Weight);
-            float availableWidth = totalRect.width - (columns.Length + 1) * DEFAULT_INDENT;
-            
-            var rects = new Rect[columns.Length];
-            float currentX = totalRect.x + DEFAULT_INDENT;
-
-            for (int i = 0; i < columns.Length; i++)
-            {
-                float width = Mathf.Max(columns[i].MinWidth, (availableWidth * columns[i].Weight / totalWeight));
-                rects[i] = new Rect(currentX, totalRect.y, width, totalRect.height);
-                currentX += width + DEFAULT_INDENT;
-            }
-
-            return rects;
+            return EditorGUIUtility.singleLineHeight;
         }
 
         public void DrawList(Rect rect)
         {
-            DoList(rect);
-        }
-
-        public void ApplyChanges()
-        {
-            // Ensure the modified properties are serialized
-            _itemsProperty.serializedObject.ApplyModifiedProperties();
-
-            // Mark the target object dirty to ensure the changes are saved
-            EditorUtility.SetDirty(_itemsProperty.serializedObject.targetObject);
-
-            // Force the editor to repaint both the inspector and the scene
-            _itemsProperty.serializedObject.UpdateIfRequiredOrScript();
-            _itemsProperty.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            EditorApplication.QueuePlayerLoopUpdate(); // Updates Scene view if necessary
-            EditorWindow.focusedWindow?.Repaint();
-        }
-
-        private void DrawElementBackgroundInternal(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            if (isActive)
-            {
-                EditorGUI.DrawRect(rect, new Color(0.24f, 0.49f, 0.90f, 0.3f));
-            }
-            else if (isFocused)
-            {
-                EditorGUI.DrawRect(rect, new Color(0.24f, 0.49f, 0.90f, 0.1f));
-            }
-        }
-
-        private void DrawPropertyField(Rect rect, SerializedProperty property, bool readOnly = false)
-        {
-            if (readOnly)
-            {
-                EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.PropertyField(rect, property, GUIContent.none);
-                EditorGUI.EndDisabledGroup();
-            }
-            else
-            {
-                DrawValueField(rect, property);
-            }
-        }
-
-        private void DrawValueField(Rect rect, SerializedProperty valueProperty)
-        {
-            // Check if the value is a Unity Object type that can be expanded
-            if (valueProperty.propertyType == SerializedPropertyType.ObjectReference)
-            {
-                Object objectRef = valueProperty.objectReferenceValue;
-                if (objectRef != null && objectRef is ScriptableObject)
-                {
-                    // Draw foldout and object field on the same line
-                    Rect foldoutRect = new Rect(rect.x, rect.y, 15f, EditorGUIUtility.singleLineHeight);
-                    Rect objectFieldRect = new Rect(rect.x + 15f, rect.y, rect.width - 15f, EditorGUIUtility.singleLineHeight);
-
-                    valueProperty.isExpanded = EditorGUI.Foldout(foldoutRect, valueProperty.isExpanded, GUIContent.none, true);
-                    EditorGUI.PropertyField(objectFieldRect, valueProperty, GUIContent.none, false);
-
-                    // If expanded, draw the scriptable object's properties
-                    if (valueProperty.isExpanded && objectRef != null)
-                    {
-                        SerializedObject serializedObject = new SerializedObject(objectRef);
-                        serializedObject.Update();
-
-                        EditorGUI.indentLevel += 2;
-                        
-                        SerializedProperty prop = serializedObject.GetIterator();
-                        bool enterChildren = true;
-                        float yOffset = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                        
-                        while (prop.NextVisible(enterChildren))
-                        {
-                            enterChildren = false;
-                            if (prop.name == "m_Script") continue;
-
-                            float propertyHeight = EditorGUI.GetPropertyHeight(prop);
-                            Rect propertyRect = new Rect(rect.x, rect.y + yOffset, rect.width, propertyHeight);
-                            EditorGUI.PropertyField(propertyRect, prop, true);
-                            
-                            yOffset += propertyHeight + EditorGUIUtility.standardVerticalSpacing;
-                        }
-
-                        EditorGUI.indentLevel -= 2;
-                        
-                        serializedObject.ApplyModifiedProperties();
-                    }
-                }
-                else
-                {
-                    EditorGUI.PropertyField(rect, valueProperty, GUIContent.none);
-                }
-            }
-            else if (valueProperty.propertyType == SerializedPropertyType.Integer)
-            {
-                valueProperty.intValue = EditorGUI.IntField(rect, valueProperty.intValue);
-            }
-            else if (valueProperty.propertyType == SerializedPropertyType.Float)
-            {
-                valueProperty.floatValue = EditorGUI.FloatField(rect, valueProperty.floatValue);
-            }
-            else if (valueProperty.propertyType == SerializedPropertyType.Vector2)
-            {
-                valueProperty.vector2Value = EditorGUI.Vector2Field(rect, GUIContent.none, valueProperty.vector2Value);
-            }
-            else if (valueProperty.propertyType == SerializedPropertyType.Vector3)
-            {
-                valueProperty.vector3Value = EditorGUI.Vector3Field(rect, GUIContent.none, valueProperty.vector3Value);
-            }
-            else
-            {
-                EditorGUI.PropertyField(rect, valueProperty, GUIContent.none);
-            }
-        }
-
-        private void OnRemoveElementInternal(ReorderableList list)
-        {
-            _itemsProperty.DeleteArrayElementAtIndex(list.index);
-            _itemsProperty.serializedObject.ApplyModifiedProperties();
+            base.DoList(rect);
         }
     }
 #endif

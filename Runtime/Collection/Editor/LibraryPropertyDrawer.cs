@@ -1,22 +1,24 @@
 using System;
 using System.Reflection;
-using NaughtyAttributes.Editor;
-
-
+using UnityEngine;
+using DarkLight.UnityExt.Collection;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
+using NaughtyAttributes.Editor;
 #endif
 
 namespace Darklight.UnityExt.Collection.Editor
 {
+/*
 #if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(Library<,>), true)]
+    [CustomPropertyDrawer(typeof(Library), true)]
     public class LibraryPropertyDrawer : PropertyDrawerBase
     {
         const string ITEMS_PROP = "_items";
-        const string READ_ONLY_KEY = "_readOnlyKey";
-        const string READ_ONLY_VALUE = "_readOnlyValue";
+        const string GUI_SETTINGS = "_guiSettings";
+        const string READ_ONLY_KEY = "ReadOnlyKey";
+        const string READ_ONLY_VALUE = "ReadOnlyValue";
+        const string SHOW_CACHE_STATS = "ShowCacheStats";
 
         readonly float SINGLE_LINE_HEIGHT = EditorGUIUtility.singleLineHeight;
         readonly float VERTICAL_SPACING = EditorGUIUtility.singleLineHeight * 0.5f;
@@ -29,121 +31,133 @@ namespace Darklight.UnityExt.Collection.Editor
         SerializedObject _serializedObject;
         SerializedProperty _libraryProperty;
         SerializedProperty _itemsProperty;
-        SerializedProperty _readOnlyKeyProperty;
-        SerializedProperty _readOnlyValueProperty;
+        SerializedProperty _guiSettingsProperty;
         LibraryReorderableList _list;
 
         bool _foldout;
         float _fullPropertyHeight;
 
-        protected override void OnGUI_Internal(
-            Rect rect,
-            SerializedProperty property,
-            GUIContent label
-        )
+        private void InitializeProperties(SerializedProperty property)
         {
-            // << INITIALIZATION >>
-            // Store the serialized object and properties
             if (_serializedObject == null)
                 _serializedObject = property.serializedObject;
+
             if (_libraryProperty == null || _libraryProperty.propertyPath != property.propertyPath)
+            {
                 _libraryProperty = property;
-            if (
-                _itemsProperty == null
-                || _itemsProperty.propertyPath
-                    != property.FindPropertyRelative(ITEMS_PROP).propertyPath
-            )
                 _itemsProperty = property.FindPropertyRelative(ITEMS_PROP);
+                _guiSettingsProperty = property.FindPropertyRelative(GUI_SETTINGS);
 
-            if (
-                _readOnlyKeyProperty == null
-                || _readOnlyKeyProperty.propertyPath
-                    != property.FindPropertyRelative(READ_ONLY_KEY).propertyPath
-            )
-                _readOnlyKeyProperty = property.FindPropertyRelative(READ_ONLY_KEY);
-            if (
-                _readOnlyValueProperty == null
-                || _readOnlyValueProperty.propertyPath
-                    != property.FindPropertyRelative(READ_ONLY_VALUE).propertyPath
-            )
-                _readOnlyValueProperty = property.FindPropertyRelative(READ_ONLY_VALUE);
+                if (_guiSettingsProperty == null)
+                {
+                    Debug.LogError($"Could not find GUISettings property in {property.propertyPath}");
+                    return;
+                }
 
-            // Initialize the ReorderableList
-            if (_list == null)
+                InitializeReorderableList();
+            }
+        }
+
+        private void InitializeReorderableList()
+        {
+            if (_list != null)
+            {
+                Debug.Log("ReorderableList already initialized. Skipping.");
+                return;
+            }
+
+            try
             {
                 _list = new LibraryReorderableList(
                     _serializedObject,
-                    _itemsProperty,
-                    _readOnlyKeyProperty,
-                    _readOnlyValueProperty,
-                    fieldInfo
+                    fieldInfo,
+                    _itemsProperty
                 );
 
-                _list.onChangedCallback += (list) =>
-                {
-                    property.serializedObject.ApplyModifiedProperties();
-                    EditorUtility.SetDirty(property.serializedObject.targetObject);
-                    Debug.Log($"Library<,> items changed.", property.serializedObject.targetObject);
-                };
+                SetupListCallbacks();
 
-                _list.onAddDropdownCallback = (rect, list) =>
-                {
-                    GenericMenu menu = new GenericMenu();
-                    menu.AddItem(
-                        new GUIContent("Add Item"),
-                        false,
-                        () =>
-                        {
-                            InvokeLibraryMethod("AddDefaultItem", out object returnValue);
-                        }
-                    );
-                    menu.AddItem(
-                        new GUIContent("Reset Library"),
-                        false,
-                        () =>
-                        {
-                            InvokeLibraryMethod("Reset", out object returnValue);
-                        }
-                    );
-                    menu.AddItem(
-                        new GUIContent("Clear Library"),
-                        false,
-                        () =>
-                        {
-                            InvokeLibraryMethod("Clear", out object returnValue);
-                        }
-                    );
-                    menu.ShowAsContext();
-                };
-
-                _list.onRemoveCallback = (list) =>
-                {
-                    InvokeLibraryMethod(
-                        "RemoveAt",
-                        out object returnValue,
-                        new object[] { list.index }
-                    );
-                };
-
-                _list.drawNoneElementCallback = (rect) =>
-                {
-                    EditorGUI.LabelField(rect, "No items in library.", LABEL_STYLE);
-                };
+                Debug.Log("ReorderableList initialized successfully.");
             }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error initializing ReorderableList: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private void SetupListCallbacks()
+        {
+            _list.onChangedCallback += (list) =>
+            {
+                _libraryProperty.serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(_libraryProperty.serializedObject.targetObject);
+                Debug.Log($"Library items changed. There are {_itemsProperty.arraySize} items in the library.", _libraryProperty.serializedObject.targetObject);
+            };
+
+            _list.onAddDropdownCallback = (rect, list) =>
+            {
+                var menu = new GenericMenu();
+                menu.AddItem(new GUIContent("Add Item"), false, () => 
+                    ExecuteWithErrorHandling("AddDefaultItem"));
+                menu.AddItem(new GUIContent("Reset Library"), false, () => 
+                    ExecuteWithErrorHandling("Reset"));
+                menu.AddItem(new GUIContent("Clear Library"), false, () => 
+                    ExecuteWithErrorHandling("Clear"));
+                menu.ShowAsContext();
+            };
+
+            _list.onRemoveCallback = (list) =>
+            {
+                ExecuteWithErrorHandling("RemoveAt", new object[] { list.index });
+            };
+
+            _list.drawNoneElementCallback = (rect) =>
+            {
+                EditorGUI.LabelField(rect, "No items in library.", LABEL_STYLE);
+            };
+        }
+
+        private void ExecuteWithErrorHandling(string methodName, object[] parameters = null)
+        {
+            try
+            {
+                InvokeLibraryMethod(methodName, out object returnValue, parameters);
+                if (_list != null)
+                {
+                    _list.index = -1;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error executing {methodName}: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        {
+            InitializeProperties(property);
+            if (_list == null) return;
 
             float currentYPos = rect.y;
-
-            // << BEGIN PROPERTY SCOPE >> -------------------------------------
-            // Begin the property scope
             EditorGUI.BeginProperty(rect, label, property);
 
-            // << Get the Field Type and Generic Arguments >>
+            DrawHeader(rect, property, label, ref currentYPos);
+
+            if (property.isExpanded)
+            {
+                DrawGUISettings(rect, ref currentYPos);
+                DrawList(rect, ref currentYPos);
+            }
+
+            _fullPropertyHeight = currentYPos - rect.y;
+            EditorGUI.EndProperty();
+        }
+
+        private void DrawHeader(Rect rect, SerializedProperty property, GUIContent label, ref float currentYPos)
+        {
             Type libraryFieldType = fieldInfo.FieldType;
             string typeName = GetGenericTypeName(libraryFieldType);
-
             int itemCount = _itemsProperty.arraySize;
 
-            // ( Foldout Title )---------------------------------------------
             Rect titleRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
             property.isExpanded = EditorGUI.Foldout(
                 titleRect,
@@ -152,34 +166,46 @@ namespace Darklight.UnityExt.Collection.Editor
                 true
             );
             currentYPos += SINGLE_LINE_HEIGHT + VERTICAL_SPACING / 2;
+        }
 
-            if (property.isExpanded)
+        private void DrawGUISettings(Rect rect, ref float currentYPos)
+        {
+            EditorGUI.BeginChangeCheck();
+            
+            var readOnlyKeyProp = _guiSettingsProperty.FindPropertyRelative(READ_ONLY_KEY);
+            var readOnlyValueProp = _guiSettingsProperty.FindPropertyRelative(READ_ONLY_VALUE);
+            var showCacheStatsProp = _guiSettingsProperty.FindPropertyRelative(SHOW_CACHE_STATS);
+
+            Rect settingsRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
+
+            using (new EditorGUI.IndentLevelScope())
             {
-                // ( Properties )-------------------------------------------------
-                EditorGUI.BeginDisabledGroup(true);
-                Rect propRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
-                EditorGUI.PropertyField(propRect, _readOnlyKeyProperty, true);
+                EditorGUI.PropertyField(settingsRect, readOnlyKeyProp);
                 currentYPos += SINGLE_LINE_HEIGHT;
-                propRect.y = currentYPos;
+                settingsRect.y = currentYPos;
 
-                EditorGUI.PropertyField(propRect, _readOnlyValueProperty, true);
+                EditorGUI.PropertyField(settingsRect, readOnlyValueProp);
+                currentYPos += SINGLE_LINE_HEIGHT;
+                settingsRect.y = currentYPos;
+
+                EditorGUI.PropertyField(settingsRect, showCacheStatsProp);
                 currentYPos += SINGLE_LINE_HEIGHT + VERTICAL_SPACING;
-                EditorGUI.EndDisabledGroup();
-
-                // ( ReorderableList )--------------------------------------------
-                using (new EditorGUI.IndentLevelScope())
-                {
-                    Rect listRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
-                    _list.DrawList(listRect);
-                    currentYPos += _list.GetHeight() + VERTICAL_SPACING;
-                }
             }
 
-            // (Calculate Property Height)-------------------------------------
-            _fullPropertyHeight = currentYPos - rect.y;
+            if (EditorGUI.EndChangeCheck())
+            {
+                _libraryProperty.serializedObject.ApplyModifiedProperties();
+            }
+        }
 
-            // End the property scope
-            EditorGUI.EndProperty();
+        private void DrawList(Rect rect, ref float currentYPos)
+        {
+            using (new EditorGUI.IndentLevelScope())
+            {
+                Rect listRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
+                _list.DrawList(listRect);
+                currentYPos += _list.GetHeight() + VERTICAL_SPACING;
+            }
         }
 
         protected override float GetPropertyHeight_Internal(
@@ -191,19 +217,6 @@ namespace Darklight.UnityExt.Collection.Editor
                 return SINGLE_LINE_HEIGHT;
 
             return _fullPropertyHeight;
-        }
-
-        private void InitializeReorderableList()
-        {
-            _list = new LibraryReorderableList(
-                _serializedObject,
-                _itemsProperty,
-                _readOnlyKeyProperty,
-                _readOnlyValueProperty,
-                fieldInfo
-            );
-
-            // ... existing list initialization code ...
         }
 
         private void DrawPropertyField(Rect rect, SerializedProperty valueProperty)
@@ -239,70 +252,6 @@ namespace Darklight.UnityExt.Collection.Editor
             }
         }
 
-        /*
-        void DrawLibraryProperties(Rect rect, ref float currentYPos)
-        {
-            // Get the Library<,> instance
-            object libraryInstance = GetLibraryInstance(_libraryProperty);
-
-            // If the Library<,> instance is not found, return
-            if (libraryInstance == null)
-            {
-                return;
-            }
-
-            // Use reflection to draw properties of the Library<,> instance
-            int count = 0;
-            foreach (FieldInfo field in libraryInstance.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                // Skip fields that are not serialized
-                if (field.IsNotSerialized) continue;
-
-                object fieldValue = field.GetValue(libraryInstance);
-                string label = ObjectNames.NicifyVariableName(field.Name);
-
-                // Create a rect for the field
-                float propertyHeight = EditorGUIUtility.singleLineHeight;
-                Rect propertyRect = new Rect(rect.x, currentYPos, rect.width, propertyHeight);
-
-                // Draw the field based on its type
-                if (field.FieldType == typeof(int))
-                {
-                    int intValue = (int)fieldValue;
-                    intValue = EditorGUI.IntField(propertyRect, label, intValue);
-                    field.SetValue(libraryInstance, intValue);
-                }
-                else if (field.FieldType == typeof(float))
-                {
-                    float floatValue = (float)fieldValue;
-                    floatValue = EditorGUI.FloatField(propertyRect, label, floatValue);
-                    field.SetValue(libraryInstance, floatValue);
-                }
-                else if (field.FieldType == typeof(string))
-                {
-                    string stringValue = (string)fieldValue;
-                    stringValue = EditorGUI.TextField(propertyRect, label, stringValue);
-                    field.SetValue(libraryInstance, stringValue);
-                }
-                else if (field.FieldType == typeof(bool))
-                {
-                    bool boolValue = (bool)fieldValue;
-                    boolValue = EditorGUI.Toggle(propertyRect, label, boolValue);
-                    field.SetValue(libraryInstance, boolValue);
-                }
-                else
-                {
-                    // Skip fields that are not supported
-                    continue;
-                }
-
-                // Increment y position
-                currentYPos += propertyHeight + EditorGUIUtility.standardVerticalSpacing;
-                count++;
-            }
-        }
-        */
-
         // ======== [[ HELPER METHODS ]] ===================================== >>>>
         /// <summary>
         /// Gets the instance of the Library<,> for the current SerializedProperty.
@@ -311,137 +260,94 @@ namespace Darklight.UnityExt.Collection.Editor
         /// <returns>The Library<,> instance, or null if not found.</returns>
         object GetLibraryInstance(SerializedProperty property)
         {
-            // Get the target object (the script holding the Library<,> field)
+            // Get the target object (the script holding the Library field)
             UnityEngine.Object targetObject = property.serializedObject.targetObject;
             Type targetType = targetObject.GetType();
 
-            // Find the Library<,> field that matches the property
-            foreach (
-                FieldInfo field in targetType.GetFields(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                )
-            )
+            // Find the Library field that matches the property
+            foreach (FieldInfo field in targetType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (
-                    field.FieldType.IsGenericType
-                    && field.FieldType.GetGenericTypeDefinition() == typeof(Library<,>)
-                )
+                if (field.FieldType.IsSubclassOf(typeof(Library)))  // Changed from checking for generic type
                 {
                     if (property.name == field.Name)
                     {
-                        return field.GetValue(targetObject);
+                        var instance = field.GetValue(targetObject);
+                        Debug.Log($"Found Library instance of type {instance.GetType().Name}");
+                        return instance;
                     }
                 }
             }
 
-            Debug.LogWarning(
-                $"No matching Library<,> instance found for property '{property.name}' on type '{targetType}'."
-            );
+            Debug.LogWarning($"No matching Library instance found for property '{property.name}' on type '{targetType}'.");
             return null;
         }
 
-        void InvokeLibraryMethod(
-            string methodName,
-            out object returnValue,
-            object[] parameters = null
-        )
+        private void InvokeLibraryMethod(string methodName, out object returnValue, object[] parameters = null)
         {
             returnValue = null;
-
-            SerializedProperty property = _libraryProperty;
-
-            // Get the target object (the script holding the Library<,> field)
-            UnityEngine.Object targetObject = property.serializedObject.targetObject;
-
-            // Get the type of the target object (MonoBehaviour or its subclass)
-            Type targetType = targetObject.GetType();
-
-            // Traverse the class hierarchy to find the field if it's inherited
-            FieldInfo libraryField = null;
-            Type currentType = targetType;
-
-            // Traverse class hierarchy to look for the field that matches the SerializedProperty
-            while (currentType != null && libraryField == null)
+            var library = GetLibraryInstance(_libraryProperty);
+            
+            if (library == null)
             {
-                libraryField = currentType.GetField(
-                    property.name,
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                );
-                currentType = currentType.BaseType;
+                Debug.LogError("Failed to get Library instance");
+                return;
             }
 
-            if (libraryField != null)
+            try
             {
-                // Get the instance of LibraryBase (or its derived type) from the field
-                object libraryInstance = libraryField.GetValue(targetObject);
+                // Get the method info
+                var methodInfo = library.GetType().GetMethod(methodName, 
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-                if (
-                    libraryInstance != null
-                    && typeof(Library).IsAssignableFrom(libraryInstance.GetType())
-                )
+                if (methodInfo == null)
                 {
-                    // Get the method information from the Library<,> or its subclass instance
-                    MethodInfo methodInfo = libraryInstance
-                        .GetType()
-                        .GetMethod(
-                            methodName,
-                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                        );
+                    Debug.LogError($"Method '{methodName}' not found on type {library.GetType().Name}");
+                    return;
+                }
 
-                    if (methodInfo != null)
-                    {
-                        try
-                        {
-                            // Invoke the method on the specific LibraryBase or its subclass instance
-                            returnValue = methodInfo.Invoke(libraryInstance, parameters);
+                Debug.Log($"Invoking method '{methodName}' on {library.GetType().Name}");
 
-                            // Apply modified properties to ensure they are serialized
-                            property.serializedObject.ApplyModifiedProperties();
-
-                            // Mark the target object as dirty to ensure the changes are saved and visible
-                            EditorUtility.SetDirty(targetObject);
-
-                            // Force the editor to repaint the Inspector
-                            property.serializedObject.UpdateIfRequiredOrScript();
-                            property.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-                            EditorApplication.QueuePlayerLoopUpdate(); // Repaints Scene view if necessary
-                            Debug.Log(
-                                $"Method '{methodName}' called on {targetObject.name}"
-                                    + $" with LibraryBase instance '{libraryInstance.GetType().Name}'.",
-                                targetObject
-                            );
-
-                            // Force a repaint of the inspector window
-                            EditorWindow.focusedWindow?.Repaint();
-                        }
-                        catch (TargetInvocationException e)
-                        {
-                            Debug.LogError(
-                                $"Error invoking method '{methodName}': {e.InnerException?.Message}",
-                                targetObject
-                            );
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning(
-                            $"Method '{methodName}' not found on type '{libraryInstance.GetType().Name}'."
-                        );
-                    }
+                // Execute the method within a write lock if it modifies the collection
+                if (IsWriteOperation(methodName))
+                {
+                    library.GetType().GetMethod("ExecuteWrite")?.MakeGenericMethod(typeof(object))
+                        .Invoke(library, new object[] { 
+                            new System.Func<object>(() => methodInfo.Invoke(library, parameters))
+                        });
                 }
                 else
                 {
-                    Debug.LogWarning(
-                        $"The field '{property.name}' is not a LibraryBase instance or its subclass."
-                    );
+                    returnValue = methodInfo.Invoke(library, parameters);
                 }
+
+                // Update the UI
+                UpdateEditorUI(library);
             }
-            else
+            catch (System.Exception e)
             {
-                Debug.LogWarning(
-                    $"Field '{property.name}' not found on type '{targetType}' or its base classes."
-                );
+                Debug.LogError($"Error invoking method '{methodName}': {e.Message}\n{e.StackTrace}");
             }
+        }
+
+        private bool IsWriteOperation(string methodName)
+        {
+            return methodName switch
+            {
+                "AddDefaultItem" or "Reset" or "Clear" or "RemoveAt" => true,
+                _ => false
+            };
+        }
+
+        private void UpdateEditorUI(object library)
+        {
+            // Apply modified properties
+            _libraryProperty.serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(_libraryProperty.serializedObject.targetObject);
+            
+            // Force UI updates
+            _libraryProperty.serializedObject.UpdateIfRequiredOrScript();
+            EditorWindow.focusedWindow?.Repaint();
+            EditorApplication.QueuePlayerLoopUpdate();
         }
 
         string GetGenericTypeName(Type type)
@@ -474,5 +380,7 @@ namespace Darklight.UnityExt.Collection.Editor
             return baseTypeName;
         }
     }
+    
 #endif
+*/
 }

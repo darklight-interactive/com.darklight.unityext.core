@@ -565,6 +565,7 @@ namespace Darklight.UnityExt.Collection
         /// <summary>
         /// Settings for the GUI.
         /// </summary>
+        [Serializable]
         public class GUISettings
         {
             public bool ReadOnlyKey = false;

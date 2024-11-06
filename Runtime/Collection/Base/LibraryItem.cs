@@ -12,25 +12,38 @@ namespace Darklight.UnityExt.Collection
     }
 
     [Serializable]
-    public readonly struct LibraryItem<TKey, TValue> : ILibraryItem
+    public class LibraryItem<TKey, TValue> : ILibraryItem
         where TKey : notnull
         where TValue : notnull
     {
-        public readonly int Id { get; }
-        public readonly int Next { get; }
-        public readonly bool IsOccupied { get; }
-        public readonly TKey Key { get; }
-        public readonly TValue Value { get; }
+        [SerializeField]
+        int _id;
+        [SerializeField]
+        TKey _key;
+        [SerializeField]
+        TValue _value;
+
+        [SerializeField]
+        int _next;
+        [SerializeField]
+        bool _isOccupied;
+
+
+        public int Id => _id;
+        public int Next => _next;
+        public bool IsOccupied => _isOccupied;
+        public TKey Key => _key;
+        public TValue Value => _value;
 
         object ILibraryItem.Value => Value;
 
         public LibraryItem(int id, TKey key, TValue value, int next = -1, bool isOccupied = true)
         {
-            Id = id;
-            Next = next;
-            IsOccupied = isOccupied;
-            Key = key;
-            Value = value;
+            _id = id;
+            _next = next;
+            _isOccupied = isOccupied;
+            _key = key;
+            _value = value;
         }
 
         public LibraryItem<TKey, TValue> WithNext(int next) =>
@@ -38,9 +51,6 @@ namespace Darklight.UnityExt.Collection
 
         public LibraryItem<TKey, TValue> WithId(int id) =>
             new(id, Key, Value, Next, IsOccupied);
-
-        public static LibraryItem<TKey, TValue> CreateFree(int next) =>
-            new(0, default, default, next, false);
     }
 
     [Serializable]
