@@ -377,7 +377,7 @@ namespace Darklight.UnityExt.Collection.Editor
 
                 if (
                     libraryInstance != null
-                    && typeof(LibraryBase).IsAssignableFrom(libraryInstance.GetType())
+                    && typeof(Library).IsAssignableFrom(libraryInstance.GetType())
                 )
                 {
                     // Get the method information from the Library<,> or its subclass instance
