@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Library;
+using Darklight.UnityExt.Collection;
 using UnityEngine;
 
 public abstract class RangeValueLibrary<TKey, TValue> : Library<TKey, TValue>

@@ -8,7 +8,7 @@ using UnityEditor;
 #endif
 
 
-namespace Darklight.UnityExt.Library.Editor
+namespace Darklight.UnityExt.Collection.Editor
 {
 #if UNITY_EDITOR
     public class LibraryReorderableList : ReorderableList

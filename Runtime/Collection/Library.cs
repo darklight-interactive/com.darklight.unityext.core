@@ -6,7 +6,7 @@ using Darklight.UnityExt.Editor;
 using System.Collections;
 
 
-namespace Darklight.UnityExt.Library
+namespace Darklight.UnityExt.Collection
 {
     public interface ILibrary<TKey, TValue> : IDictionary<TKey, TValue>
     {

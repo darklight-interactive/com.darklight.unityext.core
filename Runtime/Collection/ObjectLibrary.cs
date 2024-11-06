@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Library
+namespace Darklight.UnityExt.Collection
 {
     [Serializable]
     public class EnumObjectLibrary<TEnum, TObj> : EnumKeyLibrary<TEnum, TObj>

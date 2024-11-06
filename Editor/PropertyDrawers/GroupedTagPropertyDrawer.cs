@@ -47,7 +47,6 @@ namespace Darklight.UnityExt.Editor
         {
             InitializeTagGroups();
 
-            // Create display content
             string displayName = string.IsNullOrEmpty(property.stringValue) 
                 ? NONE_OPTION 
                 : property.stringValue;
@@ -62,14 +61,25 @@ namespace Darklight.UnityExt.Editor
             {
                 var menu = new GenericMenu();
                 
-                // Add None and Untagged options
+                // Add None option
                 menu.AddItem(new GUIContent(NONE_OPTION), string.IsNullOrEmpty(property.stringValue), 
                     () => SetPropertyValue(property, string.Empty));
-                menu.AddItem(new GUIContent(UNTAGGED_OPTION), property.stringValue == UNTAGGED_OPTION, 
-                    () => SetPropertyValue(property, UNTAGGED_OPTION));
                 menu.AddSeparator("");
 
-                // Add grouped items
+                // Add Built-in tags group
+                var builtInTags = TagGroupUtility.BUILT_IN_TAGS.Split(',');
+                foreach (var tag in builtInTags)
+                {
+                    string menuPath = $"Built-in/{tag}";
+                    menu.AddItem(
+                        new GUIContent(menuPath),
+                        property.stringValue == tag,
+                        () => SetPropertyValue(property, tag)
+                    );
+                }
+                menu.AddSeparator("");
+
+                // Add custom grouped items
                 foreach (var group in _tagGroups.OrderBy(g => g.Key))
                 {
                     foreach (var tag in group.Value.OrderBy(t => t))

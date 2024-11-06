@@ -1,13 +1,18 @@
-using UnityEngine;
-using UnityEditor;
 using System;
 using System.Reflection;
+using NaughtyAttributes.Editor;
 
-namespace Darklight.UnityExt.Library.Editor
+
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEngine;
+#endif
+
+namespace Darklight.UnityExt.Collection.Editor
 {
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(Library<,>), true)]
-    public class LibraryPropertyDrawer : PropertyDrawer
+    public class LibraryPropertyDrawer : PropertyDrawerBase
     {
         const string ITEMS_PROP = "_items";
         const string READ_ONLY_KEY = "_readOnlyKey";
@@ -21,7 +26,6 @@ namespace Darklight.UnityExt.Library.Editor
             alignment = TextAnchor.MiddleCenter
         };
 
-
         SerializedObject _serializedObject;
         SerializedProperty _libraryProperty;
         SerializedProperty _itemsProperty;
@@ -32,8 +36,11 @@ namespace Darklight.UnityExt.Library.Editor
         bool _foldout;
         float _fullPropertyHeight;
 
-
-        public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             // << INITIALIZATION >>
             // Store the serialized object and properties
@@ -41,20 +48,36 @@ namespace Darklight.UnityExt.Library.Editor
                 _serializedObject = property.serializedObject;
             if (_libraryProperty == null || _libraryProperty.propertyPath != property.propertyPath)
                 _libraryProperty = property;
-            if (_itemsProperty == null || _itemsProperty.propertyPath != property.FindPropertyRelative(ITEMS_PROP).propertyPath)
+            if (
+                _itemsProperty == null
+                || _itemsProperty.propertyPath
+                    != property.FindPropertyRelative(ITEMS_PROP).propertyPath
+            )
                 _itemsProperty = property.FindPropertyRelative(ITEMS_PROP);
 
-            if (_readOnlyKeyProperty == null
-                || _readOnlyKeyProperty.propertyPath != property.FindPropertyRelative(READ_ONLY_KEY).propertyPath)
+            if (
+                _readOnlyKeyProperty == null
+                || _readOnlyKeyProperty.propertyPath
+                    != property.FindPropertyRelative(READ_ONLY_KEY).propertyPath
+            )
                 _readOnlyKeyProperty = property.FindPropertyRelative(READ_ONLY_KEY);
-            if (_readOnlyValueProperty == null
-                || _readOnlyValueProperty.propertyPath != property.FindPropertyRelative(READ_ONLY_VALUE).propertyPath)
+            if (
+                _readOnlyValueProperty == null
+                || _readOnlyValueProperty.propertyPath
+                    != property.FindPropertyRelative(READ_ONLY_VALUE).propertyPath
+            )
                 _readOnlyValueProperty = property.FindPropertyRelative(READ_ONLY_VALUE);
 
             // Initialize the ReorderableList
             if (_list == null)
             {
-                _list = new LibraryReorderableList(_serializedObject, _itemsProperty, _readOnlyKeyProperty, _readOnlyValueProperty, fieldInfo);
+                _list = new LibraryReorderableList(
+                    _serializedObject,
+                    _itemsProperty,
+                    _readOnlyKeyProperty,
+                    _readOnlyValueProperty,
+                    fieldInfo
+                );
 
                 _list.onChangedCallback += (list) =>
                 {
@@ -66,24 +89,40 @@ namespace Darklight.UnityExt.Library.Editor
                 _list.onAddDropdownCallback = (rect, list) =>
                 {
                     GenericMenu menu = new GenericMenu();
-                    menu.AddItem(new GUIContent("Add Item"), false, () =>
-                    {
-                        InvokeLibraryMethod("AddDefaultItem", out object returnValue);
-                    });
-                    menu.AddItem(new GUIContent("Reset Library"), false, () =>
-                    {
-                        InvokeLibraryMethod("Reset", out object returnValue);
-                    });
-                    menu.AddItem(new GUIContent("Clear Library"), false, () =>
-                    {
-                        InvokeLibraryMethod("Clear", out object returnValue);
-                    });
+                    menu.AddItem(
+                        new GUIContent("Add Item"),
+                        false,
+                        () =>
+                        {
+                            InvokeLibraryMethod("AddDefaultItem", out object returnValue);
+                        }
+                    );
+                    menu.AddItem(
+                        new GUIContent("Reset Library"),
+                        false,
+                        () =>
+                        {
+                            InvokeLibraryMethod("Reset", out object returnValue);
+                        }
+                    );
+                    menu.AddItem(
+                        new GUIContent("Clear Library"),
+                        false,
+                        () =>
+                        {
+                            InvokeLibraryMethod("Clear", out object returnValue);
+                        }
+                    );
                     menu.ShowAsContext();
                 };
 
                 _list.onRemoveCallback = (list) =>
                 {
-                    InvokeLibraryMethod("RemoveAt", out object returnValue, new object[] { list.index });
+                    InvokeLibraryMethod(
+                        "RemoveAt",
+                        out object returnValue,
+                        new object[] { list.index }
+                    );
                 };
 
                 _list.drawNoneElementCallback = (rect) =>
@@ -106,24 +145,35 @@ namespace Darklight.UnityExt.Library.Editor
 
             // ( Foldout Title )---------------------------------------------
             Rect titleRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
-            EditorGUI.LabelField(titleRect, $"{label} : {typeName} : Count: {itemCount}", new GUIStyle(EditorStyles.boldLabel));
+            property.isExpanded = EditorGUI.Foldout(
+                titleRect,
+                property.isExpanded,
+                new GUIContent($"{label.text} : {typeName} : Count: {itemCount}"),
+                true
+            );
             currentYPos += SINGLE_LINE_HEIGHT + VERTICAL_SPACING / 2;
 
-            // ( Properties )-------------------------------------------------
-            EditorGUI.BeginDisabledGroup(true);
-            Rect propRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
-            EditorGUI.PropertyField(propRect, _readOnlyKeyProperty, true);
-            currentYPos += SINGLE_LINE_HEIGHT;
-            propRect.y = currentYPos;
+            if (property.isExpanded)
+            {
+                // ( Properties )-------------------------------------------------
+                EditorGUI.BeginDisabledGroup(true);
+                Rect propRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
+                EditorGUI.PropertyField(propRect, _readOnlyKeyProperty, true);
+                currentYPos += SINGLE_LINE_HEIGHT;
+                propRect.y = currentYPos;
 
-            EditorGUI.PropertyField(propRect, _readOnlyValueProperty, true);
-            currentYPos += SINGLE_LINE_HEIGHT + VERTICAL_SPACING;
-            EditorGUI.EndDisabledGroup();
+                EditorGUI.PropertyField(propRect, _readOnlyValueProperty, true);
+                currentYPos += SINGLE_LINE_HEIGHT + VERTICAL_SPACING;
+                EditorGUI.EndDisabledGroup();
 
-            // ( ReorderableList )--------------------------------------------
-            Rect listRect = new Rect(EditorGUI.IndentedRect(rect).x, currentYPos, EditorGUI.IndentedRect(rect).width, SINGLE_LINE_HEIGHT);
-            _list.DrawList(listRect);
-            currentYPos += _list.GetHeight() + VERTICAL_SPACING;
+                // ( ReorderableList )--------------------------------------------
+                using (new EditorGUI.IndentLevelScope())
+                {
+                    Rect listRect = new Rect(rect.x, currentYPos, rect.width, SINGLE_LINE_HEIGHT);
+                    _list.DrawList(listRect);
+                    currentYPos += _list.GetHeight() + VERTICAL_SPACING;
+                }
+            }
 
             // (Calculate Property Height)-------------------------------------
             _fullPropertyHeight = currentYPos - rect.y;
@@ -132,9 +182,28 @@ namespace Darklight.UnityExt.Library.Editor
             EditorGUI.EndProperty();
         }
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
+            if (!property.isExpanded)
+                return SINGLE_LINE_HEIGHT;
+
             return _fullPropertyHeight;
+        }
+
+        private void InitializeReorderableList()
+        {
+            _list = new LibraryReorderableList(
+                _serializedObject,
+                _itemsProperty,
+                _readOnlyKeyProperty,
+                _readOnlyValueProperty,
+                fieldInfo
+            );
+
+            // ... existing list initialization code ...
         }
 
         private void DrawPropertyField(Rect rect, SerializedProperty valueProperty)
@@ -144,14 +213,24 @@ namespace Darklight.UnityExt.Library.Editor
                 // Example range for int
                 int minValue = 0;
                 int maxValue = 100;
-                valueProperty.intValue = EditorGUI.IntSlider(rect, valueProperty.intValue, minValue, maxValue);
+                valueProperty.intValue = EditorGUI.IntSlider(
+                    rect,
+                    valueProperty.intValue,
+                    minValue,
+                    maxValue
+                );
             }
             else if (valueProperty.propertyType == SerializedPropertyType.Float)
             {
                 // Example range for float
                 float minValue = 0f;
                 float maxValue = 1f;
-                valueProperty.floatValue = EditorGUI.Slider(rect, valueProperty.floatValue, minValue, maxValue);
+                valueProperty.floatValue = EditorGUI.Slider(
+                    rect,
+                    valueProperty.floatValue,
+                    minValue,
+                    maxValue
+                );
             }
             else
             {
@@ -159,7 +238,6 @@ namespace Darklight.UnityExt.Library.Editor
                 EditorGUI.PropertyField(rect, valueProperty, GUIContent.none);
             }
         }
-
 
         /*
         void DrawLibraryProperties(Rect rect, ref float currentYPos)
@@ -238,9 +316,16 @@ namespace Darklight.UnityExt.Library.Editor
             Type targetType = targetObject.GetType();
 
             // Find the Library<,> field that matches the property
-            foreach (FieldInfo field in targetType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            foreach (
+                FieldInfo field in targetType.GetFields(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                )
+            )
             {
-                if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Library<,>))
+                if (
+                    field.FieldType.IsGenericType
+                    && field.FieldType.GetGenericTypeDefinition() == typeof(Library<,>)
+                )
                 {
                     if (property.name == field.Name)
                     {
@@ -249,12 +334,17 @@ namespace Darklight.UnityExt.Library.Editor
                 }
             }
 
-            Debug.LogWarning($"No matching Library<,> instance found for property '{property.name}' on type '{targetType}'.");
+            Debug.LogWarning(
+                $"No matching Library<,> instance found for property '{property.name}' on type '{targetType}'."
+            );
             return null;
         }
 
-
-        void InvokeLibraryMethod(string methodName, out object returnValue, object[] parameters = null)
+        void InvokeLibraryMethod(
+            string methodName,
+            out object returnValue,
+            object[] parameters = null
+        )
         {
             returnValue = null;
 
@@ -273,7 +363,10 @@ namespace Darklight.UnityExt.Library.Editor
             // Traverse class hierarchy to look for the field that matches the SerializedProperty
             while (currentType != null && libraryField == null)
             {
-                libraryField = currentType.GetField(property.name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                libraryField = currentType.GetField(
+                    property.name,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                );
                 currentType = currentType.BaseType;
             }
 
@@ -282,10 +375,18 @@ namespace Darklight.UnityExt.Library.Editor
                 // Get the instance of LibraryBase (or its derived type) from the field
                 object libraryInstance = libraryField.GetValue(targetObject);
 
-                if (libraryInstance != null && typeof(LibraryBase).IsAssignableFrom(libraryInstance.GetType()))
+                if (
+                    libraryInstance != null
+                    && typeof(LibraryBase).IsAssignableFrom(libraryInstance.GetType())
+                )
                 {
                     // Get the method information from the Library<,> or its subclass instance
-                    MethodInfo methodInfo = libraryInstance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    MethodInfo methodInfo = libraryInstance
+                        .GetType()
+                        .GetMethod(
+                            methodName,
+                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                        );
 
                     if (methodInfo != null)
                     {
@@ -304,35 +405,44 @@ namespace Darklight.UnityExt.Library.Editor
                             property.serializedObject.UpdateIfRequiredOrScript();
                             property.serializedObject.ApplyModifiedPropertiesWithoutUndo();
                             EditorApplication.QueuePlayerLoopUpdate(); // Repaints Scene view if necessary
-                            Debug.Log($"Method '{methodName}' called on {targetObject.name}" +
-                                $" with LibraryBase instance '{libraryInstance.GetType().Name}'.", targetObject);
+                            Debug.Log(
+                                $"Method '{methodName}' called on {targetObject.name}"
+                                    + $" with LibraryBase instance '{libraryInstance.GetType().Name}'.",
+                                targetObject
+                            );
 
                             // Force a repaint of the inspector window
                             EditorWindow.focusedWindow?.Repaint();
                         }
                         catch (TargetInvocationException e)
                         {
-                            Debug.LogError($"Error invoking method '{methodName}': {e.InnerException?.Message}", targetObject);
+                            Debug.LogError(
+                                $"Error invoking method '{methodName}': {e.InnerException?.Message}",
+                                targetObject
+                            );
                         }
                     }
                     else
                     {
-                        Debug.LogWarning($"Method '{methodName}' not found on type '{libraryInstance.GetType().Name}'.");
+                        Debug.LogWarning(
+                            $"Method '{methodName}' not found on type '{libraryInstance.GetType().Name}'."
+                        );
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"The field '{property.name}' is not a LibraryBase instance or its subclass.");
+                    Debug.LogWarning(
+                        $"The field '{property.name}' is not a LibraryBase instance or its subclass."
+                    );
                 }
             }
             else
             {
-                Debug.LogWarning($"Field '{property.name}' not found on type '{targetType}' or its base classes.");
+                Debug.LogWarning(
+                    $"Field '{property.name}' not found on type '{targetType}' or its base classes."
+                );
             }
         }
-
-
-
 
         string GetGenericTypeName(Type type)
         {
@@ -353,14 +463,16 @@ namespace Darklight.UnityExt.Library.Editor
             // If the type has generic arguments, format them
             if (genericArgs.Length > 0)
             {
-                string genericArgsString = string.Join(", ", Array.ConvertAll(genericArgs, t => t.Name));
+                string genericArgsString = string.Join(
+                    ", ",
+                    Array.ConvertAll(genericArgs, t => t.Name)
+                );
                 return $"{baseTypeName}<{genericArgsString}>";
             }
 
             // Return the cleaned-up type name
             return baseTypeName;
         }
-
     }
 #endif
 }
