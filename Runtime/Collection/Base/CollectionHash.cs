@@ -37,7 +37,7 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="item">The item to hash.</param>
         /// <returns>A hex string representation of the hash.</returns>
-        protected virtual string ComputeItemHash(ICollectionItem item)
+        protected virtual string ComputeItemHash(CollectionItem item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -58,7 +58,7 @@ namespace Darklight.UnityExt.Collection
         /// <summary>
         /// Generates a thread-safe string representation of the item's value.
         /// </summary>
-        private string GenerateValueString(ICollectionItem item)
+        private string GenerateValueString(CollectionItem item)
         {
             if (item.Value is UnityEngine.Object)
             {
@@ -108,7 +108,7 @@ namespace Darklight.UnityExt.Collection
 
             try
             {
-                List<ICollectionItem> snapshot;
+                List<CollectionItem> snapshot;
                 lock (_computeLock)
                 {
                     if (!Items.Any())
@@ -120,7 +120,7 @@ namespace Darklight.UnityExt.Collection
                     // Create a thread-safe copy of the items
                     try
                     {
-                        snapshot = new List<ICollectionItem>(Items.Count());
+                        snapshot = new List<CollectionItem>(Items.Count());
                         foreach (var item in Items)
                         {
                             if (item != null)
@@ -166,7 +166,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Add(ICollectionItem item)
+        public override void Add(CollectionItem item)
         {
             if (!_isInitialized) return;
             
@@ -176,7 +176,7 @@ namespace Darklight.UnityExt.Collection
             UpdateCollectionHash();
         }
 
-        public override bool Remove(ICollectionItem item)
+        public override bool Remove(CollectionItem item)
         {
             if (!_isInitialized) return false;
             
@@ -209,7 +209,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public bool VerifyItemIntegrity(ICollectionItem item)
+        public bool VerifyItemIntegrity(CollectionItem item)
         {
             if (!_isInitialized) return false;
             if (item == null) throw new ArgumentNullException(nameof(item));

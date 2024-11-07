@@ -53,7 +53,7 @@ namespace Darklight.Tests.Collection
             _library.Add(item);
 
             // Act
-            bool result = _library.TryGetItem(0, out ICollectionItem retrievedItem);
+            bool result = _library.TryGetItem(0, out CollectionItem retrievedItem);
 
             // Assert
             Assert.That(result, Is.True);

@@ -1,215 +1,149 @@
+using UnityEngine;
+using UnityEditor;
+using UnityEditorInternal;
+using System.Reflection;
 using System;
 using System.Linq;
-using System.Reflection;
-using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditorInternal;
-using UnityEditor;
-#endif
+using System.Collections.Generic;
 
 namespace Darklight.UnityExt.Collection.Editor
 {
-#if UNITY_EDITOR
     public class LibraryReorderableList : ReorderableList
     {
-        private const float PADDING = 2f;
-        private const float KEY_WIDTH_PERCENT = 0.3f;
-        private const float VALUE_WIDTH_PERCENT = 0.7f;
-
-        private readonly SerializedObject _serializedObject;
-        private readonly bool _showKeys;
-        private GUIStyle _headerStyle;
-        private GUIStyle _cellStyle;
-
-    
-        private FieldInfo _fieldInfo;
-        private SerializedProperty _itemsProperty;
+        private const float ID_COLUMN_WIDTH = 50f;
+        private const float PADDING = 5f;
+        private readonly Type _collectionType;
+        private readonly Type _itemType;
+        private readonly CollectionLibrary _collection;
 
         public LibraryReorderableList(
             SerializedObject serializedObject,
             FieldInfo fieldInfo,
-            SerializedProperty itemsProperty,
-            bool showKeys = true
-        ) : base(serializedObject, itemsProperty, false, true, true, true)
+            SerializedProperty itemsProperty
+        ) : base(serializedObject, itemsProperty, true, true, true, true)
         {
-            _serializedObject = serializedObject;
-            _fieldInfo = fieldInfo;
-            _itemsProperty = itemsProperty;
-            _showKeys = showKeys;
+            // Get the actual collection instance
+            _collection = fieldInfo.GetValue(serializedObject.targetObject) as CollectionLibrary;
             
-            SetupStyles();
-            SetupCallbacks();
-        }
-
-        private void SetupStyles()
-        {
-            _headerStyle = new GUIStyle(EditorStyles.boldLabel)
+            if (_collection != null)
             {
-                alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(5, 0, 0, 0)
-            };
-
-            _cellStyle = new GUIStyle(EditorStyles.label)
-            {
-                padding = new RectOffset(5, 0, 0, 0)
-            };
-        }
-
-        private void SetupCallbacks()
-        {
-            drawHeaderCallback = DrawHeaderHandler;
-            drawElementCallback = DrawElementHandler;
-            elementHeightCallback = ElementHeightHandler;
-        }
-        
-
-        private void DrawHeaderHandler(Rect rect)
-        {
-            if (_showKeys)
-            {
-                var keyRect = new Rect(rect.x, rect.y, rect.width * KEY_WIDTH_PERCENT, rect.height);
-                var valueRect = new Rect(keyRect.xMax + PADDING, rect.y, rect.width * VALUE_WIDTH_PERCENT - PADDING, rect.height);
+                Debug.Log($"Collection Instance Type: {_collection.GetType().FullName}");
                 
-                EditorGUI.LabelField(keyRect, "Key", _headerStyle);
-                EditorGUI.LabelField(valueRect, "Value", _headerStyle);
-            }
-            else
-            {
-                EditorGUI.LabelField(rect, "Value", _headerStyle);
-            }
-        }
-
-        private void DrawElementHandler(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            if (index >= serializedProperty.arraySize) return;
-
-            var element = serializedProperty.GetArrayElementAtIndex(index);
-            if (element == null) return;
-
-            var keyProp = element.FindPropertyRelative("_key");
-            var valueProp = element.FindPropertyRelative("_value");
-
-            if (_showKeys)
-            {
-                var keyRect = new Rect(rect.x, rect.y, rect.width * KEY_WIDTH_PERCENT, rect.height);
-                var valueRect = new Rect(keyRect.xMax + PADDING, rect.y, rect.width * VALUE_WIDTH_PERCENT - PADDING, rect.height);
-
-                DrawKeyField(keyRect, keyProp);
-                DrawValueField(valueRect, valueProp);
-            }
-            else
-            {
-                DrawValueField(rect, valueProp);
-            }
-        }
-
-        private void DrawKeyField(Rect rect, SerializedProperty keyProp)
-        {
-            if (keyProp == null) return;
-
-            EditorGUI.BeginChangeCheck();
-            EditorGUI.PropertyField(rect, keyProp, GUIContent.none);
-            if (EditorGUI.EndChangeCheck())
-            {
-                _serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private void DrawValueField(Rect rect, SerializedProperty valueProp)
-        {
-            if (valueProp == null) return;
-
-            EditorGUI.BeginChangeCheck();
-            
-            if (valueProp.propertyType == SerializedPropertyType.ObjectReference)
-            {
-                DrawObjectReferenceField(rect, valueProp);
-            }
-            else
-            {
-                EditorGUI.PropertyField(rect, valueProp, GUIContent.none);
-            }
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                _serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private void DrawObjectReferenceField(Rect rect, SerializedProperty valueProp)
-        {
-            var obj = valueProp.objectReferenceValue;
-            if (obj is ScriptableObject)
-            {
-                var foldoutRect = new Rect(rect.x, rect.y, 15, EditorGUIUtility.singleLineHeight);
-                var objectRect = new Rect(rect.x + 15, rect.y, rect.width - 15, EditorGUIUtility.singleLineHeight);
-
-                valueProp.isExpanded = EditorGUI.Foldout(foldoutRect, valueProp.isExpanded, GUIContent.none);
-                EditorGUI.ObjectField(objectRect, valueProp, GUIContent.none);
-
-                if (valueProp.isExpanded && obj != null)
+                // Try to find the CollectionLibrary<T> type in the hierarchy
+                var collectionType = _collection.GetType();
+                while (collectionType != null && (!collectionType.IsGenericType || collectionType.GetGenericTypeDefinition() != typeof(CollectionLibrary<>)))
                 {
-                    EditorGUI.indentLevel++;
-                    var serializedObject = new SerializedObject(obj);
-                    serializedObject.Update();
+                    Debug.Log($"Checking type: {collectionType.FullName}");
+                    collectionType = collectionType.BaseType;
+                }
+
+                if (collectionType != null)
+                {
+                    Debug.Log($"Found generic collection type: {collectionType.FullName}");
+                    var genericArgs = collectionType.GetGenericArguments();
+                    Debug.Log($"Generic arguments count: {genericArgs.Length}");
                     
-                    var iterator = serializedObject.GetIterator();
-                    var yOffset = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                    
-                    while (iterator.NextVisible(true))
+                    foreach (var arg in genericArgs)
                     {
-                        if (iterator.name == "m_Script") continue;
-                        
-                        var propertyRect = new Rect(rect.x, rect.y + yOffset, rect.width, EditorGUI.GetPropertyHeight(iterator));
-                        EditorGUI.PropertyField(propertyRect, iterator, true);
-                        yOffset += EditorGUI.GetPropertyHeight(iterator) + EditorGUIUtility.standardVerticalSpacing;
+                        Debug.Log($"Generic argument: {arg.FullName}");
                     }
-                    
-                    serializedObject.ApplyModifiedProperties();
-                    EditorGUI.indentLevel--;
+
+                    if (genericArgs.Length > 0)
+                    {
+                        _collectionType = genericArgs[0];
+                        _itemType = typeof(CollectionItem<>).MakeGenericType(_collectionType);
+                        
+                        Debug.Log($"Collection Value Type: {_collectionType.FullName}");
+                        Debug.Log($"Collection Item Type: {_itemType.FullName}");
+
+                        // Try to get the items list
+                        var itemsList = _collection.Items.ToList();
+                        Debug.Log($"Items count: {itemsList.Count}");
+                        
+                        if (itemsList.Count > 0)
+                        {
+                            var firstItem = itemsList[0];
+                            Debug.Log($"First item actual type: {firstItem.GetType().FullName}");
+                            Debug.Log($"First item value type: {firstItem.Value?.GetType().FullName}");
+                            Debug.Log($"First item value: {firstItem.Value}");
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Could not find CollectionLibrary<T> in type hierarchy!");
                 }
             }
             else
             {
-                EditorGUI.ObjectField(rect, valueProp, GUIContent.none);
+                Debug.LogError("Could not get collection instance from field!");
+                Debug.Log($"Field type: {fieldInfo.FieldType.FullName}");
+                Debug.Log($"Field declaring type: {fieldInfo.DeclaringType?.FullName}");
             }
-        }
 
-        private float ElementHeightHandler(int index)
-        {
-            if (index >= serializedProperty.arraySize) return EditorGUIUtility.singleLineHeight;
-
-            var element = serializedProperty.GetArrayElementAtIndex(index);
-            if (element == null) return EditorGUIUtility.singleLineHeight;
-
-            var valueProp = element.FindPropertyRelative("_value");
-            if (valueProp == null) return EditorGUIUtility.singleLineHeight;
-
-            if (valueProp.propertyType == SerializedPropertyType.ObjectReference && 
-                valueProp.objectReferenceValue is ScriptableObject && 
-                valueProp.isExpanded)
+            drawHeaderCallback = (Rect rect) =>
             {
-                var obj = valueProp.objectReferenceValue;
-                var serializedObject = new SerializedObject(obj);
-                var iterator = serializedObject.GetIterator();
-                float height = EditorGUIUtility.singleLineHeight;
+                var idRect = new Rect(rect.x, rect.y, ID_COLUMN_WIDTH, rect.height);
+                var valueRect = new Rect(rect.x + ID_COLUMN_WIDTH + PADDING, rect.y, rect.width - ID_COLUMN_WIDTH - PADDING, rect.height);
 
-                while (iterator.NextVisible(true))
+                EditorGUI.LabelField(idRect, "ID");
+                EditorGUI.LabelField(valueRect, $"Value <{_collectionType?.Name ?? "unknown"}>");
+            };
+
+            drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+            {
+                var element = itemsProperty.GetArrayElementAtIndex(index);
+                var idProp = element.FindPropertyRelative("_id");
+                var typedValueProp = element.FindPropertyRelative("_typedValue");
+
+                // Debug element information
+                Debug.Log($"Drawing element {index}:");
+                Debug.Log($"Element type: {element.type}");
+                Debug.Log($"Element path: {element.propertyPath}");
+                
+                if (typedValueProp != null)
                 {
-                    if (iterator.name == "m_Script") continue;
-                    height += EditorGUI.GetPropertyHeight(iterator) + EditorGUIUtility.standardVerticalSpacing;
+                    Debug.Log($"TypedValue property type: {typedValueProp.propertyType}");
+                    Debug.Log($"TypedValue property path: {typedValueProp.propertyPath}");
                 }
 
-                return height;
-            }
+                var idRect = new Rect(rect.x, rect.y + 2, ID_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight);
+                var valueRect = new Rect(rect.x + ID_COLUMN_WIDTH + PADDING, rect.y + 2, rect.width - ID_COLUMN_WIDTH - PADDING, EditorGUIUtility.singleLineHeight);
 
-            return EditorGUIUtility.singleLineHeight;
-        }
+                EditorGUI.LabelField(idRect, idProp?.intValue.ToString() ?? "?");
 
-        public void DrawList(Rect rect)
-        {
-            base.DoList(rect);
+                if (typedValueProp != null)
+                {
+                    var typeLabel = $"({_collectionType?.Name ?? "unknown"}) ";
+                    var labelWidth = GUI.skin.label.CalcSize(new GUIContent(typeLabel)).x;
+                    
+                    var typeLabelRect = new Rect(valueRect.x, valueRect.y, labelWidth, valueRect.height);
+                    var propertyRect = new Rect(valueRect.x + labelWidth, valueRect.y, valueRect.width - labelWidth, valueRect.height);
+                    
+                    EditorGUI.LabelField(typeLabelRect, typeLabel);
+                    EditorGUI.PropertyField(propertyRect, typedValueProp, GUIContent.none);
+                }
+                else
+                {
+                    EditorGUI.LabelField(valueRect, $"(null) Expected: {_collectionType?.Name ?? "unknown"}");
+                }
+            };
+
+            elementHeightCallback = (int index) =>
+            {
+                return EditorGUIUtility.singleLineHeight + 4;
+            };
         }
     }
-#endif
+
+    public static class TypeExtensions
+    {
+        public static IEnumerable<Type> GetTypeHierarchy(this Type type)
+        {
+            for (var current = type; current != null; current = current.BaseType)
+            {
+                yield return current;
+            }
+        }
+    }
 }

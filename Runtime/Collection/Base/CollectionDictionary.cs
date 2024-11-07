@@ -16,36 +16,39 @@ namespace Darklight.UnityExt.Collection
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>> _items;
+        private readonly ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>> _concurrentDict;
         private readonly ReaderWriterLockSlim _lock;
         private bool _isReadOnly;
 
+        [SerializeField]
+        private new List<KeyValueCollectionItem<TKey, TValue>> _items;
+
         public CollectionDictionary()
         {
-            _items = new ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>>();
+            _concurrentDict = new ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>>();
             _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             _isReadOnly = false;
         }
 
-        public override int Capacity => _items.Count;
-        public override int Count => _items.Count;
+        public override int Capacity => _concurrentDict.Count;
+        public override int Count => _concurrentDict.Count;
 
-        public override IEnumerable<int> IDs => _items.Values.Select(item => item.Id);
+        public override IEnumerable<int> IDs => _concurrentDict.Values.Select(item => item.Id);
         public override bool IsReadOnly => _isReadOnly;
         public override bool IsSynchronized => true;
 
-        public override IEnumerable<ICollectionItem> Items => _items.Values;
+        public override IEnumerable<CollectionItem> Items => _concurrentDict.Values.Select(item => (CollectionItem)item);
         public override object SyncRoot => _lock;
-        public override IEnumerable<object> Values => _items.Values.Select(item => item.Value);
+        public override IEnumerable<object> Values => _concurrentDict.Values.Select(item => item.Value);
 
-        public override ICollectionItem this[int index]
+        public override CollectionItem this[int index]
         {
             get
             {
                 _lock.EnterReadLock();
                 try
                 {
-                    return _items.Values.ElementAt(index);
+                    return _concurrentDict.Values.ElementAt(index);
                 }
                 finally
                 {
@@ -60,9 +63,9 @@ namespace Darklight.UnityExt.Collection
                 _lock.EnterWriteLock();
                 try
                 {
-                    var oldItem = _items.Values.ElementAt(index);
-                    _items.TryRemove(oldItem.Key, out _);
-                    _items.TryAdd(kvItem.Key, kvItem);
+                    var oldItem = _concurrentDict.Values.ElementAt(index);
+                    _concurrentDict.TryRemove(oldItem.Key, out _);
+                    _concurrentDict.TryAdd(kvItem.Key, kvItem);
                 }
                 finally
                 {
@@ -76,7 +79,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var item = new KeyValueCollectionItem<TKey, TValue>(_items.Count, key, value);
+                var item = new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, key, value);
                 Add(item);
             }
             finally
@@ -85,7 +88,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Add(ICollectionItem item)
+        public override void Add(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 throw new ArgumentException("Invalid item type");
@@ -93,7 +96,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (!_items.TryAdd(kvItem.Key, kvItem))
+                if (!_concurrentDict.TryAdd(kvItem.Key, kvItem))
                     throw new ArgumentException($"An item with key {kvItem.Key} already exists");
 
                 var args = new CollectionEventArgs(CollectionEventType.ADD, item);
@@ -119,17 +122,17 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (_items.TryGetValue(key, out var existingItem))
+                if (_concurrentDict.TryGetValue(key, out var existingItem))
                 {
                     var updatedItem = new KeyValueCollectionItem<TKey, TValue>(existingItem.Id, key, value);
-                    _items[key] = updatedItem;
+                    _concurrentDict[key] = updatedItem;
                     var args = new CollectionEventArgs(CollectionEventType.UPDATE, updatedItem);
                     CollectionChanged(args);
                 }
                 else
                 {
-                    var newItem = new KeyValueCollectionItem<TKey, TValue>(_items.Count, key, value);
-                    _items[key] = newItem;
+                    var newItem = new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, key, value);
+                    _concurrentDict[key] = newItem;
                     var args = new CollectionEventArgs(CollectionEventType.ADD, newItem);
                     CollectionChanged(args);
                 }
@@ -140,7 +143,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void AddRange(IEnumerable<ICollectionItem> items)
+        public override void AddRange(IEnumerable<CollectionItem> items)
         {
             _lock.EnterWriteLock();
             try
@@ -153,7 +156,7 @@ namespace Darklight.UnityExt.Collection
                     if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                         throw new ArgumentException($"Item must be of type KeyValueCollectionItem<{typeof(TKey).Name}, {typeof(TValue).Name}>");
 
-                    if (!_items.TryAdd(kvItem.Key, kvItem))
+                    if (!_concurrentDict.TryAdd(kvItem.Key, kvItem))
                         throw new ArgumentException($"An item with key {kvItem.Key} already exists");
                 }
 
@@ -165,7 +168,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override bool Remove(ICollectionItem item)
+        public override bool Remove(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 return false;
@@ -173,7 +176,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (_items.TryRemove(kvItem.Key, out _))
+                if (_concurrentDict.TryRemove(kvItem.Key, out _))
                 {
                     var args = new CollectionEventArgs(CollectionEventType.REMOVE, item);
                     CollectionChanged(args);
@@ -186,7 +189,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
-        public override bool Contains(ICollectionItem item)
+        public override bool Contains(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 return false;
@@ -194,7 +197,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _items.ContainsKey(kvItem.Key);
+                return _concurrentDict.ContainsKey(kvItem.Key);
             }
             finally
             {
@@ -202,7 +205,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void CopyTo(ICollectionItem[] array, int arrayIndex)
+        public override void CopyTo(CollectionItem[] array, int arrayIndex)
         {
             if (array == null)
                 throw new ArgumentNullException(nameof(array));
@@ -216,7 +219,7 @@ namespace Darklight.UnityExt.Collection
                 if (array.Length - arrayIndex < Count)
                     throw new ArgumentException("Destination array is not large enough");
 
-                foreach (var item in _items.Values)
+                foreach (var item in _concurrentDict.Values)
                 {
                     array[arrayIndex++] = item;
                 }
@@ -232,8 +235,8 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var items = _items.Values.ToList();
-                _items.Clear();
+                var items = _concurrentDict.Values.ToList();
+                _concurrentDict.Clear();
                 var args = new CollectionEventArgs(CollectionEventType.CLEAR, items: items);
                 CollectionChanged(args);
             }
@@ -248,7 +251,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                if (_items.TryGetValue(key, out var item))
+                if (_concurrentDict.TryGetValue(key, out var item))
                 {
                     value = (TValue)item.Value;
                     return true;
@@ -267,7 +270,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                if (_items.TryGetValue(key, out var item))
+                if (_concurrentDict.TryGetValue(key, out var item))
                     return (TValue)item.Value;
                 throw new KeyNotFoundException($"Key {key} not found in collection");
             }
@@ -282,7 +285,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                _items.Clear();
+                _concurrentDict.Clear();
                 var args = new CollectionEventArgs(CollectionEventType.DISPOSE);
                 CollectionChanged(args);
             }
@@ -298,23 +301,23 @@ namespace Darklight.UnityExt.Collection
             if (other is not CollectionDictionary<TKey, TValue> otherDict)
                 return false;
 
-            return _items.Values.SequenceEqual(otherDict._items.Values);
+            return _concurrentDict.Values.SequenceEqual(otherDict._concurrentDict.Values);
         }
 
-        public override IEnumerator<ICollectionItem> GetEnumerator()
+        public override IEnumerator<CollectionItem> GetEnumerator()
         {
-            return _items.Values.GetEnumerator();
+            return _concurrentDict.Values.GetEnumerator();
         }
 
-        public override int IndexOf(ICollectionItem item)
+        public override int IndexOf(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 return -1;
 
-            return _items.Values.ToList().IndexOf(kvItem);
+            return _concurrentDict.Values.ToList().IndexOf(kvItem);
         }
 
-        public override void Insert(int index, ICollectionItem item)
+        public override void Insert(int index, CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 throw new ArgumentException(
@@ -324,12 +327,12 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var itemsList = _items.Values.ToList();
+                var itemsList = _concurrentDict.Values.ToList();
                 itemsList.Insert(index, kvItem);
-                _items.Clear();
+                _concurrentDict.Clear();
                 foreach (var existingItem in itemsList)
                 {
-                    _items.TryAdd(existingItem.Key, existingItem);
+                    _concurrentDict.TryAdd(existingItem.Key, existingItem);
                 }
             }
             finally
@@ -340,11 +343,11 @@ namespace Darklight.UnityExt.Collection
 
         public override void RemoveAt(int index)
         {
-            var item = _items.Values.ElementAt(index);
+            var item = _concurrentDict.Values.ElementAt(index);
             _lock.EnterWriteLock();
             try
             {
-                _items.TryRemove(item.Key, out _);
+                _concurrentDict.TryRemove(item.Key, out _);
             }
             finally
             {
@@ -352,7 +355,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void RemoveRange(IEnumerable<ICollectionItem> items)
+        public override void RemoveRange(IEnumerable<CollectionItem> items)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
@@ -365,7 +368,7 @@ namespace Darklight.UnityExt.Collection
                 {
                     if (item is KeyValueCollectionItem<TKey, TValue> kvItem)
                     {
-                        _items.TryRemove(kvItem.Key, out _);
+                        _concurrentDict.TryRemove(kvItem.Key, out _);
                     }
                 }
             }
@@ -374,7 +377,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
-        public override void RemoveWhere(Func<ICollectionItem, bool> predicate)
+        public override void RemoveWhere(Func<CollectionItem, bool> predicate)
         {
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
@@ -382,12 +385,12 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var itemsToRemove = _items.Values.Where(predicate).ToList();
+                var itemsToRemove = _concurrentDict.Values.Where(predicate).ToList();
                 foreach (var item in itemsToRemove)
                 {
                     if (item is KeyValueCollectionItem<TKey, TValue> kvItem)
                     {
-                        _items.TryRemove(kvItem.Key, out _);
+                        _concurrentDict.TryRemove(kvItem.Key, out _);
                     }
                 }
             }
@@ -397,7 +400,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Replace(ICollectionItem oldItem, ICollectionItem newItem)
+        public override void Replace(CollectionItem oldItem, CollectionItem newItem)
         {
             if (oldItem == null)
                 throw new ArgumentNullException(nameof(oldItem));
@@ -412,9 +415,9 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (_items.TryRemove(kvOldItem.Key, out _))
+                if (_concurrentDict.TryRemove(kvOldItem.Key, out _))
                 {
-                    _items.TryAdd(kvNewItem.Key, kvNewItem);
+                    _concurrentDict.TryAdd(kvNewItem.Key, kvNewItem);
                 }
             }
             finally
@@ -423,12 +426,12 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override bool TryGetItem(int id, out ICollectionItem item)
+        public override bool TryGetItem(int id, out CollectionItem item)
         {
             _lock.EnterReadLock();
             try
             {
-                item = _items.Values.FirstOrDefault(i => i.Id == id);
+                item = _concurrentDict.Values.FirstOrDefault(i => i.Id == id);
                 return item != null;
             }
             finally
@@ -445,7 +448,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                Array.Copy(_items.Values.ToArray(), 0, array, index, _items.Count);
+                Array.Copy(_concurrentDict.Values.ToArray(), 0, array, index, _concurrentDict.Count);
             }
             finally
             {
@@ -453,7 +456,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override bool AddOrUpdate(ICollectionItem item)
+        public override bool AddOrUpdate(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
                 throw new ArgumentException("Invalid item type");
@@ -461,7 +464,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                return _items.AddOrUpdate(kvItem.Key, kvItem, (_, _) => kvItem) != null;
+                return _concurrentDict.AddOrUpdate(kvItem.Key, kvItem, (_, _) => kvItem) != null;
             }
             finally
             {
@@ -469,5 +472,30 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
+        public override void AddDefaultItem()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                Add(new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, default, default));
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public override void Refresh()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _items = _concurrentDict.Values.ToList();
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
     }
 }

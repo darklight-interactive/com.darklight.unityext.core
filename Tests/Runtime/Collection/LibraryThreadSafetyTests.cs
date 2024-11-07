@@ -233,7 +233,7 @@ namespace Darklight.Tests.Collection
                             var id = (threadId * OperationsPerThread + j) % MaxTestIndex;
                             
                             // Get items inside the try block to handle potential null references
-                            ICollectionItem item;
+                            CollectionItem item;
                             GameObject obj;
                             
                             lock(syncLock)

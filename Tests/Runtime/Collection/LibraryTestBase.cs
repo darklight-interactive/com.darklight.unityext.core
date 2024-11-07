@@ -10,13 +10,13 @@ namespace Darklight.Tests.Collection
     {
         protected const int TEST_OBJECT_COUNT = 100;
         protected List<GameObject> _testObjects;
-        protected Dictionary<int, ICollectionItem> _testItems;
+        protected Dictionary<int, CollectionItem> _testItems;
 
         [SetUp]
         public virtual void Setup()
         {
             _testObjects = new List<GameObject>(TEST_OBJECT_COUNT);
-            _testItems = new Dictionary<int, ICollectionItem>(TEST_OBJECT_COUNT);
+            _testItems = new Dictionary<int, CollectionItem>(TEST_OBJECT_COUNT);
 
             for (int i = 0; i < TEST_OBJECT_COUNT; i++)
             {
@@ -38,12 +38,12 @@ namespace Darklight.Tests.Collection
             _testItems.Clear();
         }
 
-        protected class TestCollectionItem : ICollectionItem
+        protected class TestCollectionItem : CollectionItem
         {
             public int Id { get; }
             public object Value { get; }
 
-            public TestCollectionItem(int id, GameObject value)
+            public TestCollectionItem(int id, object value) : base(id, value)
             {
                 Id = id;
                 Value = value;
@@ -63,14 +63,14 @@ namespace Darklight.Tests.Collection
             }
         }
 
-        protected IEnumerable<ICollectionItem> GetTestItems(int startIndex, int count)
+        protected IEnumerable<CollectionItem> GetTestItems(int startIndex, int count)
         {
             return _testItems.Values
                 .Skip(startIndex)
                 .Take(count);
         }
 
-        protected ICollectionItem GetTestItem(int index)
+        protected CollectionItem GetTestItem(int index)
         {
             return _testItems[index];
         }
@@ -80,7 +80,7 @@ namespace Darklight.Tests.Collection
             return _testObjects[index];
         }
 
-        protected IEnumerable<ICollectionItem> GetTestItemsInRange(int startId, int endId)
+        protected IEnumerable<CollectionItem> GetTestItemsInRange(int startId, int endId)
         {
             return _testItems.Values
                 .Where(item => item.Id >= startId && item.Id <= endId);
@@ -122,14 +122,14 @@ namespace Darklight.Tests.Collection
             Assert.That(distinctCount, Is.EqualTo(collection.Count()));
         }
 
-        protected void AssertItemProperties(ICollectionItem item, int expectedId, GameObject expectedValue)
+        protected void AssertItemProperties(CollectionItem item, int expectedId, GameObject expectedValue)
         {
             Assert.That(item.Id, Is.EqualTo(expectedId));
             Assert.That(item.Value, Is.EqualTo(expectedValue));
         }
 
         protected void AssertRangeProperties(
-            IEnumerable<ICollectionItem> items, 
+            IEnumerable<CollectionItem> items, 
             int expectedStartId, 
             int expectedCount)
         {

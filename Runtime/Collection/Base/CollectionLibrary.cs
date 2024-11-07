@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using UnityEngine;
 
 namespace Darklight.UnityExt.Collection
 {
@@ -25,15 +26,15 @@ namespace Darklight.UnityExt.Collection
     public class CollectionEventArgs : EventArgs
     {
         public CollectionEventType EventType { get; }
-        public ICollectionItem Item { get; }
-        public IEnumerable<ICollectionItem> Items { get; }
+        public CollectionItem Item { get; }
+        public IEnumerable<CollectionItem> Items { get; }
         public int? AffectedId { get; }
         public int? Index { get; }
 
         public CollectionEventArgs(
             CollectionEventType eventType,
-            ICollectionItem item = null,
-            IEnumerable<ICollectionItem> items = null,
+            CollectionItem item = null,
+            IEnumerable<CollectionItem> items = null,
             int? affectedId = null,
             int? index = null
         )
@@ -51,15 +52,15 @@ namespace Darklight.UnityExt.Collection
     /// </summary>
     [Serializable]
     public abstract class CollectionLibrary
-        : ICollection<ICollectionItem>,
-            IEnumerable<ICollectionItem>,
+        : ICollection<CollectionItem>,
+            IEnumerable<CollectionItem>,
             IEnumerable,
             ICollection,
-            IList<ICollectionItem>,
+            IList<CollectionItem>,
             IEquatable<CollectionLibrary>,
             IDisposable
     {
-        public abstract IEnumerable<ICollectionItem> Items { get; }
+        public abstract IEnumerable<CollectionItem> Items { get; }
         public abstract int Count { get; }
         public abstract int Capacity { get; }
         public abstract bool IsReadOnly { get; }
@@ -145,28 +146,28 @@ namespace Darklight.UnityExt.Collection
         /// Adds an item to the ICollection.
         /// </summary>
         /// <param name="item">The object to add to the ICollection.</param>
-        public abstract void Add(ICollectionItem item);
+        public abstract void Add(CollectionItem item);
 
         /// <summary>
         /// Determines whether the ICollection contains a specific value.
         /// </summary>
         /// <param name="item">The object to locate in the ICollection.</param>
         /// <returns>true if item is found in the ICollection; otherwise, false.</returns>
-        public abstract bool Contains(ICollectionItem item);
+        public abstract bool Contains(CollectionItem item);
 
         /// <summary>
         /// Removes the first occurrence of a specific object from the ICollection.
         /// </summary>
         /// <param name="item">The object to remove from the ICollection.</param>
         /// <returns>true if item was successfully removed from the ICollection; otherwise, false. This method also returns false if item is not found in the original ICollection.</returns>
-        public abstract bool Remove(ICollectionItem item);
+        public abstract bool Remove(CollectionItem item);
 
         /// <summary>
         /// Copies the elements of the ICollection to an ILibraryItem[], starting at a particular ILibraryItem[] index.
         /// </summary>
         /// <param name="array">The one-dimensional ILibraryItem[] that is the destination of the elements copied from ICollection.</param>
         /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
-        public abstract void CopyTo(ICollectionItem[] array, int arrayIndex);
+        public abstract void CopyTo(CollectionItem[] array, int arrayIndex);
 
         /// <summary>
         /// Copies the elements of the ICollection to an Array, starting at a particular Array index.
@@ -188,7 +189,7 @@ namespace Darklight.UnityExt.Collection
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>An enumerator that can be used to iterate through the collection.</returns>
-        public abstract IEnumerator<ICollectionItem> GetEnumerator();
+        public abstract IEnumerator<CollectionItem> GetEnumerator();
         #endregion ---- < IEnumerator Implementation > ---------------------------------
 
 
@@ -199,21 +200,21 @@ namespace Darklight.UnityExt.Collection
         /// <param name="index">The zero-based index of the element to get or set.</param>
         /// <returns>The item at the specified index.</returns>
 
-        public abstract ICollectionItem this[int index] { get; set; }
+        public abstract CollectionItem this[int index] { get; set; }
 
         /// <summary>
         /// Gets the index of the specified item in the collection.
         /// </summary>
         /// <param name="item">The item to locate.</param>
         /// <returns>The index of the item if found; otherwise, -1.</returns>
-        public abstract int IndexOf(ICollectionItem item);
+        public abstract int IndexOf(CollectionItem item);
 
         /// <summary>
         /// Inserts an item at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index at which to insert the item.</param>
         /// <param name="item">The item to insert.</param>
-        public abstract void Insert(int index, ICollectionItem item);
+        public abstract void Insert(int index, CollectionItem item);
 
         /// <summary>
         /// Removes the item at the specified index.
@@ -251,32 +252,37 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="item">The item to add or update.</param>
         /// <returns>True if the item was added, false if it was updated.</returns>
-        public abstract bool AddOrUpdate(ICollectionItem item);
+        public abstract bool AddOrUpdate(CollectionItem item);
 
         /// <summary>
         /// Adds a range of items to the collection.
         /// </summary>
         /// <param name="items">The items to add.</param>
-        public abstract void AddRange(IEnumerable<ICollectionItem> items);
+        public abstract void AddRange(IEnumerable<CollectionItem> items);
+
+        /// <summary>
+        /// Adds a default item to the collection.
+        /// </summary>
+        public abstract void AddDefaultItem();
 
         /// <summary>
         /// Removes a range of items from the collection.
         /// </summary>
         /// <param name="items">The items to remove.</param>
-        public abstract void RemoveRange(IEnumerable<ICollectionItem> items);
+        public abstract void RemoveRange(IEnumerable<CollectionItem> items);
 
         /// <summary>
         /// Replaces an item in the collection with a new item.
         /// </summary>
         /// <param name="item">The item to replace.</param>
         /// <param name="newItem">The new item to replace the old item with.</param>
-        public abstract void Replace(ICollectionItem item, ICollectionItem newItem);
+        public abstract void Replace(CollectionItem item, CollectionItem newItem);
 
         /// <summary>
         /// Removes all items from the collection that match the predicate.
         /// </summary>
         /// <param name="predicate">The condition to test items against.</param>
-        public abstract void RemoveWhere(Func<ICollectionItem, bool> predicate);
+        public abstract void RemoveWhere(Func<CollectionItem, bool> predicate);
 
         /// <summary>
         /// Generates a hash code for the collection based on its items.
@@ -284,7 +290,7 @@ namespace Darklight.UnityExt.Collection
         /// <returns>A hash code that represents the current collection state.</returns>
         /// <remarks>
         /// The hash is computed using a combination of all item hashes in the collection.
-        /// For consistent hashing behavior, ensure all ICollectionItems implement GetHashCode properly.
+        /// For consistent hashing behavior, ensure all CollectionItems implement GetHashCode properly.
         /// </remarks>
         public override int GetHashCode()
         {
@@ -315,40 +321,54 @@ namespace Darklight.UnityExt.Collection
         /// <param name="id">The ID to look for.</param>
         /// <param name="item">The found item, if any.</param>
         /// <returns>True if the item was found, false otherwise.</returns>
-        public abstract bool TryGetItem(int id, out ICollectionItem item);
+        public abstract bool TryGetItem(int id, out CollectionItem item);
+
+        /// <summary>
+        /// Refreshes the collection.
+        /// </summary>
+        public abstract void Refresh();
     }
 
     [Serializable]
     public class CollectionLibrary<TValue> : CollectionLibrary
     {
-        private readonly ConcurrentDictionary<int, ICollectionItem> _items;
+        private readonly ConcurrentDictionary<int, CollectionItem<TValue>> _concurrentDict;
         private readonly ReaderWriterLockSlim _lock;
         private bool _isInitialized;
 
+        [SerializeField] protected List<CollectionItem<TValue>> _items = new();
+        [SerializeField] protected List<int> _ids = new();
+        [SerializeField] protected CollectionGuiSettings _guiSettings = new();
+
         public CollectionLibrary()
         {
-            _items = new ConcurrentDictionary<int, ICollectionItem>();
+            _concurrentDict = new ConcurrentDictionary<int, CollectionItem<TValue>>();
             _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             _isInitialized = true;
-            // Raise initialization event
-            CollectionChanged(new CollectionEventArgs(CollectionEventType.INITIALIZE));
+            CollectionChanged(new CollectionEventArgs(CollectionEventType.INITIALIZE));       
+
+            OnCollectionChanged += (sender, args) =>
+            {
+                Debug.Log($"Collection changed: {args.EventType}");
+                _items = _concurrentDict.Values.ToList();
+            };
         }
 
-        public override IEnumerable<ICollectionItem> Items => _items.Values;
-        public override int Count => _items.Count;
-        public override int Capacity => _items.Count;
+        public override IEnumerable<CollectionItem> Items => _concurrentDict.Values.Cast<CollectionItem>();
+        public override int Count => _concurrentDict.Count;
+        public override int Capacity => _concurrentDict.Count;
         public override bool IsReadOnly => false;
         public override object SyncRoot => _lock;
         public override bool IsSynchronized => true;
 
-        public override ICollectionItem this[int index]
+        public override CollectionItem this[int index]
         {
             get
             {
                 _lock.EnterReadLock();
                 try
                 {
-                    return _items.Values.ElementAt(index);
+                    return _concurrentDict.Values.ElementAt(index);
                 }
                 finally
                 {
@@ -357,11 +377,14 @@ namespace Darklight.UnityExt.Collection
             }
             set
             {
+                if (!(value is CollectionItem<TValue> typedValue))
+                    throw new ArgumentException($"Value must be of type CollectionItem<{typeof(TValue).Name}>");
+
                 _lock.EnterWriteLock();
                 try
                 {
-                    var key = _items.Keys.ElementAt(index);
-                    _items[key] = value;
+                    var key = _concurrentDict.Keys.ElementAt(index);
+                    _concurrentDict[key] = typedValue;
                 }
                 finally
                 {
@@ -370,20 +393,27 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Add(ICollectionItem item)
+        public override void Add(CollectionItem item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
+        
+            if (!(item is CollectionItem<TValue> typedItem))
+                throw new ArgumentException($"Item must be of type CollectionItem<{typeof(TValue).Name}>");
 
             _lock.EnterWriteLock();
             try
             {
-                var args = new CollectionEventArgs(CollectionEventType.ADD, item, affectedId: item.Id);
+                var args = new CollectionEventArgs(
+                    CollectionEventType.ADD,
+                    item,
+                    affectedId: item.Id
+                );
 
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                if (!_items.TryAdd(item.Id, item))
+                if (!_concurrentDict.TryAdd(item.Id, typedItem))
                     throw new ArgumentException($"An item with ID {item.Id} already exists");
 
                 if (!EventsSuspended)
@@ -395,9 +425,24 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override bool Remove(ICollectionItem item)
+        public override void AddDefaultItem()
         {
-            if (item == null) return false;
+            _lock.EnterWriteLock();
+            try
+            {
+                int id = _concurrentDict.Count;
+                Add(new CollectionItem<TValue>(id, Activator.CreateInstance<TValue>()));
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public override bool Remove(CollectionItem item)
+        {
+            if (item == null)
+                return false;
 
             _lock.EnterWriteLock();
             try
@@ -411,7 +456,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                bool result = _items.TryRemove(item.Id, out _);
+                bool result = _concurrentDict.TryRemove(item.Id, out _);
 
                 if (!EventsSuspended && result)
                     CollectionChanged(args);
@@ -429,13 +474,13 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var items = _items.Values.ToList();
+                var items = _concurrentDict.Values.ToList();
                 var args = new CollectionEventArgs(CollectionEventType.CLEAR, items: items);
 
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items.Clear();
+                _concurrentDict.Clear();
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -446,15 +491,16 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override bool Contains(ICollectionItem item) =>
-            item != null && _items.ContainsKey(item.Id);
+        public override bool Contains(CollectionItem item) =>
+            item != null && _concurrentDict.ContainsKey(item.Id);
 
-        public override void CopyTo(ICollectionItem[] array, int arrayIndex)
+        public override void CopyTo(CollectionItem[] array, int arrayIndex)
         {
             _lock.EnterReadLock();
             try
             {
-                _items.Values.CopyTo(array, arrayIndex);
+                var values = _concurrentDict.Values.Cast<CollectionItem>().ToArray();
+                Array.Copy(values, 0, array, arrayIndex, values.Length);
             }
             finally
             {
@@ -467,7 +513,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                ((ICollection)_items.Values).CopyTo(array, index);
+                ((ICollection)_concurrentDict.Values).CopyTo(array, index);
             }
             finally
             {
@@ -475,8 +521,8 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override IEnumerator<ICollectionItem> GetEnumerator() =>
-            _items.Values.GetEnumerator();
+        public override IEnumerator<CollectionItem> GetEnumerator() =>
+            _concurrentDict.Values.Cast<CollectionItem>().GetEnumerator();
 
         public override void Dispose()
         {
@@ -488,7 +534,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items.Clear();
+                _concurrentDict.Clear();
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -502,18 +548,11 @@ namespace Darklight.UnityExt.Collection
 
         public override bool Equals(CollectionLibrary other)
         {
-            _lock.EnterReadLock();
-            try
-            {
-                if (other == null)
-                    return false;
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            if (!(other is CollectionLibrary<TValue> typedOther)) return false;
 
-                return _items.Equals(other.Items);
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
+            return _concurrentDict.Values.SequenceEqual(typedOther._concurrentDict.Values);
         }
 
         public override IEnumerable<int> IDs
@@ -523,7 +562,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.EnterReadLock();
                 try
                 {
-                    return _items.Keys.ToList();
+                    return _concurrentDict.Keys.ToList();
                 }
                 finally
                 {
@@ -539,7 +578,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.EnterReadLock();
                 try
                 {
-                    return _items.Values.Select(x => x.Value).ToList();
+                    return _concurrentDict.Values.Select(x => x.Value).ToList();
                 }
                 finally
                 {
@@ -560,7 +599,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                if (_items.TryGetValue(id, out var item))
+                if (_concurrentDict.TryGetValue(id, out var item))
                 {
                     return (TValue)item.Value;
                 }
@@ -578,12 +617,18 @@ namespace Darklight.UnityExt.Collection
         /// <param name="id">The ID to look for.</param>
         /// <param name="item">The found item, if any.</param>
         /// <returns>True if the item was found, false otherwise.</returns>
-        public override bool TryGetItem(int id, out ICollectionItem item)
+        public override bool TryGetItem(int id, out CollectionItem item)
         {
             _lock.EnterReadLock();
             try
             {
-                return _items.TryGetValue(id, out item);
+                if (_concurrentDict.TryGetValue(id, out var tempItem))
+                {
+                    item = tempItem;
+                    return true;
+                }
+                item = null;
+                return false;
             }
             finally
             {
@@ -602,7 +647,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                if (_items.TryGetValue(id, out var item))
+                if (_concurrentDict.TryGetValue(id, out var item))
                 {
                     value = (TValue)item.Value;
                     return true;
@@ -621,7 +666,7 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="item">The item to add or update.</param>
         /// <returns>True if the item was added, false if it was updated.</returns>
-        public override bool AddOrUpdate(ICollectionItem item)
+        public override bool AddOrUpdate(CollectionItem item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -629,14 +674,14 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                bool isNew = !_items.ContainsKey(item.Id);
+                bool isNew = !_concurrentDict.ContainsKey(item.Id);
                 var eventType = isNew ? CollectionEventType.ADD : CollectionEventType.UPDATE;
                 var args = new CollectionEventArgs(eventType, item, affectedId: item.Id);
 
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items[item.Id] = item;
+                _concurrentDict[item.Id] = (CollectionItem<TValue>)item;
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -660,7 +705,9 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _items.TryGetValue(id, out var item) ? (TValue)item.Value : defaultValue;
+                return _concurrentDict.TryGetValue(id, out var item)
+                    ? (TValue)item.Value
+                    : defaultValue;
             }
             finally
             {
@@ -673,13 +720,13 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="predicate">The condition to test items against.</param>
         /// <returns>A new filtered collection.</returns>
-        public CollectionLibrary<TValue> Where(Func<ICollectionItem, bool> predicate)
+        public CollectionLibrary<TValue> Where(Func<CollectionItem<TValue>, bool> predicate)
         {
             _lock.EnterReadLock();
             try
             {
                 var newCollection = new CollectionLibrary<TValue>();
-                foreach (var item in _items.Values.Where(predicate))
+                foreach (var item in _concurrentDict.Values.Where(predicate))
                 {
                     newCollection.Add(item);
                 }
@@ -696,12 +743,12 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="predicate">The condition to test items against.</param>
         /// <returns>True if any item matches, false otherwise.</returns>
-        public bool Any(Func<ICollectionItem, bool> predicate)
+        public bool Any(Func<CollectionItem<TValue>, bool> predicate)
         {
             _lock.EnterReadLock();
             try
             {
-                return _items.Values.Any(predicate);
+                return _concurrentDict.Values.Any(predicate);
             }
             finally
             {
@@ -714,12 +761,12 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="predicate">The condition to test items against.</param>
         /// <returns>The first matching item or null.</returns>
-        public ICollectionItem FirstOrDefault(Func<ICollectionItem, bool> predicate)
+        public CollectionItem<TValue> FirstOrDefault(Func<CollectionItem<TValue>, bool> predicate)
         {
             _lock.EnterReadLock();
             try
             {
-                return _items.Values.FirstOrDefault(predicate);
+                return _concurrentDict.Values.FirstOrDefault(predicate);
             }
             finally
             {
@@ -732,7 +779,7 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         /// <param name="items">The items to add.</param>
         /// <exception cref="ArgumentNullException">Thrown when items is null.</exception>
-        public override void AddRange(IEnumerable<ICollectionItem> items)
+        public override void AddRange(IEnumerable<CollectionItem> items)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
@@ -763,7 +810,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void RemoveRange(IEnumerable<ICollectionItem> items)
+        public override void RemoveRange(IEnumerable<CollectionItem> items)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
@@ -772,7 +819,10 @@ namespace Darklight.UnityExt.Collection
             try
             {
                 var itemsList = items.ToList();
-                var args = new CollectionEventArgs(CollectionEventType.BATCH_REMOVE, items: itemsList);
+                var args = new CollectionEventArgs(
+                    CollectionEventType.BATCH_REMOVE,
+                    items: itemsList
+                );
 
                 if (!EventsSuspended)
                     CollectionChanging(args);
@@ -794,7 +844,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Replace(ICollectionItem item, ICollectionItem newItem)
+        public override void Replace(CollectionItem item, CollectionItem newItem)
         {
             if (item == null || newItem == null)
                 throw new ArgumentNullException(nameof(item));
@@ -812,7 +862,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items[item.Id] = newItem;
+                _concurrentDict[item.Id] = (CollectionItem<TValue>)newItem;
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -838,12 +888,12 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void RemoveWhere(Func<ICollectionItem, bool> predicate)
+        public override void RemoveWhere(Func<CollectionItem, bool> predicate)
         {
             _lock.EnterWriteLock();
             try
             {
-                var itemsToRemove = _items.Values.Where(predicate).ToList();
+                var itemsToRemove = _concurrentDict.Values.Where(predicate).ToList();
                 if (!itemsToRemove.Any())
                     return;
 
@@ -859,7 +909,7 @@ namespace Darklight.UnityExt.Collection
                 {
                     foreach (var item in itemsToRemove)
                     {
-                        _items.TryRemove(item.Id, out _);
+                        _concurrentDict.TryRemove(item.Id, out _);
                     }
                 }
 
@@ -882,7 +932,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _items.ContainsKey(id);
+                return _concurrentDict.ContainsKey(id);
             }
             finally
             {
@@ -896,12 +946,14 @@ namespace Darklight.UnityExt.Collection
         /// <param name="startId">The inclusive start ID.</param>
         /// <param name="endId">The inclusive end ID.</param>
         /// <returns>A collection of items within the ID range.</returns>
-        public IEnumerable<ICollectionItem> GetItemsInRange(int startId, int endId)
+        public IEnumerable<CollectionItem<TValue>> GetItemsInRange(int startId, int endId)
         {
             _lock.EnterReadLock();
             try
             {
-                return _items.Values.Where(item => item.Id >= startId && item.Id <= endId).ToList();
+                return _concurrentDict
+                    .Values.Where(item => item.Id >= startId && item.Id <= endId)
+                    .ToList();
             }
             finally
             {
@@ -909,21 +961,21 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void Sort(IComparer<ICollectionItem> comparer)
+        public void Sort(IComparer<CollectionItem<TValue>> comparer)
         {
             _lock.EnterWriteLock();
             try
             {
-                var sortedItems = _items.Values.OrderBy(x => x, comparer).ToList();
+                var sortedItems = _concurrentDict.Values.OrderBy(x => x, comparer).ToList();
                 var args = new CollectionEventArgs(CollectionEventType.SORT, items: sortedItems);
 
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items.Clear();
+                _concurrentDict.Clear();
                 foreach (var item in sortedItems)
                 {
-                    _items[item.Id] = item;
+                    _concurrentDict[item.Id] = item;
                 }
 
                 if (!EventsSuspended)
@@ -935,7 +987,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void Replace(int id, ICollectionItem newItem)
+        public void Replace(int id, CollectionItem<TValue> newItem)
         {
             if (newItem == null)
                 throw new ArgumentNullException(nameof(newItem));
@@ -943,7 +995,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (!_items.TryGetValue(id, out var oldItem))
+                if (!_concurrentDict.TryGetValue(id, out var oldItem))
                     throw new KeyNotFoundException($"No item found with ID: {id}");
 
                 var args = new CollectionEventArgs(
@@ -956,7 +1008,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items[id] = newItem;
+                _concurrentDict[id] = newItem;
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -967,7 +1019,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void Update(ICollectionItem item)
+        public void Update(CollectionItem<TValue> item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -975,7 +1027,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                if (!_items.ContainsKey(item.Id))
+                if (!_concurrentDict.ContainsKey(item.Id))
                     throw new KeyNotFoundException($"No item found with ID: {item.Id}");
 
                 var args = new CollectionEventArgs(
@@ -987,7 +1039,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items[item.Id] = item;
+                _concurrentDict[item.Id] = item;
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -998,7 +1050,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void Reset(IEnumerable<ICollectionItem> newItems)
+        public void Reset(IEnumerable<CollectionItem<TValue>> newItems)
         {
             if (newItems == null)
                 throw new ArgumentNullException(nameof(newItems));
@@ -1006,7 +1058,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var oldItems = _items.Values.ToList();
+                var oldItems = _concurrentDict.Values.ToList();
                 var newItemsList = newItems.ToList();
 
                 var args = new CollectionEventArgs(
@@ -1018,10 +1070,10 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items.Clear();
+                _concurrentDict.Clear();
                 foreach (var item in newItemsList)
                 {
-                    _items[item.Id] = item;
+                    _concurrentDict[item.Id] = item;
                 }
 
                 if (!EventsSuspended)
@@ -1038,7 +1090,9 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var itemsToRemove = ids.Select(id => _items.TryGetValue(id, out var item) ? item : null)
+                var itemsToRemove = ids.Select(id =>
+                        _concurrentDict.TryGetValue(id, out var item) ? item : null
+                    )
                     .Where(item => item != null)
                     .ToList();
 
@@ -1057,7 +1111,7 @@ namespace Darklight.UnityExt.Collection
                 {
                     foreach (var item in itemsToRemove)
                     {
-                        _items.TryRemove(item.Id, out _);
+                        _concurrentDict.TryRemove(item.Id, out _);
                     }
                 }
 
@@ -1070,7 +1124,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void InsertAt(int index, ICollectionItem item)
+        public void InsertAt(int index, CollectionItem<TValue> item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -1091,13 +1145,13 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                var list = _items.Values.ToList();
+                var list = _concurrentDict.Values.ToList();
                 list.Insert(index, item);
 
-                _items.Clear();
+                _concurrentDict.Clear();
                 foreach (var existingItem in list)
                 {
-                    _items[existingItem.Id] = existingItem;
+                    _concurrentDict[existingItem.Id] = existingItem;
                 }
 
                 if (!EventsSuspended)
@@ -1108,7 +1162,8 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
-        public override int IndexOf(ICollectionItem item)
+
+        public override int IndexOf(CollectionItem item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -1116,7 +1171,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _items.Values.ToList().IndexOf(item);
+                return _concurrentDict.Values.ToList().IndexOf((CollectionItem<TValue>)item);
             }
             finally
             {
@@ -1124,43 +1179,12 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public override void Insert(int index, ICollectionItem item)
+        public override void Insert(int index, CollectionItem item)
         {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
+            if (!(item is CollectionItem<TValue> typedItem))
+                throw new ArgumentException($"Item must be of type CollectionItem<{typeof(TValue).Name}>");
 
-            _lock.EnterWriteLock();
-            try
-            {
-                if (index < 0 || index > Count)
-                    throw new ArgumentOutOfRangeException(nameof(index));
-
-                var args = new CollectionEventArgs(
-                    CollectionEventType.ADD,
-                    item: item,
-                    affectedId: item.Id,
-                    index: index
-                );
-
-                if (!EventsSuspended)
-                    CollectionChanging(args);
-
-                var list = _items.Values.ToList();
-                list.Insert(index, item);
-
-                _items.Clear();
-                foreach (var existingItem in list)
-                {
-                    _items[existingItem.Id] = existingItem;
-                }
-
-                if (!EventsSuspended)
-                    CollectionChanged(args);
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
+            InsertAt(index, typedItem);
         }
 
         public override void RemoveAt(int index)
@@ -1171,7 +1195,7 @@ namespace Darklight.UnityExt.Collection
                 if (index < 0 || index >= Count)
                     throw new ArgumentOutOfRangeException(nameof(index));
 
-                var item = _items.Values.ElementAt(index);
+                var item = _concurrentDict.Values.ElementAt(index);
                 var args = new CollectionEventArgs(
                     CollectionEventType.REMOVE,
                     item: item,
@@ -1182,7 +1206,7 @@ namespace Darklight.UnityExt.Collection
                 if (!EventsSuspended)
                     CollectionChanging(args);
 
-                _items.TryRemove(item.Id, out _);
+                _concurrentDict.TryRemove(item.Id, out _);
 
                 if (!EventsSuspended)
                     CollectionChanged(args);
@@ -1192,5 +1216,74 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
+
+        public override void Refresh()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _items = _concurrentDict.Values.ToList();
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public CollectionItem<TValue> GetTypedItem(int id)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                if (_concurrentDict.TryGetValue(id, out var item))
+                    return item;
+                throw new KeyNotFoundException($"No item found with ID: {id}");
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        public CollectionItem<TValue> GetTypedItemAt(int index)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                return _concurrentDict.Values.ElementAt(index);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        public void SetTypedItem(int index, CollectionItem<TValue> item)
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                var key = _concurrentDict.Keys.ElementAt(index);
+                _concurrentDict[key] = item;
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+    }
+
+    [Serializable]
+    public class CollectionGuiSettings
+    {
+        public bool showHeader = true;
+        public bool showFooter = true;
+        public bool showSearch = true;
+        public bool showPagination = true;
+        public int itemsPerPage = 10;
+        public string searchText = string.Empty;
+        public int currentPage = 0;
+        public bool readOnlyKey = false;
+        public bool readOnlyValue = false;
     }
 }
