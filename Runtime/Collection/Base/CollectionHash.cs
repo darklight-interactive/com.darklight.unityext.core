@@ -60,14 +60,14 @@ namespace Darklight.UnityExt.Collection
         /// </summary>
         private string GenerateValueString(CollectionItem item)
         {
-            if (item.Value is UnityEngine.Object)
+            if (item.Object is UnityEngine.Object)
             {
                 return $"UnityObject_{item.Id}";
             }
 
             try
             {
-                return item.Value?.ToString() ?? "null";
+                return item.Object?.ToString() ?? "null";
             }
             catch (Exception)
             {
@@ -165,50 +165,6 @@ namespace Darklight.UnityExt.Collection
                 _hashLock.ExitWriteLock();
             }
         }
-
-        public override void Add(CollectionItem item)
-        {
-            if (!_isInitialized) return;
-            
-            string hash = ComputeItemHash(item);
-            base.Add(item);
-            _hashCache.TryAdd(item.Id, hash);
-            UpdateCollectionHash();
-        }
-
-        public override bool Remove(CollectionItem item)
-        {
-            if (!_isInitialized) return false;
-            
-            var result = base.Remove(item);
-            if (result)
-            {
-                _hashCache.TryRemove(item.Id, out _);
-                UpdateCollectionHash();
-            }
-            return result;
-        }
-
-        public override void Clear()
-        {
-            if (!_isInitialized) return;
-            
-            base.Clear();
-            _hashCache.Clear();
-            
-            if (_hashLock.TryEnterWriteLock(TimeSpan.FromSeconds(1)))
-            {
-                try
-                {
-                    _collectionHash = string.Empty;
-                }
-                finally
-                {
-                    _hashLock.ExitWriteLock();
-                }
-            }
-        }
-
         public bool VerifyItemIntegrity(CollectionItem item)
         {
             if (!_isInitialized) return false;
@@ -221,15 +177,6 @@ namespace Darklight.UnityExt.Collection
             return string.Equals(cachedHash, currentHash, StringComparison.OrdinalIgnoreCase);
         }
 
-        public override void Dispose()
-        {
-            if (!_isInitialized) return;
-            
-            base.Dispose();
-            _hashCache.Clear();
-            _hashLock.Dispose();
-            _isInitialized = false;
-        }
 
         public string GetItemHash(int id)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Darklight.UnityExt.Collection;
 
@@ -10,26 +11,20 @@ namespace Darklight.UnityExt.Collection
     /// Abstract class for a library.
     /// </summary>
     [Serializable]
-    public abstract class CollectionLibrary
-        : ICollection<CollectionItem>,
-            IEnumerable<CollectionItem>,
-            IEnumerable,
+    public abstract class Collection
+        : IEnumerable<CollectionItem>,
+            IEquatable<Collection>,
+            ICollection<CollectionItem>,
             ICollection,
-            IList<CollectionItem>,
-            IEquatable<CollectionLibrary>,
+            IEnumerable,
+            IEnumerator,
+            INotifyCollectionChanged,
             IDisposable
     {
-        public abstract IEnumerable<CollectionItem> Items { get; }
-        public abstract IEnumerable<int> IDs { get; }
-        public abstract IEnumerable<object> ObjectValues { get; }
-        public abstract int Count { get; }
-        public abstract int Capacity { get; }
-        public abstract bool IsReadOnly { get; }
-        public abstract object SyncRoot { get; }
-        public abstract bool IsSynchronized { get; }
-
         private EventHandler<CollectionEventArgs> _collectionChanged;
         private EventHandler<CollectionEventArgs> _collectionChanging;
+
+        private int _position = -1;
 
         /// <summary>
         /// Occurs when the collection changes.
@@ -49,13 +44,231 @@ namespace Darklight.UnityExt.Collection
             remove { _collectionChanging -= value; }
         }
 
-        /// <summary>
-        /// Raises the CollectionChanging event.
-        /// </summary>
-        /// <param name="args">The event arguments.</param>
-        protected virtual void CollectionChanging(CollectionEventArgs args)
+        event NotifyCollectionChangedEventHandler INotifyCollectionChanged.CollectionChanged
         {
-            _collectionChanging?.Invoke(this, args);
+            add =>
+                _collectionChanged += (_, args) =>
+                    value(
+                        this,
+                        new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset)
+                    );
+            remove =>
+                _collectionChanged -= (_, args) =>
+                    value(
+                        this,
+                        new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset)
+                    );
+        }
+        public abstract int Capacity { get; }
+        public abstract int Count { get; }
+        public object Current => Items.ElementAtOrDefault(_position);
+        public abstract bool IsReadOnly { get; }
+        public abstract bool IsSynchronized { get; }
+        public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
+        public abstract IEnumerable<CollectionItem> Items { get; }
+        public virtual IEnumerable<object> Objects => Items.Select(x => x.Object);
+        public abstract object SyncRoot { get; }
+
+        /// <summary>
+        /// Gets whether events are currently suspended.
+        /// </summary>
+        protected bool EventsSuspended { get; private set; }
+
+        public void Add(CollectionItem item)
+        {
+            CollectionChanging(
+                new CollectionEventArgs(CollectionEventType.ADD, item, null, item.Id)
+            );
+            var items = Items.ToList();
+            items.Add(item);
+            CollectionChanged(
+                new CollectionEventArgs(CollectionEventType.ADD, item, null, item.Id)
+            );
+        }
+
+        public void AddRange(IEnumerable<CollectionItem> items)
+        {
+            foreach (var item in items)
+                Add(item);
+        }
+
+        public void AddRange(params CollectionItem[] items)
+        {
+            AddRange(items as IEnumerable<CollectionItem>);
+        }
+
+        public void RemoveRange(IEnumerable<CollectionItem> items)
+        {
+            foreach (var item in items)
+                Remove(item);
+        }
+
+        public void RemoveRange(params CollectionItem[] items)
+        {
+            RemoveRange(items as IEnumerable<CollectionItem>);
+        }
+
+        public void Clear()
+        {
+            CollectionChanging(new CollectionEventArgs(CollectionEventType.RESET));
+            var items = Items.ToList();
+            items.Clear();
+            CollectionChanged(new CollectionEventArgs(CollectionEventType.RESET));
+        }
+
+        public Collection Clone()
+        {
+            var clone = (Collection)MemberwiseClone();
+            return clone;
+        }
+
+        public bool Contains(CollectionItem item)
+        {
+            return Items.Contains(item);
+        }
+
+        public void CopyTo(CollectionItem[] array, int arrayIndex)
+        {
+            var items = Items.ToList();
+            items.CopyTo(array, arrayIndex);
+        }
+
+        public void CopyTo(Array array, int index)
+        {
+            var items = Items.ToList();
+            Array.Copy(items.ToArray(), 0, array, index, items.Count);
+        }
+
+        public void Dispose()
+        {
+            OnCollectionChanged -= (_, __) => { };
+            OnCollectionChanging -= (_, __) => { };
+            GC.SuppressFinalize(this);
+        }
+
+        public bool Equals(Collection other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+
+            return Count == other.Count && Items.SequenceEqual(other.Items);
+        }
+
+        public IEnumerator<CollectionItem> GetEnumerator()
+        {
+            return Items.GetEnumerator();
+        }
+
+        public CollectionItem TryGetItem(int id)
+        {
+            return Items.FirstOrDefault(x => x.Id == id);
+        }
+
+        public bool TryGetItem(int id, out CollectionItem item)
+        {
+            item = TryGetItem(id);
+            return item != null;
+        }
+
+        public CollectionItem GetItemById(int id)
+        {
+            return TryGetItem(id);
+        }
+
+        public int IndexOf(CollectionItem item)
+        {
+            return Items.ToList().IndexOf(item);
+        }
+
+        public void RemoveWhere(Predicate<CollectionItem> predicate)
+        {
+            var items = Items.ToList();
+            items.RemoveAll(predicate);
+        }
+
+        public IEnumerable<CollectionItem> GetItemsInRange(int startIndex, int count)
+        {
+            return Items.Skip(startIndex).Take(count);
+        }
+
+        public void Insert(int index, CollectionItem item)
+        {
+            CollectionChanging(
+                new CollectionEventArgs(CollectionEventType.ADD, item, null, item.Id, index)
+            );
+            var items = Items.ToList();
+            items.Insert(index, item);
+            CollectionChanged(
+                new CollectionEventArgs(CollectionEventType.ADD, item, null, item.Id, index)
+            );
+        }
+
+        public IEnumerable<CollectionItem> Where(Func<CollectionItem, bool> predicate)
+        {
+            return Items.Where(predicate);
+        }
+
+        public bool MoveNext()
+        {
+            var items = Items.ToList();
+            if (_position < items.Count - 1)
+            {
+                _position++;
+                return true;
+            }
+            return false;
+        }
+
+        public bool Remove(CollectionItem item)
+        {
+            var items = Items.ToList();
+            var index = items.IndexOf(item);
+            if (index >= 0)
+            {
+                CollectionChanging(
+                    new CollectionEventArgs(CollectionEventType.REMOVE, item, null, item.Id, index)
+                );
+                items.Remove(item);
+                CollectionChanged(
+                    new CollectionEventArgs(CollectionEventType.REMOVE, item, null, item.Id, index)
+                );
+                return true;
+            }
+            return false;
+        }
+
+        public void RemoveAt(int index)
+        {
+            var items = Items.ToList();
+            var item = items[index];
+            CollectionChanging(
+                new CollectionEventArgs(CollectionEventType.REMOVE, item, null, item.Id, index)
+            );
+            items.RemoveAt(index);
+            CollectionChanged(
+                new CollectionEventArgs(CollectionEventType.REMOVE, item, null, item.Id, index)
+            );
+        }
+
+        public void Reset()
+        {
+            _position = -1;
+        }
+
+        /// <summary>
+        /// Suspends collection change events.
+        /// </summary>
+        /// <returns>An IDisposable that resumes events when disposed.</returns>
+        public IDisposable SuspendEvents()
+        {
+            return new EventSuspender(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         /// <summary>
@@ -68,25 +281,20 @@ namespace Darklight.UnityExt.Collection
         }
 
         /// <summary>
-        /// Gets whether events are currently suspended.
+        /// Raises the CollectionChanging event.
         /// </summary>
-        protected bool EventsSuspended { get; private set; }
-
-        /// <summary>
-        /// Suspends collection change events.
-        /// </summary>
-        /// <returns>An IDisposable that resumes events when disposed.</returns>
-        public IDisposable SuspendEvents()
+        /// <param name="args">The event arguments.</param>
+        protected virtual void CollectionChanging(CollectionEventArgs args)
         {
-            return new EventSuspender(this);
+            _collectionChanging?.Invoke(this, args);
         }
 
         private class EventSuspender : IDisposable
         {
-            private readonly CollectionLibrary _collection;
+            private readonly Collection _collection;
             private bool _disposed;
 
-            public EventSuspender(CollectionLibrary collection)
+            public EventSuspender(Collection collection)
             {
                 _collection = collection;
                 _collection.EventsSuspended = true;
@@ -100,203 +308,6 @@ namespace Darklight.UnityExt.Collection
                     _disposed = true;
                 }
             }
-        }
-
-        #region ---- < ICollection Implementation > ---------------------------------
-        /// <summary>
-        /// Adds an item to the ICollection.
-        /// </summary>
-        /// <param name="item">The object to add to the ICollection.</param>
-        public abstract void Add(CollectionItem item);
-
-        /// <summary>
-        /// Determines whether the ICollection contains a specific value.
-        /// </summary>
-        /// <param name="item">The object to locate in the ICollection.</param>
-        /// <returns>true if item is found in the ICollection; otherwise, false.</returns>
-        public abstract bool Contains(CollectionItem item);
-
-        /// <summary>
-        /// Removes the first occurrence of a specific object from the ICollection.
-        /// </summary>
-        /// <param name="item">The object to remove from the ICollection.</param>
-        /// <returns>true if item was successfully removed from the ICollection; otherwise, false. This method also returns false if item is not found in the original ICollection.</returns>
-        public abstract bool Remove(CollectionItem item);
-
-        /// <summary>
-        /// Copies the elements of the ICollection to an ILibraryItem[], starting at a particular ILibraryItem[] index.
-        /// </summary>
-        /// <param name="array">The one-dimensional ILibraryItem[] that is the destination of the elements copied from ICollection.</param>
-        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
-        public abstract void CopyTo(CollectionItem[] array, int arrayIndex);
-
-        /// <summary>
-        /// Copies the elements of the ICollection to an Array, starting at a particular Array index.
-        /// </summary>
-        /// <param name="array">The one-dimensional Array that is the destination of the elements copied from ICollection.</param>
-        /// <param name="index">The zero-based index in array at which copying begins.</param>
-        public abstract void CopyTo(Array array, int index);
-
-        /// <summary>
-        /// Removes all items from the ICollection.
-        /// </summary>
-        public abstract void Clear();
-
-        #endregion ---- < ICollection Implementation > ---------------------------------
-
-        #region ---- < IEnumerator Implementation > ---------------------------------
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
-        public abstract IEnumerator<CollectionItem> GetEnumerator();
-        #endregion ---- < IEnumerator Implementation > ---------------------------------
-
-
-        #region ---- < IList Implementation > ---------------------------------
-        /// <summary>
-        /// Gets or sets the item at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to get or set.</param>
-        /// <returns>The item at the specified index.</returns>
-
-        public abstract CollectionItem this[int index] { get; set; }
-
-        /// <summary>
-        /// Gets the index of the specified item in the collection.
-        /// </summary>
-        /// <param name="item">The item to locate.</param>
-        /// <returns>The index of the item if found; otherwise, -1.</returns>
-        public abstract int IndexOf(CollectionItem item);
-
-        /// <summary>
-        /// Inserts an item at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index at which to insert the item.</param>
-        /// <param name="item">The item to insert.</param>
-        public abstract void Insert(int index, CollectionItem item);
-
-        /// <summary>
-        /// Removes the item at the specified index.
-        /// </summary>
-        /// <param name="index">The zero-based index of the item to remove.</param>
-        public abstract void RemoveAt(int index);
-
-        #endregion ---- < IList Implementation > ---------------------------------
-
-
-        #region ---- < IEquatable Implementation > ---------------------------------
-        /// <summary>
-        /// Determines whether the current collection is equal to another collection.
-        /// </summary>
-        /// <param name="other">The collection to compare with the current collection.</param>
-        /// <returns>true if the current collection is equal to the other collection; otherwise, false.</returns>
-        public abstract bool Equals(CollectionLibrary other);
-        #endregion ---- < IEquatable Implementation > ---------------------------------
-
-        #region ---- < IDisposable Implementation > ---------------------------------
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public abstract void Dispose();
-        #endregion ---- < IDisposable Implementation > ---------------------------------
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        /// <summary>
-        /// Adds or updates an item in the collection.
-        /// </summary>
-        /// <param name="item">The item to add or update.</param>
-        /// <returns>True if the item was added, false if it was updated.</returns>
-        public abstract bool AddOrUpdate(CollectionItem item);
-
-        /// <summary>
-        /// Adds a range of items to the collection.
-        /// </summary>
-        /// <param name="items">The items to add.</param>
-        public abstract void AddRange(IEnumerable<CollectionItem> items);
-
-        /// <summary>
-        /// Adds a default item to the collection.
-        /// </summary>
-        public abstract void AddDefaultItem();
-
-        /// <summary>
-        /// Removes a range of items from the collection.
-        /// </summary>
-        /// <param name="items">The items to remove.</param>
-        public abstract void RemoveRange(IEnumerable<CollectionItem> items);
-
-        /// <summary>
-        /// Replaces an item in the collection with a new item.
-        /// </summary>
-        /// <param name="item">The item to replace.</param>
-        /// <param name="newItem">The new item to replace the old item with.</param>
-        public abstract void Replace(CollectionItem item, CollectionItem newItem);
-
-        /// <summary>
-        /// Removes all items from the collection that match the predicate.
-        /// </summary>
-        /// <param name="predicate">The condition to test items against.</param>
-        public abstract void RemoveWhere(Func<CollectionItem, bool> predicate);
-
-        /// <summary>
-        /// Tries to get an item by its ID.
-        /// </summary>
-        /// <param name="id">The ID to look for.</param>
-        /// <param name="item">The found item, if any.</param>
-        /// <returns>True if the item was found, false otherwise.</returns>
-        public abstract bool TryGetItem(int id, out CollectionItem item);
-
-        /// <summary>
-        /// Refreshes the collection by updating the internal list of items.
-        /// </summary>
-        public abstract void Refresh();
-
-        /// <summary>
-        /// Generates a hash code for the collection based on its items.
-        /// </summary>
-        /// <returns>A hash code that represents the current collection state.</returns>
-        /// <remarks>
-        /// The hash is computed using a combination of all item hashes in the collection.
-        /// For consistent hashing behavior, ensure all CollectionItems implement GetHashCode properly.
-        /// </remarks>
-        public override int GetHashCode()
-        {
-            unchecked // Allow arithmetic overflow
-            {
-                int hash = 17; // Prime number starting point
-                foreach (var item in Items)
-                {
-                    hash = hash * 31 + (item?.GetHashCode() ?? 0);
-                }
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Gets the next available ID in the collection by finding the first gap in the sequence.
-        /// </summary>
-        /// <param name="id">The next available ID.</param>
-        /// <remarks>
-        /// This method finds the first missing number in the sorted sequence of IDs.
-        /// If no gaps exist, returns the next number after the highest existing ID.
-        /// </remarks>
-        protected void GetNextAvailableID(out int id)
-        {
-            if (!IDs.Any())
-            {
-                id = 0;
-                return;
-            }
-
-            var sortedIds = IDs.OrderBy(x => x);
-            id = Enumerable.Range(0, sortedIds.Max() + 2).Except(sortedIds).First();
         }
     }
 }

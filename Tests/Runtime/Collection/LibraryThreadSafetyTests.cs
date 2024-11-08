@@ -12,13 +12,12 @@ namespace Darklight.Tests.Collection
 {
     public class LibraryThreadSafetyTests : LibraryTestBase
     {
-        private CollectionLibrary<GameObject> _baseLibrary;
-        private CollectionHash<GameObject> _hashLibrary;
-        private CollectionDictionary<int, GameObject> _dictionaryLibrary;
-
         private const int ThreadCount = 10;
         private const int OperationsPerThread = 10;
         private const int MaxTestIndex = TEST_OBJECT_COUNT - 1;
+        private CollectionLibrary<GameObject> _baseLibrary;
+        private CollectionHash<GameObject> _hashLibrary;
+        private CollectionDictionary<int, GameObject> _dictionaryLibrary;
 
         [SetUp]
         public override void Setup()
@@ -175,7 +174,10 @@ namespace Darklight.Tests.Collection
                                                 var existingKey = currentKeys[randomIndex];
                                                 try
                                                 {
-                                                    _dictionaryLibrary.GetValue(existingKey);
+                                                    _dictionaryLibrary.TryGetValue(
+                                                        existingKey,
+                                                        out _
+                                                    );
                                                 }
                                                 catch (KeyNotFoundException)
                                                 {
@@ -201,12 +203,12 @@ namespace Darklight.Tests.Collection
             await Task.WhenAll(tasks);
 
             // Assert
-            Assert.DoesNotThrow(() => 
+            Assert.DoesNotThrow(() =>
             {
                 foreach (var item in _dictionaryLibrary.Items)
                 {
                     _ = item.Id;
-                    _ = item.Value;
+                    _ = item.Object;
                 }
             });
         }
@@ -231,18 +233,19 @@ namespace Darklight.Tests.Collection
                         try
                         {
                             var id = (threadId * OperationsPerThread + j) % MaxTestIndex;
-                            
+
                             // Get items inside the try block to handle potential null references
                             CollectionItem item;
                             GameObject obj;
-                            
-                            lock(syncLock)
+
+                            lock (syncLock)
                             {
                                 item = GetTestItem(id);
                                 obj = GetTestObject(id);
                             }
 
-                            if (item == null || obj == null) continue;
+                            if (item == null || obj == null)
+                                continue;
 
                             // Perform parallel operations on all collections
                             switch (random.Next(3))
@@ -252,7 +255,7 @@ namespace Darklight.Tests.Collection
                                     {
                                         try
                                         {
-                                            lock(syncLock)
+                                            lock (syncLock)
                                             {
                                                 _baseLibrary.Add(item);
                                                 _hashLibrary.Add(item);
@@ -269,28 +272,42 @@ namespace Darklight.Tests.Collection
                                 case 1: // Remove from all
                                     if (addedItems.TryRemove(id, out _))
                                     {
-                                        lock(syncLock)
+                                        lock (syncLock)
                                         {
-                                            try { _baseLibrary.Remove(item); } catch { }
-                                            try { _hashLibrary.Remove(item); } catch { }
-                                            try 
-                                            { 
+                                            try
+                                            {
+                                                _baseLibrary.Remove(item);
+                                            }
+                                            catch { }
+                                            try
+                                            {
+                                                _hashLibrary.Remove(item);
+                                            }
+                                            catch { }
+                                            try
+                                            {
                                                 _dictionaryLibrary.Remove(
-                                                    new KeyValueCollectionItem<int, GameObject>(id, id, obj)
-                                                ); 
-                                            } 
+                                                    new KeyValueCollectionItem<int, GameObject>(
+                                                        id,
+                                                        id,
+                                                        obj
+                                                    )
+                                                );
+                                            }
                                             catch { }
                                         }
                                     }
                                     break;
 
                                 case 2: // Read from all
-                                    lock(syncLock)
+                                    lock (syncLock)
                                     {
                                         try
                                         {
-                                            if (_baseLibrary.TryGetItem(id, out _) &&
-                                                _hashLibrary.GetItemHash(id) != null)
+                                            if (
+                                                _baseLibrary.TryGetItem(id, out _)
+                                                && _hashLibrary.GetItemHash(id) != null
+                                            )
                                             {
                                                 _dictionaryLibrary.TryGetValue(id, out _);
                                             }
@@ -317,7 +334,7 @@ namespace Darklight.Tests.Collection
             await Task.WhenAll(tasks);
 
             // Assert
-            lock(syncLock)
+            lock (syncLock)
             {
                 Assert.DoesNotThrow(() =>
                 {
@@ -326,10 +343,18 @@ namespace Darklight.Tests.Collection
                     var dictCount = _dictionaryLibrary.Items.Count();
 
                     Assert.That(hashIntegrity, Is.True, "Hash integrity check failed");
-                    Assert.That(baseCount, Is.GreaterThanOrEqualTo(0), "Base library count is invalid");
-                    Assert.That(dictCount, Is.GreaterThanOrEqualTo(0), "Dictionary count is invalid");
+                    Assert.That(
+                        baseCount,
+                        Is.GreaterThanOrEqualTo(0),
+                        "Base library count is invalid"
+                    );
+                    Assert.That(
+                        dictCount,
+                        Is.GreaterThanOrEqualTo(0),
+                        "Dictionary count is invalid"
+                    );
                 });
             }
         }
     }
-} 
+}

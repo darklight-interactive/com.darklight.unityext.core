@@ -9,7 +9,7 @@ namespace Darklight.UnityExt.Collection
     public interface ICollectionItem
     {
         int Id { get; }
-        object Value { get; }
+        object Object { get; }
 
         // Add hash code contract
         int GetHashCode();
@@ -19,54 +19,58 @@ namespace Darklight.UnityExt.Collection
     [Serializable]
     public class CollectionItem : ICollectionItem
     {
-        [SerializeField] protected int _id;
-        [SerializeField] protected object _value;
+        [SerializeField]
+        protected int _id;
 
-        public int Id { get => _id; protected set => _id = value; }
-        public virtual object Value { get => _value; protected set => _value = value; }
+        [SerializeField]
+        protected object _object;
+
+        public int Id
+        {
+            get => _id;
+            protected set => _id = value;
+        }
+        public virtual object Object
+        {
+            get => _object;
+            protected set => _object = value;
+        }
+
         public override int GetHashCode() => _id.GetHashCode();
+
         public override bool Equals(object obj) => obj is CollectionItem item && _id == item._id;
 
         public CollectionItem(int id, object value)
         {
             _id = id;
-            _value = value;
+            _object = value;
         }
     }
 
     [Serializable]
-    public class CollectionItem<TValue> : CollectionItem 
+    public class CollectionItem<TValue> : CollectionItem
         where TValue : notnull
     {
-        [SerializeField] private TValue _typedValue;
+        [SerializeField]
+        private TValue _value;
 
-        public TValue TypedValue
+        public TValue Value
         {
-            get => _typedValue;
-            protected set
-            {
-                _typedValue = value;
-                _value = value;
-            }
-        }
-
-        public override object Value
-        {
-            get => _typedValue;
+            get => _value;
             protected set
             {
                 _value = value;
-                _typedValue = (TValue)value;
+                _object = value;
             }
         }
 
-        public CollectionItem(int id, TValue value) : base(id, value)
+        public CollectionItem(int id, TValue value)
+            : base(id, value)
         {
-            TypedValue = value;
+            Value = value;
         }
     }
 
-    
     /// <summary>
     /// Represents a key-value pair item in a collection.
     /// </summary>
@@ -77,12 +81,17 @@ namespace Darklight.UnityExt.Collection
         where TKey : notnull
         where TValue : notnull
     {
-        [SerializeField] private TKey _key;
+        [SerializeField]
+        private TKey _key;
 
         /// <summary>
         /// Gets the key of the item.
         /// </summary>
-        public TKey Key { get => _key; protected set => _key = value; }
+        public TKey Key
+        {
+            get => _key;
+            protected set => _key = value;
+        }
 
         /// <summary>
         /// Initializes a new instance of KeyValueCollectionItem.
@@ -90,7 +99,8 @@ namespace Darklight.UnityExt.Collection
         /// <param name="id">The ID of the item.</param>
         /// <param name="key">The key of the item.</param>
         /// <param name="value">The value of the item.</param>
-        public KeyValueCollectionItem(int id, TKey key, TValue value) : base(id, value)
+        public KeyValueCollectionItem(int id, TKey key, TValue value)
+            : base(id, value)
         {
             Key = key;
         }
@@ -111,11 +121,11 @@ namespace Darklight.UnityExt.Collection
         {
             if (obj is KeyValueCollectionItem<TKey, TValue> other)
             {
-                return Id == other.Id && 
-                       Key.Equals(other.Key) && 
-                       (Value?.Equals(other.Value) ?? other.Value == null);
+                return Id == other.Id
+                    && Key.Equals(other.Key)
+                    && (Value?.Equals(other.Value) ?? other.Value == null);
             }
             return false;
         }
     }
-} 
+}

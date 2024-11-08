@@ -6,7 +6,7 @@ using NaughtyAttributes.Editor;
 namespace Darklight.UnityExt.Collection.Editor
 {
 #if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(CollectionLibrary), true)]
+    [CustomPropertyDrawer(typeof(Collection), true)]
     public class LibraryPropertyDrawer : PropertyDrawerBase
     {
         private const string ITEMS_PROP = "_items";

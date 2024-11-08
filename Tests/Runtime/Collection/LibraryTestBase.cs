@@ -125,7 +125,7 @@ namespace Darklight.Tests.Collection
         protected void AssertItemProperties(CollectionItem item, int expectedId, GameObject expectedValue)
         {
             Assert.That(item.Id, Is.EqualTo(expectedId));
-            Assert.That(item.Value, Is.EqualTo(expectedValue));
+            Assert.That(item.Object, Is.EqualTo(expectedValue));
         }
 
         protected void AssertRangeProperties(

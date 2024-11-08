@@ -1,7 +1,7 @@
+using System.Linq;
+using Darklight.UnityExt.Collection;
 using NUnit.Framework;
 using UnityEngine;
-using Darklight.UnityExt.Collection;
-using System.Linq;
 
 namespace Darklight.Tests.Collection
 {
@@ -68,7 +68,7 @@ namespace Darklight.Tests.Collection
             _library.Add(item);
 
             // Act
-            var value = _library.GetValueById(0);
+            var value = _library.GetItemById(0);
 
             // Assert
             Assert.That(value, Is.EqualTo(GetTestObject(0)));
@@ -138,8 +138,8 @@ namespace Darklight.Tests.Collection
             var filtered = _library.Where(item => item.Id >= 50);
 
             // Assert
-            AssertCollectionCount(filtered.Items, 50);
-            AssertRangeProperties(filtered.Items, 50, 50);
+            AssertCollectionCount(filtered, 50);
+            AssertRangeProperties(filtered, 50, 50);
         }
 
         [Test]
@@ -181,7 +181,7 @@ namespace Darklight.Tests.Collection
             _library.AddRange(items);
 
             // Act
-            var rangeItems = _library.GetItemsInRange(25, 74).ToList();
+            var rangeItems = _library.GetItemsInRange(25, 74);
 
             // Assert
             AssertCollectionCount(rangeItems, 50);
@@ -200,7 +200,7 @@ namespace Darklight.Tests.Collection
 
             // Act & Assert - Filter
             var filtered = _library.Where(item => item.Id % 2 == 0);
-            AssertCollectionCount(filtered.Items, 50);
+            AssertCollectionCount(filtered, 50);
 
             // Act & Assert - Remove
             _library.RemoveWhere(item => item.Id % 3 == 0);
@@ -231,4 +231,4 @@ namespace Darklight.Tests.Collection
             AssertCollectionUnique(_library.IDs);
         }
     }
-} 
+}

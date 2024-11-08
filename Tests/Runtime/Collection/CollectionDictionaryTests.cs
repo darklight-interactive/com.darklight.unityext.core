@@ -29,7 +29,7 @@ namespace Darklight.Tests.Collection
 
             // Assert
             Assert.That(_dictionary.Count, Is.EqualTo(1));
-            Assert.That(_dictionary.GetValue(key), Is.EqualTo(value));
+            Assert.That(_dictionary[key], Is.EqualTo(value));
         }
 
         [Test]
@@ -116,10 +116,10 @@ namespace Darklight.Tests.Collection
             _dictionary.Add(key, oldValue);
 
             // Act
-            _dictionary.Replace(oldItem, newItem);
+            _dictionary.Replace(key, newValue);
 
             // Assert
-            Assert.That(_dictionary.GetValue(key), Is.EqualTo(newValue));
+            Assert.That(_dictionary[key], Is.EqualTo(newValue));
         }
 
         [Test]

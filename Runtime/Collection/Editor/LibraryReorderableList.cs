@@ -15,13 +15,17 @@ namespace Darklight.UnityExt.Collection.Editor
         private const float KEY_COLUMN_WIDTH = 150f;
         private const float PADDING = 5f;
 
-        private CollectionLibrary _collection;
+        private const string ID_PROP = "_id";
+        private const string KEY_PROP = "_key";
+        private const string VALUE_PROP = "_value";
         private readonly SerializedProperty _itemsProperty;
 
         private readonly Type _collectionType;
         private readonly Type _keyType;
         private readonly Type _valueType;
         private readonly bool _collectionIsDictionary;
+
+        private Collection _collection;
         private Dictionary<int, bool> _foldoutStates = new Dictionary<int, bool>();
 
         public LibraryReorderableList(
@@ -31,7 +35,7 @@ namespace Darklight.UnityExt.Collection.Editor
         )
             : base(serializedObject, itemsProperty, true, true, true, true)
         {
-            _collection = fieldInfo.GetValue(serializedObject.targetObject) as CollectionLibrary;
+            _collection = fieldInfo.GetValue(serializedObject.targetObject) as Collection;
             _itemsProperty = itemsProperty;
 
             if (_collection == null)
@@ -72,7 +76,7 @@ namespace Darklight.UnityExt.Collection.Editor
         #region [[ Get Types ]] ================================================================
 
         private void GetCollectionTypes(
-            CollectionLibrary collection,
+            Collection collection,
             out Type collectionType,
             out Type keyType,
             out Type valueType
@@ -121,182 +125,6 @@ namespace Darklight.UnityExt.Collection.Editor
             }
             return "unknown";
         }
-        #endregion
-
-
-        #region [[ Draw Library Elements ]] ========================================================
-
-        void DrawLibraryHeader(Rect rect)
-        {
-            float currentX = rect.x + HEADER_PADDING;
-            float currentY = rect.y;
-
-            // Draw ID column
-            EditorGUI.LabelField(new Rect(currentX, currentY, ID_COLUMN_WIDTH, rect.height), "ID");
-            currentX += ID_COLUMN_WIDTH + PADDING;
-
-            // Draw Value column
-            EditorGUI.LabelField(
-                new Rect(currentX, currentY, rect.width - currentX, rect.height),
-                $"Value <{_valueType?.Name ?? "unknown"}>"
-            );
-        }
-
-        void DrawLibraryElement(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            var element = _itemsProperty.GetArrayElementAtIndex(index);
-
-            float currentX = rect.x;
-            float currentY = rect.y + 2;
-
-            // Draw ID
-            DrawID(
-                new Rect(currentX, currentY, ID_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
-                element
-            );
-            currentX += ID_COLUMN_WIDTH + PADDING;
-
-            // Draw Value
-            DrawValue(
-                new Rect(
-                    currentX,
-                    currentY,
-                    rect.width - currentX,
-                    EditorGUIUtility.singleLineHeight
-                ),
-                element
-            );
-        }
-
-        #endregion
-
-        #region [[ Draw Dictionary Elements ]] ======================================================
-
-        void DrawDictionaryHeader(Rect rect)
-        {
-            float currentX = rect.x + HEADER_PADDING;
-            float currentY = rect.y;
-
-            // Draw ID column
-            EditorGUI.LabelField(new Rect(currentX, currentY, ID_COLUMN_WIDTH, rect.height), "ID");
-            currentX += ID_COLUMN_WIDTH + PADDING;
-
-            // Draw Key column
-            EditorGUI.LabelField(
-                new Rect(currentX, currentY, KEY_COLUMN_WIDTH, rect.height),
-                $"Key <{_keyType?.Name ?? "unknown"}>"
-            );
-            currentX += KEY_COLUMN_WIDTH + PADDING;
-
-            // Draw Value column
-            EditorGUI.LabelField(
-                new Rect(currentX, currentY, rect.width - currentX, rect.height),
-                $"Value <{_valueType?.Name ?? "unknown"}>"
-            );
-        }
-
-        void DrawDictionaryElement(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            var element = _itemsProperty.GetArrayElementAtIndex(index);
-
-            float currentX = rect.x;
-            float currentY = rect.y + 2;
-
-            // Draw ID
-            DrawID(
-                new Rect(currentX, currentY, ID_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
-                element
-            );
-            currentX += ID_COLUMN_WIDTH + PADDING;
-
-            // Draw Key
-            DrawKey(
-                new Rect(currentX, currentY, KEY_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
-                element
-            );
-            currentX += KEY_COLUMN_WIDTH + PADDING;
-
-            // Draw Value
-            DrawValue(
-                new Rect(
-                    currentX,
-                    currentY,
-                    rect.width - currentX,
-                    EditorGUIUtility.singleLineHeight
-                ),
-                element
-            );
-        }
-
-        #endregion
-
-        #region [[ Draw Properties ]] ================================================================
-
-        void DrawID(Rect rect, SerializedProperty property)
-        {
-            var idProp = property.FindPropertyRelative("_id");
-            EditorGUI.LabelField(rect, idProp?.intValue.ToString() ?? "?");
-        }
-
-        void DrawKey(Rect rect, SerializedProperty property)
-        {
-            var keyProp = property.FindPropertyRelative("_key");
-            if (keyProp != null)
-            {
-                EditorGUI.PropertyField(rect, keyProp, GUIContent.none);
-            }
-        }
-
-        void DrawValue(Rect rect, SerializedProperty property)
-        {
-            var typedValueProp = property.FindPropertyRelative("_typedValue");
-            if (typedValueProp == null)
-                return;
-
-            // Handle object reference values (ScriptableObjects, MonoBehaviours, etc)
-            if (
-                typedValueProp.propertyType == SerializedPropertyType.ObjectReference
-                && typedValueProp.objectReferenceValue != null
-            )
-            {
-                DrawSerializableObjectValue(
-                    rect,
-                    typedValueProp,
-                    property.propertyPath.GetHashCode()
-                );
-            }
-            // Handle arrays and lists
-            else if (typedValueProp.isArray || IsListType(typedValueProp))
-            {
-                DrawCollectionValue(rect, typedValueProp);
-            }
-            // Handle Dictionary<string, object>
-            else if (IsDictionaryType(typedValueProp))
-            {
-                DrawDictionaryObjectValue(
-                    rect,
-                    typedValueProp,
-                    property.propertyPath.GetHashCode()
-                );
-            }
-            // Handle raw object values
-            else if (
-                typedValueProp.propertyType == SerializedPropertyType.Generic
-                && typedValueProp.type == "object"
-            )
-            {
-                DrawRawObjectValue(
-                    rect,
-                    typedValueProp.managedReferenceValue,
-                    property.propertyPath.GetHashCode()
-                );
-            }
-            // Regular properties
-            else
-            {
-                EditorGUI.PropertyField(rect, typedValueProp, GUIContent.none);
-            }
-        }
 
         private void DrawSerializableObjectValue(Rect rect, SerializedProperty property, int index)
         {
@@ -324,7 +152,12 @@ namespace Darklight.UnityExt.Collection.Editor
             // Draw foldout only if there are properties to show
             if (hasSerializedProperties)
             {
-                var foldoutRect = new Rect(rect.x + 20, rect.y, 20, EditorGUIUtility.singleLineHeight);
+                var foldoutRect = new Rect(
+                    rect.x + 20,
+                    rect.y,
+                    20,
+                    EditorGUIUtility.singleLineHeight
+                );
                 _foldoutStates[index] = EditorGUI.Foldout(
                     foldoutRect,
                     _foldoutStates.GetValueOrDefault(index),
@@ -536,14 +369,12 @@ namespace Darklight.UnityExt.Collection.Editor
 
         #endregion
 
-
-
         #region [[ Get Element Heights ]] ==========================================================
 
         private float GetElementHeight(int index)
         {
             var element = _itemsProperty.GetArrayElementAtIndex(index);
-            var typedValueProp = element.FindPropertyRelative("_typedValue");
+            var typedValueProp = element.FindPropertyRelative(VALUE_PROP);
             float baseHeight = EditorGUIUtility.singleLineHeight + 4;
 
             if (typedValueProp == null)
@@ -636,6 +467,181 @@ namespace Darklight.UnityExt.Collection.Editor
             }
 
             return baseHeight;
+        }
+        #endregion
+
+        #region [[ Draw Library Elements ]] ========================================================
+
+        void DrawLibraryHeader(Rect rect)
+        {
+            float currentX = rect.x + HEADER_PADDING;
+            float currentY = rect.y;
+
+            // Draw ID column
+            EditorGUI.LabelField(new Rect(currentX, currentY, ID_COLUMN_WIDTH, rect.height), "ID");
+            currentX += ID_COLUMN_WIDTH + PADDING;
+
+            // Draw Value column
+            EditorGUI.LabelField(
+                new Rect(currentX, currentY, rect.width - currentX, rect.height),
+                $"Value <{_valueType?.Name ?? "unknown"}>"
+            );
+        }
+
+        void DrawLibraryElement(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            var element = _itemsProperty.GetArrayElementAtIndex(index);
+
+            float currentX = rect.x;
+            float currentY = rect.y + 2;
+
+            // Draw ID
+            DrawID(
+                new Rect(currentX, currentY, ID_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
+                element
+            );
+            currentX += ID_COLUMN_WIDTH + PADDING;
+
+            // Draw Value
+            DrawValue(
+                new Rect(
+                    currentX,
+                    currentY,
+                    rect.width - currentX,
+                    EditorGUIUtility.singleLineHeight
+                ),
+                element
+            );
+        }
+
+        #endregion
+
+        #region [[ Draw Dictionary Elements ]] ======================================================
+
+        void DrawDictionaryHeader(Rect rect)
+        {
+            float currentX = rect.x + HEADER_PADDING;
+            float currentY = rect.y;
+
+            // Draw ID column
+            EditorGUI.LabelField(new Rect(currentX, currentY, ID_COLUMN_WIDTH, rect.height), "ID");
+            currentX += ID_COLUMN_WIDTH + PADDING;
+
+            // Draw Key column
+            EditorGUI.LabelField(
+                new Rect(currentX, currentY, KEY_COLUMN_WIDTH, rect.height),
+                $"Key <{_keyType?.Name ?? "unknown"}>"
+            );
+            currentX += KEY_COLUMN_WIDTH + PADDING;
+
+            // Draw Value column
+            EditorGUI.LabelField(
+                new Rect(currentX, currentY, rect.width - currentX, rect.height),
+                $"Value <{_valueType?.Name ?? "unknown"}>"
+            );
+        }
+
+        void DrawDictionaryElement(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            var element = _itemsProperty.GetArrayElementAtIndex(index);
+
+            float currentX = rect.x;
+            float currentY = rect.y + 2;
+
+            // Draw ID
+            DrawID(
+                new Rect(currentX, currentY, ID_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
+                element
+            );
+            currentX += ID_COLUMN_WIDTH + PADDING;
+
+            // Draw Key
+            DrawKey(
+                new Rect(currentX, currentY, KEY_COLUMN_WIDTH, EditorGUIUtility.singleLineHeight),
+                element
+            );
+            currentX += KEY_COLUMN_WIDTH + PADDING;
+
+            // Draw Value
+            DrawValue(
+                new Rect(
+                    currentX,
+                    currentY,
+                    rect.width - currentX,
+                    EditorGUIUtility.singleLineHeight
+                ),
+                element
+            );
+        }
+
+        #endregion
+
+        #region [[ Draw Properties ]] ================================================================
+
+        void DrawID(Rect rect, SerializedProperty property)
+        {
+            var idProp = property.FindPropertyRelative(ID_PROP);
+            EditorGUI.LabelField(rect, idProp?.intValue.ToString() ?? "?");
+        }
+
+        void DrawKey(Rect rect, SerializedProperty property)
+        {
+            var keyProp = property.FindPropertyRelative(KEY_PROP);
+            if (keyProp != null)
+            {
+                EditorGUI.PropertyField(rect, keyProp, GUIContent.none);
+            }
+        }
+
+        void DrawValue(Rect rect, SerializedProperty property)
+        {
+            var typedValueProp = property.FindPropertyRelative(VALUE_PROP);
+            if (typedValueProp == null)
+                return;
+
+            // Handle object reference values (ScriptableObjects, MonoBehaviours, etc)
+            if (
+                typedValueProp.propertyType == SerializedPropertyType.ObjectReference
+                && typedValueProp.objectReferenceValue != null
+            )
+            {
+                DrawSerializableObjectValue(
+                    rect,
+                    typedValueProp,
+                    property.propertyPath.GetHashCode()
+                );
+            }
+            // Handle arrays and lists
+            else if (typedValueProp.isArray || IsListType(typedValueProp))
+            {
+                DrawCollectionValue(rect, typedValueProp);
+            }
+            // Handle Dictionary<string, object>
+            else if (IsDictionaryType(typedValueProp))
+            {
+                DrawDictionaryObjectValue(
+                    rect,
+                    typedValueProp,
+                    property.propertyPath.GetHashCode()
+                );
+            }
+            // Handle raw object values
+            else if (
+                typedValueProp.propertyType == SerializedPropertyType.Generic
+                && typedValueProp.type == "object"
+            )
+            {
+                DrawRawObjectValue(
+                    rect,
+                    typedValueProp.managedReferenceValue,
+                    property.propertyPath.GetHashCode()
+                );
+            }
+            // Regular properties
+            else
+            {
+                EditorGUI.PropertyField(rect, typedValueProp, GUIContent.none);
+            }
         }
 
         #endregion
