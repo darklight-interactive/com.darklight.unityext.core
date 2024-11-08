@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
@@ -16,18 +16,28 @@ namespace Darklight.UnityExt.Collection
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>> _concurrentDict;
+        private readonly ConcurrentDictionary<
+            TKey,
+            KeyValueCollectionItem<TKey, TValue>
+        > _concurrentDict;
         private readonly ReaderWriterLockSlim _lock;
         private bool _isReadOnly;
 
         [SerializeField]
-        private new List<KeyValueCollectionItem<TKey, TValue>> _items;
+        private List<KeyValueCollectionItem<TKey, TValue>> _items = new();
 
         public CollectionDictionary()
         {
-            _concurrentDict = new ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>>();
+            _concurrentDict =
+                new ConcurrentDictionary<TKey, KeyValueCollectionItem<TKey, TValue>>();
             _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             _isReadOnly = false;
+
+            OnCollectionChanged += (sender, args) =>
+            {
+                Debug.Log($"Collection changed: {args.EventType}");
+                _items = _concurrentDict.Values.ToList();
+            };
         }
 
         public override int Capacity => _concurrentDict.Count;
@@ -37,9 +47,11 @@ namespace Darklight.UnityExt.Collection
         public override bool IsReadOnly => _isReadOnly;
         public override bool IsSynchronized => true;
 
-        public override IEnumerable<CollectionItem> Items => _concurrentDict.Values.Select(item => (CollectionItem)item);
+        public override IEnumerable<CollectionItem> Items =>
+            _concurrentDict.Values.Select(item => (CollectionItem)item);
         public override object SyncRoot => _lock;
-        public override IEnumerable<object> Values => _concurrentDict.Values.Select(item => item.Value);
+        public override IEnumerable<object> Values =>
+            _concurrentDict.Values.Select(item => item.Value);
 
         public override CollectionItem this[int index]
         {
@@ -79,7 +91,11 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var item = new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, key, value);
+                var item = new KeyValueCollectionItem<TKey, TValue>(
+                    _concurrentDict.Count,
+                    key,
+                    value
+                );
                 Add(item);
             }
             finally
@@ -124,14 +140,22 @@ namespace Darklight.UnityExt.Collection
             {
                 if (_concurrentDict.TryGetValue(key, out var existingItem))
                 {
-                    var updatedItem = new KeyValueCollectionItem<TKey, TValue>(existingItem.Id, key, value);
+                    var updatedItem = new KeyValueCollectionItem<TKey, TValue>(
+                        existingItem.Id,
+                        key,
+                        value
+                    );
                     _concurrentDict[key] = updatedItem;
                     var args = new CollectionEventArgs(CollectionEventType.UPDATE, updatedItem);
                     CollectionChanged(args);
                 }
                 else
                 {
-                    var newItem = new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, key, value);
+                    var newItem = new KeyValueCollectionItem<TKey, TValue>(
+                        _concurrentDict.Count,
+                        key,
+                        value
+                    );
                     _concurrentDict[key] = newItem;
                     var args = new CollectionEventArgs(CollectionEventType.ADD, newItem);
                     CollectionChanged(args);
@@ -148,16 +172,23 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                var args = new CollectionEventArgs(CollectionEventType.BATCH_ADD, items: items.ToList());
+                var args = new CollectionEventArgs(
+                    CollectionEventType.BATCH_ADD,
+                    items: items.ToList()
+                );
                 CollectionChanging(args);
 
                 foreach (var item in items)
                 {
                     if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
-                        throw new ArgumentException($"Item must be of type KeyValueCollectionItem<{typeof(TKey).Name}, {typeof(TValue).Name}>");
+                        throw new ArgumentException(
+                            $"Item must be of type KeyValueCollectionItem<{typeof(TKey).Name}, {typeof(TValue).Name}>"
+                        );
 
                     if (!_concurrentDict.TryAdd(kvItem.Key, kvItem))
-                        throw new ArgumentException($"An item with key {kvItem.Key} already exists");
+                        throw new ArgumentException(
+                            $"An item with key {kvItem.Key} already exists"
+                        );
                 }
 
                 CollectionChanged(args);
@@ -189,6 +220,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
+
         public override bool Contains(CollectionItem item)
         {
             if (item is not KeyValueCollectionItem<TKey, TValue> kvItem)
@@ -377,6 +409,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.ExitWriteLock();
             }
         }
+
         public override void RemoveWhere(Func<CollectionItem, bool> predicate)
         {
             if (predicate == null)
@@ -448,7 +481,13 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                Array.Copy(_concurrentDict.Values.ToArray(), 0, array, index, _concurrentDict.Count);
+                Array.Copy(
+                    _concurrentDict.Values.ToArray(),
+                    0,
+                    array,
+                    index,
+                    _concurrentDict.Count
+                );
             }
             finally
             {
@@ -477,7 +516,13 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterWriteLock();
             try
             {
-                Add(new KeyValueCollectionItem<TKey, TValue>(_concurrentDict.Count, default, default));
+                Add(
+                    new KeyValueCollectionItem<TKey, TValue>(
+                        _concurrentDict.Count,
+                        default,
+                        default
+                    )
+                );
             }
             finally
             {
