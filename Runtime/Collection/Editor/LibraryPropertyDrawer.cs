@@ -1,7 +1,7 @@
-using UnityEngine;
-using UnityEditor;
 using System;
 using NaughtyAttributes.Editor;
+using UnityEditor;
+using UnityEngine;
 
 namespace Darklight.UnityExt.Collection.Editor
 {
@@ -9,15 +9,39 @@ namespace Darklight.UnityExt.Collection.Editor
     [CustomPropertyDrawer(typeof(Collection), true)]
     public class LibraryPropertyDrawer : PropertyDrawerBase
     {
-        private const string ITEMS_PROP = "_items";
+        private const string LIBRARY_ITEMS_PROP = "_libraryItems";
+        private const string DICTIONARY_ITEMS_PROP = "_dictionaryItems";
         private LibraryReorderableList _list;
         private SerializedProperty _itemsProperty;
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (_list == null)
             {
-                _itemsProperty = property.FindPropertyRelative(ITEMS_PROP);
+                var libraryItemsProperty = property.FindPropertyRelative(LIBRARY_ITEMS_PROP);
+                var dictionaryItemsProperty = property.FindPropertyRelative(DICTIONARY_ITEMS_PROP);
+
+                if (libraryItemsProperty != null)
+                {
+                    _itemsProperty = libraryItemsProperty;
+                }
+                else if (dictionaryItemsProperty != null)
+                {
+                    _itemsProperty = dictionaryItemsProperty;
+                }
+                else
+                {
+                    Debug.LogError(
+                        "No items property found",
+                        property.serializedObject.targetObject
+                    );
+                    return;
+                }
+
                 if (_itemsProperty != null)
                 {
                     _list = new LibraryReorderableList(
@@ -32,9 +56,14 @@ namespace Darklight.UnityExt.Collection.Editor
             {
                 _list.DoList(rect);
             }
+
+            EditorGUILayout.PropertyField(_itemsProperty, label);
         }
 
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (_list == null)
                 return EditorGUIUtility.singleLineHeight;

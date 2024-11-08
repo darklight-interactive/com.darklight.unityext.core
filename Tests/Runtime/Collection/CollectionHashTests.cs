@@ -1,8 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
+using Darklight.UnityExt.Collection;
 using NUnit.Framework;
 using UnityEngine;
-using Darklight.UnityExt.Collection;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Darklight.Tests.Collection
 {
@@ -59,7 +59,7 @@ namespace Darklight.Tests.Collection
             _hashLibrary.Add(item);
 
             // Act
-            bool isValid = _hashLibrary.VerifyItemIntegrity(item);
+            bool isValid = _hashLibrary.VerifyItemIntegrity((CollectionItem<GameObject>)item);
 
             // Assert
             Assert.That(isValid, Is.True);
@@ -120,7 +120,7 @@ namespace Darklight.Tests.Collection
             // Act
             _hashLibrary.Remove(items[0]);
             var hashAfterRemove = _hashLibrary.GetCollectionHash();
-            
+
             _hashLibrary.Add(items[0]);
             var hashAfterReadding = _hashLibrary.GetCollectionHash();
 
@@ -129,4 +129,4 @@ namespace Darklight.Tests.Collection
             Assert.That(hashAfterReadding, Is.EqualTo(initialHash));
         }
     }
-} 
+}

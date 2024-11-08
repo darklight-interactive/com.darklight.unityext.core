@@ -27,7 +27,7 @@ namespace Darklight.UnityExt.Collection
         private bool _isReadOnly;
 
         [SerializeField]
-        private List<KeyValueCollectionItem<TKey, TValue>> _items = new();
+        private List<KeyValueCollectionItem<TKey, TValue>> _dictionaryItems = new();
 
         public CollectionDictionary()
         {
@@ -39,7 +39,7 @@ namespace Darklight.UnityExt.Collection
             OnCollectionChanged += (sender, args) =>
             {
                 Debug.Log($"Collection changed: {args.EventType}");
-                _items = _concurrentDict.Values.ToList();
+                _dictionaryItems = _concurrentDict.Values.ToList();
             };
         }
 
@@ -282,6 +282,19 @@ namespace Darklight.UnityExt.Collection
                 CollectionChanging(new CollectionEventArgs(CollectionEventType.ADD, item, null, id));
                 _concurrentDict.TryAdd(key, item);
                 CollectionChanged(new CollectionEventArgs(CollectionEventType.ADD, item, null, id));
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        public override void Refresh()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _dictionaryItems = _concurrentDict.Values.ToList();
             }
             finally
             {

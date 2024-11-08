@@ -98,7 +98,7 @@ namespace Darklight.Tests.Collection
                                 _hashLibrary.Remove(item);
                                 break;
                             case 2:
-                                _hashLibrary.VerifyItemIntegrity(item);
+                                _hashLibrary.VerifyItemIntegrity((CollectionItem<GameObject>)item);
                                 break;
                             case 3:
                                 _hashLibrary.GetCollectionHash();

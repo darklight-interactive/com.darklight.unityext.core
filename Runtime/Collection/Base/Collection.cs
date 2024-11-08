@@ -10,7 +10,6 @@ namespace Darklight.UnityExt.Collection
     /// <summary>
     /// Abstract class for a library.
     /// </summary>
-    [Serializable]
     public abstract class Collection
         : IEnumerable<CollectionItem>,
             IEquatable<Collection>,
@@ -25,6 +24,7 @@ namespace Darklight.UnityExt.Collection
         private EventHandler<CollectionEventArgs> _collectionChanging;
 
         private int _position = -1;
+        private List<CollectionItem> _items = new();
 
         /// <summary>
         /// Occurs when the collection changes.
@@ -65,7 +65,7 @@ namespace Darklight.UnityExt.Collection
         public abstract bool IsReadOnly { get; }
         public abstract bool IsSynchronized { get; }
         public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
-        public abstract IEnumerable<CollectionItem> Items { get; }
+        public virtual IEnumerable<CollectionItem> Items => _items;
         public virtual IEnumerable<object> Objects => Items.Select(x => x.Object);
         public abstract object SyncRoot { get; }
 
@@ -250,6 +250,11 @@ namespace Darklight.UnityExt.Collection
             CollectionChanged(
                 new CollectionEventArgs(CollectionEventType.REMOVE, item, null, item.Id, index)
             );
+        }
+
+        public virtual void Refresh()
+        {
+            _items = Items.ToList();
         }
 
         public void Reset()

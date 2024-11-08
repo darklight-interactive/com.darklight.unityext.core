@@ -72,7 +72,7 @@ namespace Darklight.UnityExt.Collection
         protected List<int> _ids = new();
 
         [SerializeField]
-        protected List<CollectionItem<TValue>> _items = new();
+        protected List<CollectionItem<TValue>> _libraryItems = new();
         private readonly ConcurrentDictionary<int, CollectionItem<TValue>> _concurrentDict;
         private readonly ReaderWriterLockSlim _lock;
         private bool _isInitialized;
@@ -87,7 +87,7 @@ namespace Darklight.UnityExt.Collection
             OnCollectionChanged += (sender, args) =>
             {
                 Debug.Log($"Collection changed: {args.EventType}");
-                _items = _concurrentDict.Values.ToList();
+                Refresh();
             };
         }
 
@@ -112,8 +112,7 @@ namespace Darklight.UnityExt.Collection
         public override bool IsReadOnly => false;
         public override bool IsSynchronized => true;
 
-        public override IEnumerable<CollectionItem> Items =>
-            _concurrentDict.Values.Cast<CollectionItem>();
+        public new IEnumerable<CollectionItem<TValue>> Items => _libraryItems;
 
         public override IEnumerable<object> Objects
         {
@@ -122,7 +121,7 @@ namespace Darklight.UnityExt.Collection
                 _lock.EnterReadLock();
                 try
                 {
-                    return _concurrentDict.Values.Select(x => x.Object).ToList();
+                    return _libraryItems.Select(x => x.Object).ToList();
                 }
                 finally
                 {
@@ -132,15 +131,13 @@ namespace Darklight.UnityExt.Collection
         }
         public override object SyncRoot => _lock;
 
-        public IEnumerable<TValue> Values
-        {
-            get { return _concurrentDict.Values.Select(x => x.Value); }
-        }
+        public IEnumerable<TValue> Values => _libraryItems.Select(x => x.Value);
 
         public TValue this[int index]
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => _libraryItems[index].Value;
+            set =>
+                _libraryItems[index] = new CollectionItem<TValue>(_libraryItems[index].Id, value);
         }
 
         public void Add(TValue item)
@@ -161,6 +158,7 @@ namespace Darklight.UnityExt.Collection
                 CollectionChanged(
                     new CollectionEventArgs(CollectionEventType.ADD, collectionItem, null, id)
                 );
+                Refresh();
             }
             finally
             {
@@ -168,7 +166,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void Clear()
+        public new void Clear()
         {
             _lock.EnterWriteLock();
             try
@@ -177,6 +175,7 @@ namespace Darklight.UnityExt.Collection
                 _ids.Clear();
                 _concurrentDict.Clear();
                 CollectionChanged(new CollectionEventArgs(CollectionEventType.RESET));
+                Refresh();
             }
             finally
             {
@@ -216,7 +215,7 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _items.FindIndex(x => x.Value.Equals(item));
+                return _libraryItems.FindIndex(x => x.Value.Equals(item));
             }
             finally
             {
@@ -254,6 +253,7 @@ namespace Darklight.UnityExt.Collection
                         index
                     )
                 );
+                Refresh();
             }
             finally
             {
@@ -290,6 +290,7 @@ namespace Darklight.UnityExt.Collection
                             index
                         )
                     );
+                    Refresh();
                     return true;
                 }
                 return false;
@@ -300,7 +301,7 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-        public void RemoveAt(int index)
+        public new void RemoveAt(int index)
         {
             _lock.EnterWriteLock();
             try
@@ -316,11 +317,17 @@ namespace Darklight.UnityExt.Collection
                         new CollectionEventArgs(CollectionEventType.REMOVE, item, null, id, index)
                     );
                 }
+                Refresh();
             }
             finally
             {
                 _lock.ExitWriteLock();
             }
+        }
+
+        public void Refresh()
+        {
+            _libraryItems = _concurrentDict.Values.ToList();
         }
 
         IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()

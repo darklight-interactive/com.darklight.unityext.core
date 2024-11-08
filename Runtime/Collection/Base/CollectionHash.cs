@@ -17,14 +17,15 @@ namespace Darklight.UnityExt.Collection
     {
         private readonly ConcurrentDictionary<int, string> _hashCache;
         private readonly ReaderWriterLockSlim _hashLock;
-        private volatile string _collectionHash;
         private readonly object _computeLock = new object();
+        private volatile string _collectionHash;
         private bool _isInitialized;
 
         /// <summary>
         /// Initializes a new instance of the CollectionHash class.
         /// </summary>
-        public CollectionHash() : base()
+        public CollectionHash()
+            : base()
         {
             _hashCache = new ConcurrentDictionary<int, string>();
             _hashLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
@@ -33,11 +34,61 @@ namespace Darklight.UnityExt.Collection
         }
 
         /// <summary>
+        /// Gets the current hash of the entire collection.
+        /// </summary>
+        public string GetCollectionHash()
+        {
+            if (!_isInitialized)
+                return string.Empty;
+
+            if (!_hashLock.TryEnterReadLock(TimeSpan.FromSeconds(1)))
+                return _collectionHash;
+
+            try
+            {
+                return _collectionHash;
+            }
+            finally
+            {
+                _hashLock.ExitReadLock();
+            }
+        }
+
+        public bool VerifyItemIntegrity(CollectionItem<TValue> item)
+        {
+            if (!_isInitialized)
+                return false;
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            if (!_hashCache.TryGetValue(item.Id, out var cachedHash))
+                return false;
+
+            var currentHash = ComputeItemHash(item);
+            return string.Equals(cachedHash, currentHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public string GetItemHash(int id)
+        {
+            if (!_isInitialized)
+                return null;
+            return _hashCache.TryGetValue(id, out var hash) ? hash : null;
+        }
+
+        public bool VerifyCollectionIntegrity()
+        {
+            if (!_isInitialized)
+                return false;
+            var snapshot = Items.ToList(); // Create a snapshot for thread-safe enumeration
+            return snapshot.All(VerifyItemIntegrity);
+        }
+
+        /// <summary>
         /// Computes a secure hash for an item using SHA256.
         /// </summary>
         /// <param name="item">The item to hash.</param>
         /// <returns>A hex string representation of the hash.</returns>
-        protected virtual string ComputeItemHash(CollectionItem item)
+        protected virtual string ComputeItemHash(CollectionItem<TValue> item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -56,59 +107,19 @@ namespace Darklight.UnityExt.Collection
         }
 
         /// <summary>
-        /// Generates a thread-safe string representation of the item's value.
-        /// </summary>
-        private string GenerateValueString(CollectionItem item)
-        {
-            if (item.Object is UnityEngine.Object)
-            {
-                return $"UnityObject_{item.Id}";
-            }
-
-            try
-            {
-                return item.Object?.ToString() ?? "null";
-            }
-            catch (Exception)
-            {
-                // Fallback for any thread-safety issues with ToString()
-                return $"Object_{item.Id}";
-            }
-        }
-
-        /// <summary>
-        /// Gets the current hash of the entire collection.
-        /// </summary>
-        public string GetCollectionHash()
-        {
-            if (!_isInitialized) return string.Empty;
-            
-            if (!_hashLock.TryEnterReadLock(TimeSpan.FromSeconds(1)))
-                return _collectionHash;
-
-            try
-            {
-                return _collectionHash;
-            }
-            finally
-            {
-                _hashLock.ExitReadLock();
-            }
-        }
-
-        /// <summary>
         /// Updates the collection hash when items change.
         /// </summary>
         protected virtual void UpdateCollectionHash()
         {
-            if (!_isInitialized) return;
-            
+            if (!_isInitialized)
+                return;
+
             if (!_hashLock.TryEnterWriteLock(TimeSpan.FromSeconds(1)))
                 return;
 
             try
             {
-                List<CollectionItem> snapshot;
+                List<CollectionItem<TValue>> snapshot;
                 lock (_computeLock)
                 {
                     if (!Items.Any())
@@ -120,7 +131,7 @@ namespace Darklight.UnityExt.Collection
                     // Create a thread-safe copy of the items
                     try
                     {
-                        snapshot = new List<CollectionItem>(Items.Count());
+                        snapshot = new List<CollectionItem<TValue>>(Items.Count());
                         foreach (var item in Items)
                         {
                             if (item != null)
@@ -139,12 +150,14 @@ namespace Darklight.UnityExt.Collection
                 using (var sha256 = SHA256.Create())
                 {
                     var orderedHashes = new List<string>(snapshot.Count);
-                    
+
                     foreach (var item in snapshot)
                     {
                         if (item != null)
                         {
-                            orderedHashes.Add(_hashCache.GetOrAdd(item.Id, _ => ComputeItemHash(item)));
+                            orderedHashes.Add(
+                                _hashCache.GetOrAdd(item.Id, _ => ComputeItemHash(item))
+                            );
                         }
                     }
 
@@ -152,7 +165,10 @@ namespace Darklight.UnityExt.Collection
 
                     var combinedHash = string.Join("", orderedHashes);
                     var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(combinedHash));
-                    _collectionHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+                    _collectionHash = BitConverter
+                        .ToString(hashBytes)
+                        .Replace("-", "")
+                        .ToLowerInvariant();
                 }
             }
             catch (Exception)
@@ -165,37 +181,34 @@ namespace Darklight.UnityExt.Collection
                 _hashLock.ExitWriteLock();
             }
         }
-        public bool VerifyItemIntegrity(CollectionItem item)
-        {
-            if (!_isInitialized) return false;
-            if (item == null) throw new ArgumentNullException(nameof(item));
-
-            if (!_hashCache.TryGetValue(item.Id, out var cachedHash))
-                return false;
-
-            var currentHash = ComputeItemHash(item);
-            return string.Equals(cachedHash, currentHash, StringComparison.OrdinalIgnoreCase);
-        }
-
-
-        public string GetItemHash(int id)
-        {
-            if (!_isInitialized) return null;
-            return _hashCache.TryGetValue(id, out var hash) ? hash : null;
-        }
-
-        public bool VerifyCollectionIntegrity()
-        {
-            if (!_isInitialized) return false;
-            var snapshot = Items.ToList(); // Create a snapshot for thread-safe enumeration
-            return snapshot.All(VerifyItemIntegrity);
-        }
 
         protected override void CollectionChanged(CollectionEventArgs args)
         {
-            if (!_isInitialized) return;
+            if (!_isInitialized)
+                return;
             base.CollectionChanged(args);
             UpdateCollectionHash(); // Ensure hash is updated after collection changes
         }
+
+        /// <summary>
+        /// Generates a thread-safe string representation of the item's value.
+        /// </summary>
+        private string GenerateValueString(CollectionItem<TValue> item)
+        {
+            if (item.Object is UnityEngine.Object)
+            {
+                return $"UnityObject_{item.Id}";
+            }
+
+            try
+            {
+                return item.Object?.ToString() ?? "null";
+            }
+            catch (Exception)
+            {
+                // Fallback for any thread-safety issues with ToString()
+                return $"Object_{item.Id}";
+            }
+        }
     }
-} 
+}
