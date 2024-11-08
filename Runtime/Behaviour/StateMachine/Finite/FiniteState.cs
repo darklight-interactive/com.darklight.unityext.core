@@ -42,8 +42,6 @@ namespace Darklight.UnityExt.Behaviour
     public class FiniteState<TEnum> : StateBase<TEnum>
         where TEnum : Enum
     {
-        protected readonly FiniteStateMachine<TEnum> FiniteStateMachine;
-
         [Header("Timing")]
         [SerializeField, ShowOnly]
         float _stateStartTime;
@@ -71,11 +69,7 @@ namespace Darklight.UnityExt.Behaviour
         /// </summary>
         /// <param name="finiteStateMachine">The parent state machine</param>
         /// <param name="stateType">The enum value representing this state</param>
-        public FiniteState(FiniteStateMachine<TEnum> finiteStateMachine, TEnum stateType)
-            : base(finiteStateMachine, stateType)
-        {
-            FiniteStateMachine = finiteStateMachine;
-        }
+        public FiniteState(TEnum stateType) : base(stateType) { }
 
         /// <summary>
         /// Called when the state is entered
@@ -111,16 +105,6 @@ namespace Darklight.UnityExt.Behaviour
         {
             OnExit();
             _stateElapsedTime = 0f;
-        }
-
-        /// <summary>
-        /// Transitions to a new state
-        /// </summary>
-        /// <param name="newState">The state to transition to</param>
-        /// <param name="force">Force transition even if already in target state</param>
-        protected bool TransitionTo(TEnum newState, bool force = false)
-        {
-            return FiniteStateMachine.GoToState(newState, force);
         }
 
         #region Virtual Methods

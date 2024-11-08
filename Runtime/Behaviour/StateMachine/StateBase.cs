@@ -8,8 +8,6 @@ namespace Darklight.UnityExt.Behaviour
 	public abstract class StateBase<TEnum> : IState<TEnum>
 		where TEnum : Enum
 	{
-		protected readonly StateMachineBase<TEnum> StateMachineBase;
-
 		[SerializeField, ShowOnly] TEnum _stateType;
 		
 		public TEnum StateType => _stateType;
@@ -18,10 +16,9 @@ namespace Darklight.UnityExt.Behaviour
 		public abstract void Execute();
 		public abstract void Exit();
 		
-		public StateBase(StateMachineBase<TEnum> stateMachineBase, TEnum stateType)
+		public StateBase(TEnum stateType)
 		{
-			this.StateMachineBase = stateMachineBase;
-			this._stateType = stateType;
+			_stateType = stateType;
 		}
 	}
 }

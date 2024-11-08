@@ -166,6 +166,11 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
+        public override void AddDefaultItem()
+        {
+            Add(default);
+        }
+
         public new void Clear()
         {
             _lock.EnterWriteLock();
@@ -261,6 +266,11 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
+        public void Refresh()
+        {
+            _libraryItems = _concurrentDict.Values.ToList();
+        }
+
         public bool Remove(TValue item)
         {
             _lock.EnterWriteLock();
@@ -323,11 +333,6 @@ namespace Darklight.UnityExt.Collection
             {
                 _lock.ExitWriteLock();
             }
-        }
-
-        public void Refresh()
-        {
-            _libraryItems = _concurrentDict.Values.ToList();
         }
 
         IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()

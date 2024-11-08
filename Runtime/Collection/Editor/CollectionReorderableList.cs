@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Collection.Editor
 {
-    public class LibraryReorderableList : ReorderableList
+    public class CollectionReorderableList : ReorderableList
     {
         private const float HEADER_PADDING = 12f;
         private const float ID_COLUMN_WIDTH = 50f;
@@ -27,8 +27,9 @@ namespace Darklight.UnityExt.Collection.Editor
 
         private Collection _collection;
         private Dictionary<int, bool> _foldoutStates = new Dictionary<int, bool>();
+        private int _selectedIndex;
 
-        public LibraryReorderableList(
+        public CollectionReorderableList(
             SerializedObject serializedObject,
             FieldInfo fieldInfo,
             SerializedProperty itemsProperty
@@ -70,7 +71,103 @@ namespace Darklight.UnityExt.Collection.Editor
                     DrawLibraryElement(rect, index, isActive, isFocused);
             };
 
+            onAddDropdownCallback += OnDropdownCallback;
+            
+
             elementHeightCallback = GetElementHeight;
+        }
+
+        void OnDropdownCallback(Rect buttonRect, ReorderableList list)
+        {
+            var menu = new GenericMenu();
+
+            if (_collectionIsDictionary)
+            {
+                menu.AddItem(new GUIContent("Add Dictionary Entry"), false, () => 
+                {
+                    var index = _itemsProperty.arraySize;
+                    _itemsProperty.InsertArrayElementAtIndex(index);
+                    var element = _itemsProperty.GetArrayElementAtIndex(index);
+                    
+                    // Set default values
+                    var idProp = element.FindPropertyRelative(ID_PROP);
+                    if (idProp != null) idProp.intValue = GetNextId();
+                    
+                    _itemsProperty.serializedObject.ApplyModifiedProperties();
+                });
+            }
+            else
+            {
+                menu.AddItem(new GUIContent("Add Empty Item"), false, () => 
+                {
+                    var index = _itemsProperty.arraySize;
+                    _itemsProperty.InsertArrayElementAtIndex(index);
+                    var element = _itemsProperty.GetArrayElementAtIndex(index);
+                    
+                    
+                    
+                    _itemsProperty.serializedObject.ApplyModifiedProperties();
+                });
+            }
+
+            menu.AddSeparator("");
+            
+            menu.AddItem(new GUIContent("Sort by ID"), false, () => 
+            {
+                SortByID();
+            });
+
+            menu.AddItem(new GUIContent("Clear All"), false, () => 
+            {
+                if (EditorUtility.DisplayDialog("Clear All Items", 
+                    "Are you sure you want to remove all items?", "Yes", "No"))
+                {
+                    _itemsProperty.ClearArray();
+                    _itemsProperty.serializedObject.ApplyModifiedProperties();
+                }
+            });
+
+            menu.DropDown(buttonRect);
+        }
+
+        private int GetNextId()
+        {
+            int maxId = -1;
+            for (int i = 0; i < _itemsProperty.arraySize; i++)
+            {
+                var element = _itemsProperty.GetArrayElementAtIndex(i);
+                var idProp = element.FindPropertyRelative(ID_PROP);
+                if (idProp != null && idProp.intValue > maxId)
+                {
+                    maxId = idProp.intValue;
+                }
+            }
+            return maxId + 1;
+        }
+
+        private void SortByID()
+        {
+            bool changed;
+            do
+            {
+                changed = false;
+                for (int i = 0; i < _itemsProperty.arraySize - 1; i++)
+                {
+                    var element1 = _itemsProperty.GetArrayElementAtIndex(i);
+                    var element2 = _itemsProperty.GetArrayElementAtIndex(i + 1);
+                    
+                    var id1 = element1.FindPropertyRelative(ID_PROP);
+                    var id2 = element2.FindPropertyRelative(ID_PROP);
+                    
+                    if (id1 != null && id2 != null && id1.intValue > id2.intValue)
+                    {
+                        _itemsProperty.MoveArrayElement(i + 1, i);
+                        changed = true;
+                    }
+                }
+            } while (changed);
+
+            _itemsProperty.serializedObject.ApplyModifiedProperties();
         }
 
         #region [[ Get Types ]] ================================================================

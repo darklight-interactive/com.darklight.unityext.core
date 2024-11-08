@@ -7,11 +7,11 @@ namespace Darklight.UnityExt.Collection.Editor
 {
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(Collection), true)]
-    public class LibraryPropertyDrawer : PropertyDrawerBase
+    public class CollectionPropertyDrawer : PropertyDrawerBase
     {
         private const string LIBRARY_ITEMS_PROP = "_libraryItems";
         private const string DICTIONARY_ITEMS_PROP = "_dictionaryItems";
-        private LibraryReorderableList _list;
+        private CollectionReorderableList _list;
         private SerializedProperty _itemsProperty;
 
         protected override void OnGUI_Internal(
@@ -44,7 +44,7 @@ namespace Darklight.UnityExt.Collection.Editor
 
                 if (_itemsProperty != null)
                 {
-                    _list = new LibraryReorderableList(
+                    _list = new CollectionReorderableList(
                         property.serializedObject,
                         fieldInfo,
                         _itemsProperty
@@ -57,7 +57,7 @@ namespace Darklight.UnityExt.Collection.Editor
                 _list.DoList(rect);
             }
 
-            EditorGUILayout.PropertyField(_itemsProperty, label);
+            EditorGUILayout.PropertyField(property);
         }
 
         protected override float GetPropertyHeight_Internal(

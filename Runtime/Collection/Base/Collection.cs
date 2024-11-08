@@ -13,18 +13,14 @@ namespace Darklight.UnityExt.Collection
     public abstract class Collection
         : IEnumerable<CollectionItem>,
             IEquatable<Collection>,
-            ICollection<CollectionItem>,
-            ICollection,
-            IEnumerable,
-            IEnumerator,
             INotifyCollectionChanged,
             IDisposable
     {
         private EventHandler<CollectionEventArgs> _collectionChanged;
         private EventHandler<CollectionEventArgs> _collectionChanging;
+        private List<CollectionItem> _items = new();
 
         private int _position = -1;
-        private List<CollectionItem> _items = new();
 
         /// <summary>
         /// Occurs when the collection changes.
@@ -62,9 +58,9 @@ namespace Darklight.UnityExt.Collection
         public abstract int Capacity { get; }
         public abstract int Count { get; }
         public object Current => Items.ElementAtOrDefault(_position);
+        public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
         public abstract bool IsReadOnly { get; }
         public abstract bool IsSynchronized { get; }
-        public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
         public virtual IEnumerable<CollectionItem> Items => _items;
         public virtual IEnumerable<object> Objects => Items.Select(x => x.Object);
         public abstract object SyncRoot { get; }
@@ -97,16 +93,7 @@ namespace Darklight.UnityExt.Collection
             AddRange(items as IEnumerable<CollectionItem>);
         }
 
-        public void RemoveRange(IEnumerable<CollectionItem> items)
-        {
-            foreach (var item in items)
-                Remove(item);
-        }
-
-        public void RemoveRange(params CollectionItem[] items)
-        {
-            RemoveRange(items as IEnumerable<CollectionItem>);
-        }
+        public abstract void AddDefaultItem();
 
         public void Clear()
         {
@@ -161,36 +148,19 @@ namespace Darklight.UnityExt.Collection
             return Items.GetEnumerator();
         }
 
-        public CollectionItem TryGetItem(int id)
-        {
-            return Items.FirstOrDefault(x => x.Id == id);
-        }
-
-        public bool TryGetItem(int id, out CollectionItem item)
-        {
-            item = TryGetItem(id);
-            return item != null;
-        }
-
         public CollectionItem GetItemById(int id)
         {
             return TryGetItem(id);
         }
 
-        public int IndexOf(CollectionItem item)
-        {
-            return Items.ToList().IndexOf(item);
-        }
-
-        public void RemoveWhere(Predicate<CollectionItem> predicate)
-        {
-            var items = Items.ToList();
-            items.RemoveAll(predicate);
-        }
-
         public IEnumerable<CollectionItem> GetItemsInRange(int startIndex, int count)
         {
             return Items.Skip(startIndex).Take(count);
+        }
+
+        public int IndexOf(CollectionItem item)
+        {
+            return Items.ToList().IndexOf(item);
         }
 
         public void Insert(int index, CollectionItem item)
@@ -205,11 +175,6 @@ namespace Darklight.UnityExt.Collection
             );
         }
 
-        public IEnumerable<CollectionItem> Where(Func<CollectionItem, bool> predicate)
-        {
-            return Items.Where(predicate);
-        }
-
         public bool MoveNext()
         {
             var items = Items.ToList();
@@ -219,6 +184,11 @@ namespace Darklight.UnityExt.Collection
                 return true;
             }
             return false;
+        }
+
+        public virtual void Refresh()
+        {
+            _items = Items.ToList();
         }
 
         public bool Remove(CollectionItem item)
@@ -252,9 +222,21 @@ namespace Darklight.UnityExt.Collection
             );
         }
 
-        public virtual void Refresh()
+        public void RemoveRange(IEnumerable<CollectionItem> items)
         {
-            _items = Items.ToList();
+            foreach (var item in items)
+                Remove(item);
+        }
+
+        public void RemoveRange(params CollectionItem[] items)
+        {
+            RemoveRange(items as IEnumerable<CollectionItem>);
+        }
+
+        public void RemoveWhere(Predicate<CollectionItem> predicate)
+        {
+            var items = Items.ToList();
+            items.RemoveAll(predicate);
         }
 
         public void Reset()
@@ -269,6 +251,22 @@ namespace Darklight.UnityExt.Collection
         public IDisposable SuspendEvents()
         {
             return new EventSuspender(this);
+        }
+
+        public CollectionItem TryGetItem(int id)
+        {
+            return Items.FirstOrDefault(x => x.Id == id);
+        }
+
+        public bool TryGetItem(int id, out CollectionItem item)
+        {
+            item = TryGetItem(id);
+            return item != null;
+        }
+
+        public IEnumerable<CollectionItem> Where(Func<CollectionItem, bool> predicate)
+        {
+            return Items.Where(predicate);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

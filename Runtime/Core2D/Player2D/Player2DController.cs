@@ -122,7 +122,7 @@ namespace Darklight.UnityExt.Core2D.Player
             {
                 protected Player2DController.StateMachine stateMachine;
                 protected Player2DController controller;
-                public BaseState(Player2DController.StateMachine stateMachine, PlayerState stateType) : base(stateMachine, stateType)
+                public BaseState(Player2DController.StateMachine stateMachine, PlayerState stateType) : base(stateType)
                 {
                     this.stateMachine = stateMachine;
                     this.controller = stateMachine._controller;

@@ -86,7 +86,7 @@ namespace Darklight.UnityExt.Behaviour
 			_possibleFiniteStates.Clear();
 			foreach (TEnum state in GetAllStateEnums())
 			{
-				AddState(new FiniteState<TEnum>(this, state));
+				AddState(new FiniteState<TEnum>(state));
 			}
 		}
 

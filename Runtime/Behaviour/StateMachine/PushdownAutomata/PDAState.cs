@@ -51,7 +51,7 @@ namespace Darklight.UnityExt.Behaviour
             IStateStack<TEnum> _stack;
             HashSet<State> _stackableStates = new HashSet<State>();
             HashSet<State> _unstackableStates = new HashSet<State>();
-            public State(PDAStateMachine<TEnum> stateMachine, TEnum stateType) : base(stateMachine, stateType)
+            public State(PDAStateMachine<TEnum> stateMachine, TEnum stateType) : base(stateType)
             {
                 _unstackableStates.Add(this);
             }
