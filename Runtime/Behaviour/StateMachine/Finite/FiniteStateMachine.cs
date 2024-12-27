@@ -51,6 +51,9 @@ namespace Darklight.UnityExt.Behaviour
 		public FiniteState<TEnum> PreviousFiniteState => _previousState;
 		public FiniteState<TEnum> CurrentFiniteState => _currentFiniteState;
 
+		// Events
+		public event Action OnStep;
+
 		#region Constructors
 
 		public FiniteStateMachine()
@@ -145,6 +148,7 @@ namespace Darklight.UnityExt.Behaviour
 			if (_currentFiniteState != null)
 			{
 				_currentFiniteState.Execute();
+				OnStep?.Invoke();
 				return;
 			}
 			GoToState(initialStateEnum);
