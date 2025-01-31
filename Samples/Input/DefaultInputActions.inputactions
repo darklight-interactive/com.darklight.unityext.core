@@ -9,7 +9,7 @@
                     "name": "PrimaryInteract",
                     "type": "Button",
                     "id": "ca8eb9ec-9b81-4bba-b30f-d4a232d32e75",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -36,7 +36,34 @@
                     "name": "MenuButton",
                     "type": "Button",
                     "id": "68f36159-20da-4219-a657-9eb6ac26db36",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MousePosition",
+                    "type": "Value",
+                    "id": "4d8b4c7d-ffab-4db4-baa6-4721c9f8fdc1",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "MousePrimaryClick",
+                    "type": "Button",
+                    "id": "e6d6b460-ad59-4a3b-93d8-980ee5a3ebf4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MouseSecondaryClick",
+                    "type": "Button",
+                    "id": "6f6cf3f6-4406-487b-8c61-3c7183a8cf5b",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -238,6 +265,39 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "MenuButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "835cfb00-eb22-411e-b817-f10a0502bb29",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard",
+                    "action": "MousePosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3b2c1dac-07db-42c8-8d30-2919e0d6a6a9",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MousePrimaryClick",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bc935694-5be1-4bf7-aa5e-3cbd859e67fc",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MouseSecondaryClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

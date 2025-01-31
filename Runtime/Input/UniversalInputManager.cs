@@ -1,10 +1,9 @@
-using Darklight.UnityExt.Editor;
+using System.Collections.Generic;
 using Darklight.UnityExt.Behaviour;
-
+using Darklight.UnityExt.Editor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Users;
-using System.Collections.Generic;
 
 namespace Darklight.UnityExt.Input
 {
@@ -16,7 +15,14 @@ namespace Darklight.UnityExt.Input
         private bool _moveStarted;
 
         // -------------- [[ STATIC INPUT TYPE ]] -------------- >>
-        public enum InputType { NULL, KEYBOARD, TOUCH, GAMEPAD }
+        public enum InputType
+        {
+            NULL,
+            KEYBOARD,
+            TOUCH,
+            GAMEPAD
+        }
+
         public static InputType DeviceInputType
         {
             get => Instance._deviceInputType;
@@ -24,12 +30,23 @@ namespace Darklight.UnityExt.Input
         }
 
         // -------------- [[ SERIALIZED FIELDS ]] -------------- >>
-        [SerializeField] private InputActionAsset _inputActionAsset;
-        [SerializeField, ShowOnly] private InputType _deviceInputType;
-        [SerializeField, ShowOnly] private List<string> _connectedDevices;
-        [SerializeField, ShowOnly] private Vector2 _moveInput;
-        [SerializeField, ShowOnly] private bool _primaryInteract;
-        [SerializeField, ShowOnly] private bool _secondaryInteract;
+        [SerializeField]
+        private InputActionAsset _inputActionAsset;
+
+        [SerializeField, ShowOnly]
+        private InputType _deviceInputType;
+
+        [SerializeField, ShowOnly]
+        private List<string> _connectedDevices;
+
+        [SerializeField, ShowOnly]
+        private Vector2 _moveInput;
+
+        [SerializeField, ShowOnly]
+        private bool _primaryInteract;
+
+        [SerializeField, ShowOnly]
+        private bool _secondaryInteract;
 
         // -------------- [[ INPUT ACTION MAPS ]] -------------- >>
         InputActionMap _activeActionMap;
@@ -42,10 +59,14 @@ namespace Darklight.UnityExt.Input
         InputAction _primaryButtonAction => _activeActionMap.FindAction("PrimaryInteract");
         InputAction _secondaryButtonAction => _activeActionMap.FindAction("SecondaryInteract");
         InputAction _menuButtonAction => _activeActionMap.FindAction("MenuButton");
+        InputAction _mousePositionAction => _activeActionMap.FindAction("MousePosition");
+        InputAction _mousePrimaryClickAction => _activeActionMap.FindAction("MousePrimaryClick");
+        InputAction _mouseSecondaryClickAction =>
+            _activeActionMap.FindAction("MouseSecondaryClick");
 
         // -------------- [[ INPUT EVENTS ]] -------------- >>
         public delegate void OnInput_Trigger();
-        public delegate void OnInput_Vec2(Vector2 moveInput);
+        public delegate void OnInput_Vec2(Vector2 input);
 
         /// <summary> Event for the move input from the active device. </summary>
         public static event OnInput_Vec2 OnMoveInput;
@@ -62,6 +83,11 @@ namespace Darklight.UnityExt.Input
 
         /// <summary> Event for the menu button input from the active device. </summary>
         public static event OnInput_Trigger OnMenuButton;
+
+        // << -- MOUSE INPUT EVENTS -- >>
+        public static event OnInput_Vec2 OnMousePosition;
+        public static event OnInput_Trigger OnMousePrimaryClick;
+        public static event OnInput_Trigger OnMouseSecondaryClick;
 
         void OnEnable()
         {
@@ -95,13 +121,17 @@ namespace Darklight.UnityExt.Input
 
         private void OnDeviceChange(InputUser user, InputUserChange change, InputDevice device)
         {
-            if (change == InputUserChange.ControlSchemeChanged || change == InputUserChange.DevicePaired || change == InputUserChange.DeviceUnpaired)
+            if (
+                change == InputUserChange.ControlSchemeChanged
+                || change == InputUserChange.DevicePaired
+                || change == InputUserChange.DeviceUnpaired
+            )
             {
                 //string currentDevice = device.displayName;
                 //Debug.Log("Current input device: " + currentDevice);
             }
         }
-        
+
         private void OnDestroy()
         {
             ResetInputEvents();
@@ -131,11 +161,15 @@ namespace Darklight.UnityExt.Input
             _activeActionMap = map;
             _activeActionMap.Enable();
 
-            try {
+            try
+            {
                 // Enable the actions
                 _moveInputAction.Enable();
                 _primaryButtonAction.Enable();
                 _secondaryButtonAction.Enable();
+                _menuButtonAction.Enable();
+                _mousePrimaryClickAction.Enable();
+                _mouseSecondaryClickAction.Enable();
 
                 // << -- Set the input events -- >>
                 _moveInputAction.started += HandleMoveStarted;
@@ -149,6 +183,10 @@ namespace Darklight.UnityExt.Input
                 _secondaryButtonAction.canceled += HandleSecondaryCanceled;
 
                 _menuButtonAction.started += HandleMenuStarted;
+
+                _mousePositionAction.performed += HandleMousePosition;
+                _mousePrimaryClickAction.performed += HandleMousePrimaryClick;
+                _mouseSecondaryClickAction.performed += HandleMouseSecondaryClick;
             }
             catch (System.Exception e)
             {
@@ -179,6 +217,10 @@ namespace Darklight.UnityExt.Input
                 _secondaryButtonAction.canceled -= HandleSecondaryCanceled;
 
                 _menuButtonAction.started -= HandleMenuStarted;
+
+                _mousePrimaryClickAction.performed -= HandleMousePrimaryClick;
+                _mouseSecondaryClickAction.performed -= HandleMouseSecondaryClick;
+                _mousePositionAction.performed -= HandleMousePosition;
             }
             catch (System.Exception e)
             {
@@ -239,5 +281,19 @@ namespace Darklight.UnityExt.Input
             OnMenuButton?.Invoke();
         }
 
+        private void HandleMousePosition(InputAction.CallbackContext ctx)
+        {
+            OnMousePosition?.Invoke(ctx.ReadValue<Vector2>());
+        }
+
+        private void HandleMousePrimaryClick(InputAction.CallbackContext ctx)
+        {
+            OnMousePrimaryClick?.Invoke();
+        }
+
+        private void HandleMouseSecondaryClick(InputAction.CallbackContext ctx)
+        {
+            OnMouseSecondaryClick?.Invoke();
+        }
     }
 }

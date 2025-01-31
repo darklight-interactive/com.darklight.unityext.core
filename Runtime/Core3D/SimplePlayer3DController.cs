@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Darklight.UnityExt.Core3D
 {
     [RequireComponent(typeof(Rigidbody), (typeof(BoxCollider)))]
-    public class Player3DController : UniversalInputController
+    public class SimplePlayer3DController : UniversalInputController
     {
         const string PREFIX = "<color=green>[Player3DController]</color> ";
         Rigidbody _rb;

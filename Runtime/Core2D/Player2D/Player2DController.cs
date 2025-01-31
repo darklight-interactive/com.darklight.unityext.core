@@ -1,12 +1,9 @@
 using System;
 using System.Collections;
-
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Input;
-
 using UnityEditorInternal;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Core2D.Player
@@ -20,18 +17,18 @@ namespace Darklight.UnityExt.Core2D.Player
 
         float _moveSpeed;
 
-
-
-
         [Header("State Machine")]
-        [SerializeField] StateMachine _stateMachine;
-
+        [SerializeField]
+        StateMachine _stateMachine;
 
         [Header("Settings")]
-        [SerializeField] float _moveSpeedValue = 1f;
-        [SerializeField] Vector2 _size = new Vector2(1, 1);
+        [SerializeField]
+        float _moveSpeedValue = 1f;
 
-        #region < PRIVATE_METHODS > [[ PRELOAD ]] ================================================================ 
+        [SerializeField]
+        Vector2 _size = new Vector2(1, 1);
+
+        #region < PRIVATE_METHODS > [[ PRELOAD ]] ================================================================
         void Preload()
         {
             // RIGIDBODY -------- >>
@@ -47,7 +44,6 @@ namespace Darklight.UnityExt.Core2D.Player
 
             // STATE MACHINE -------- >>
             _stateMachine = new StateMachine(this);
-
         }
         #endregion
 
@@ -58,11 +54,9 @@ namespace Darklight.UnityExt.Core2D.Player
             transform.position = position;
         }
 
-
-
         #endregion
 
-        #region < PRIVATE_METHODS > [[ UNITY RUNTIME ]] ================================================================ 
+        #region < PRIVATE_METHODS > [[ UNITY RUNTIME ]] ================================================================
 
         protected override void Awake()
         {
@@ -71,21 +65,17 @@ namespace Darklight.UnityExt.Core2D.Player
         }
 
         // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-        {
-
-        }
+        void Start() { }
 
         // Update is called once per frame
         void Update()
         {
             _stateMachine.Step();
             _rb.linearVelocity = MoveInput * _moveSpeed;
-
         }
         #endregion
 
-        #region < PUBLIC_METHODS > [[ EDITOR HANDLING ]] ================================================================ 
+        #region < PUBLIC_METHODS > [[ EDITOR HANDLING ]] ================================================================
         public void OnEditorReloaded()
         {
             Preload();
@@ -106,7 +96,9 @@ namespace Darklight.UnityExt.Core2D.Player
         class StateMachine : FiniteStateMachine<PlayerState>
         {
             Player2DController _controller;
-            public StateMachine(Player2DController controller) : base()
+
+            public StateMachine(Player2DController controller)
+                : base()
             {
                 _controller = controller;
                 AddState(new IdleState(this));
@@ -122,7 +114,12 @@ namespace Darklight.UnityExt.Core2D.Player
             {
                 protected Player2DController.StateMachine stateMachine;
                 protected Player2DController controller;
-                public BaseState(Player2DController.StateMachine stateMachine, PlayerState stateType) : base(stateType)
+
+                public BaseState(
+                    Player2DController.StateMachine stateMachine,
+                    PlayerState stateType
+                )
+                    : base(stateType)
                 {
                     this.stateMachine = stateMachine;
                     this.controller = stateMachine._controller;
@@ -131,7 +128,8 @@ namespace Darklight.UnityExt.Core2D.Player
 
             class IdleState : BaseState
             {
-                public IdleState(StateMachine stateMachine) : base(stateMachine, PlayerState.IDLE) { }
+                public IdleState(StateMachine stateMachine)
+                    : base(stateMachine, PlayerState.IDLE) { }
 
                 public override void Enter()
                 {
@@ -149,7 +147,8 @@ namespace Darklight.UnityExt.Core2D.Player
 
             class MovingState : BaseState
             {
-                public MovingState(StateMachine stateMachine) : base(stateMachine, PlayerState.MOVING) { }
+                public MovingState(StateMachine stateMachine)
+                    : base(stateMachine, PlayerState.MOVING) { }
 
                 public override void Enter()
                 {
@@ -158,13 +157,23 @@ namespace Darklight.UnityExt.Core2D.Player
 
                 public override void Execute()
                 {
-                    if (Game2DManager.WorldBounds.Contains(controller.transform.position, controller._size))
+                    if (
+                        Game2DManager.WorldBounds.Contains(
+                            controller.transform.position,
+                            controller._size
+                        )
+                    )
                     {
                         controller._moveSpeed = controller._moveSpeedValue;
                     }
                     else
                     {
-                        controller.SetPosition(Game2DManager.WorldBounds.ClosestPointWithinBounds(controller.transform.position, controller._size));
+                        controller.SetPosition(
+                            Game2DManager.WorldBounds.ClosestPointWithinBounds(
+                                controller.transform.position,
+                                controller._size
+                            )
+                        );
                         //StateMachine.GoToState(PlayerState.STUNNED);
                     }
                 }
@@ -172,7 +181,8 @@ namespace Darklight.UnityExt.Core2D.Player
 
             class StunnedState : BaseState
             {
-                public StunnedState(StateMachine stateMachine) : base(stateMachine, PlayerState.STUNNED) { }
+                public StunnedState(StateMachine stateMachine)
+                    : base(stateMachine, PlayerState.STUNNED) { }
 
                 public override void Enter()
                 {
@@ -189,7 +199,8 @@ namespace Darklight.UnityExt.Core2D.Player
 
             class DamagedState : BaseState
             {
-                public DamagedState(StateMachine stateMachine) : base(stateMachine, PlayerState.DAMAGED) { }
+                public DamagedState(StateMachine stateMachine)
+                    : base(stateMachine, PlayerState.DAMAGED) { }
 
                 public override void Enter()
                 {
@@ -199,7 +210,8 @@ namespace Darklight.UnityExt.Core2D.Player
 
             class DeadState : BaseState
             {
-                public DeadState(StateMachine stateMachine) : base(stateMachine, PlayerState.DEAD) { }
+                public DeadState(StateMachine stateMachine)
+                    : base(stateMachine, PlayerState.DEAD) { }
 
                 public override void Enter()
                 {

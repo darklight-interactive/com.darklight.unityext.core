@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace Darklight.UnityExt.Editor
 {
@@ -121,9 +122,16 @@ namespace Darklight.UnityExt.Editor
         /// <param name="end">The ending point of the line.</param>
         /// <param name="color">The color of the line.</param>
         /// <param name="thickness">The thickness of the line.</param>
-        public static void DrawLine(Vector3 start, Vector3 end, Color color, float thickness = 1f)
+        public static void DrawLine(Vector3 start, Vector3 end, Color color, float thickness = 0f)
         {
             Handles.color = color;
+
+            if (thickness <= 0)
+            {
+                Handles.DrawLine(start, end);
+                return;
+            }
+
             Handles.DrawAAPolyLine(thickness, new Vector3[] { start, end });
         }
         #endregion << DRAW LINE >> ------------------------------------ >>
@@ -404,7 +412,12 @@ namespace Darklight.UnityExt.Editor
         /// - Top face: vertices 4,5,6,7 (counter-clockwise)<br/>
         /// - Side edges connecting corresponding vertices between faces<br/>
         /// </summary>
-        static void CalculateCubeVertices(Vector3 position, Vector3 size, Quaternion rotation, out Vector3[] vertices)
+        static void CalculateCubeVertices(
+            Vector3 position,
+            Vector3 size,
+            Quaternion rotation,
+            out Vector3[] vertices
+        )
         {
             Vector3 halfSize = size * 0.5f;
             s_CubeVertexBuffer[0] =

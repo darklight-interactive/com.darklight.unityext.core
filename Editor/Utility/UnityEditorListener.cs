@@ -54,9 +54,10 @@ namespace Darklight.UnityExt.Editor
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             EditorApplication.quitting += OnEditorQuitting;
             SceneView.duringSceneGui += OnSceneGUI;
+
             OnEditorReloaded += () => DebugEvent("EditorReloaded");
-            OnSceneView += (sceneView) => DebugEvent("SceneView");
-            OnSceneViewChanged += (sceneView) => DebugEvent("SceneViewChanged");
+            //OnSceneView += (sceneView) => DebugEvent("SceneView");
+            //OnSceneViewChanged += (sceneView) => DebugEvent("SceneViewChanged");
 
             // Find all MonoBehaviour instances that implement IUnityEditorListener
             Listeners = UnityEngine
@@ -70,7 +71,6 @@ namespace Darklight.UnityExt.Editor
             }
 
             OnEditorReloaded?.Invoke();
-            DebugEvent("EditorReloaded");
         }
 
         static void InitializeListener(IUnityEditorListener listener)
@@ -124,8 +124,10 @@ namespace Darklight.UnityExt.Editor
 
         static void DebugEvent(string eventName)
         {
+            List<string> str_listeners = Listeners.Select(listener => listener.ToString()).ToList();
+
             Debug.Log(
-                $"{Prefix} {eventName} -> Notifying {Listeners.Count} Listeners. \n {Listeners}"
+                $"{Prefix} {eventName} -> Notifying {Listeners.Count} Listeners. \n {string.Join("\n", str_listeners)}"
             );
         }
     }

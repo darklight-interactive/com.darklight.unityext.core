@@ -6,41 +6,44 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.World
 {
-    public enum WorldAxis { X, Y, Z }
+    public enum WorldAxis
+    {
+        X,
+        Y,
+        Z
+    }
 
     [Serializable]
     public class SingleAxisBounds
     {
         readonly Vector2 valueRange;
 
-        [SerializeField, ShowOnly] WorldAxis _axis;
-        [SerializeField, DynamicRange("valueRange")] float _min;
-        [SerializeField, DynamicRange("valueRange")] float _max;
+        [SerializeField, ShowOnly]
+        WorldAxis _axis;
 
-        public WorldAxis Axis { get => _axis; set => _axis = value; }
+        [SerializeField, DynamicRange("valueRange")]
+        float _min;
+
+        [SerializeField, DynamicRange("valueRange")]
+        float _max;
+
+        public WorldAxis Axis
+        {
+            get => _axis;
+            set => _axis = value;
+        }
         public float Min
         {
-            get
-            {
-                return _min = Mathf.Clamp(_min, valueRange.x, valueRange.y);
-            }
-            set
-            {
-                _min = Mathf.Clamp(value, valueRange.x, valueRange.y);
-            }
+            get { return _min = Mathf.Clamp(_min, valueRange.x, valueRange.y); }
+            set { _min = Mathf.Clamp(value, valueRange.x, valueRange.y); }
         }
         public float Max
         {
-            get
-            {
-                return _max = Mathf.Clamp(_max, valueRange.x, valueRange.y);
-            }
-            set
-            {
-                _max = Mathf.Clamp(value, valueRange.x, valueRange.y);
-            }
+            get { return _max = Mathf.Clamp(_max, valueRange.x, valueRange.y); }
+            set { _max = Mathf.Clamp(value, valueRange.x, valueRange.y); }
         }
         public float Length => Mathf.Abs(Max - Min);
+
         public SingleAxisBounds(WorldAxis axis, Vector2 range)
         {
             _axis = axis;
@@ -125,7 +128,7 @@ namespace Darklight.UnityExt.World
                 perpendicular = Vector3.up * length; // Move up for Z axis
 
             // Draw the min and max points
-            CustomGizmos.DrawLine(minPoint, maxPoint, color, 5);
+            CustomGizmos.DrawLine(minPoint, maxPoint, color);
         }
     }
 }
