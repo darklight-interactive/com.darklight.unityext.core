@@ -2,12 +2,14 @@ using System;
 using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Darklight.UnityExt.Input
 {
     /// <summary>
     /// Listens for mouse clicks and provides both screen and world positions of the click points.
     /// Integrates with the Universal Input system for consistent input handling.
+    ///
     /// </summary>
     public class MouseClickInputListener : UniversalInputController
     {
@@ -18,23 +20,27 @@ namespace Darklight.UnityExt.Input
         private bool _hasHit;
         private RaycastHit _lastHit;
 
-        [Header("Debug")]
+        [Foldout("Debug")]
         [SerializeField]
-        private bool _debug;
+        private bool _debug = true;
 
+        [Foldout("Debug")]
         [SerializeField, ShowIf("_debug")]
-        private bool _drawCurrentMouseWorldPosition;
+        private bool _drawCurrentMouseWorldPosition = true;
 
+        [Foldout("Debug")]
         [SerializeField, ShowIf("_debug")]
-        private bool _drawLastClickWorldPosition;
+        private bool _drawLastClickWorldPosition = true;
 
-        [Header("Click Settings")]
+        [Foldout("Camera")]
         [SerializeField]
         private Camera _camera;
 
+        [Foldout("Camera")]
         [SerializeField]
         private LayerMask _clickableLayerMask = -1; // -1 means everything
 
+        [Foldout("Camera")]
         [SerializeField]
         private float _maxRayDistance = 100f;
 
@@ -61,27 +67,27 @@ namespace Darklight.UnityExt.Input
                 }
             }
 
-            UniversalInputManager.OnMousePosition += HandleMousePosition;
-            UniversalInputManager.OnMousePrimaryClick += HandleMousePrimaryClick;
-            UniversalInputManager.OnMouseSecondaryClick += HandleMouseSecondaryClick;
+            UniversalInputManager.OnMousePosition += OnMousePosition;
+            UniversalInputManager.OnMousePrimaryClick += OnMousePrimaryClick;
+            UniversalInputManager.OnMouseSecondaryClick += OnMouseSecondaryClick;
         }
 
-        protected void HandleMousePosition(Vector2 screenPosition)
+        protected virtual void OnMousePosition(Vector2 screenPosition)
         {
             _currentMouseScreenPosition = screenPosition;
             _currentMouseWorldPosition = CalculateScreenToWorld(_currentMouseScreenPosition);
         }
 
-        protected void HandleMousePrimaryClick()
+        protected virtual void OnMousePrimaryClick()
         {
-            Debug.Log("Mouse Primary Click");
             _lastClickScreenPosition = _currentMouseScreenPosition;
             _lastClickWorldPosition = CalculateScreenToWorld(_lastClickScreenPosition);
         }
 
-        protected void HandleMouseSecondaryClick()
+        protected virtual void OnMouseSecondaryClick()
         {
-            Debug.Log("Mouse Secondary Click");
+            _lastClickScreenPosition = _currentMouseScreenPosition;
+            _lastClickWorldPosition = CalculateScreenToWorld(_lastClickScreenPosition);
         }
 
         protected Vector3 CalculateScreenToWorld(Vector2 screenPosition)
@@ -92,13 +98,24 @@ namespace Darklight.UnityExt.Input
             // Perform the raycast
             _hasHit = Physics.Raycast(ray, out _lastHit, _maxRayDistance, _clickableLayerMask);
 
-            return _hasHit ? _lastHit.point : ray.GetPoint(_maxRayDistance);
+            if (_hasHit)
+                return _lastHit.point;
+            else
+            {
+                Debug.LogError("Could not find hitpoint");
+                return ray.GetPoint(_maxRayDistance);
+            }
         }
 
-        private void OnDrawGizmosSelected()
+        protected virtual void OnDrawGizmosSelected()
         {
-            if (!_debug)
+            if (!_debug || _camera == null)
                 return;
+
+            // Draw the ray from camera through current mouse position
+            Ray currentRay = _camera.ScreenPointToRay(_currentMouseScreenPosition);
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(currentRay.origin, currentRay.direction * _maxRayDistance);
 
             if (_drawCurrentMouseWorldPosition)
             {
@@ -110,13 +127,19 @@ namespace Darklight.UnityExt.Input
             {
                 Gizmos.color = Color.red;
                 Gizmos.DrawSphere(LastClickWorldPosition, 0.5f);
+
+                // Draw the ray that created the last hit
+                Ray lastRay = _camera.ScreenPointToRay(_lastClickScreenPosition);
+                Gizmos.color = Color.blue;
+                Gizmos.DrawRay(lastRay.origin, lastRay.direction * _maxRayDistance);
             }
 
             // If we hit something, draw a line from the camera to the hit point
             if (_hasHit)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawLine(_camera.transform.position, LastClickWorldPosition);
+                Gizmos.DrawWireSphere(_lastHit.point, 0.2f);
+                Gizmos.DrawLine(_camera.transform.position, _lastHit.point);
             }
         }
     }
