@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 
 using UnityEditor;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix.Editor
@@ -43,11 +42,14 @@ namespace Darklight.UnityExt.Matrix.Editor
         #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
         private void CheckTransformChanges()
         {
-            if (_script == null) return;
+            if (_script == null)
+                return;
 
             // Check for changes in the position, rotation, or scale
-            if (_script.transform.position != _lastPosition ||
-                _script.transform.rotation != _lastRotation)
+            if (
+                _script.transform.position != _lastPosition
+                || _script.transform.rotation != _lastRotation
+            )
             {
                 // Update the last-known state
                 _lastPosition = _script.transform.position;

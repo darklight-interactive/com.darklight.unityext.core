@@ -1,20 +1,15 @@
 using System;
 using System.Collections.Generic;
-
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Utility;
-
 using NaughtyAttributes;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix
 {
-
     public partial class Matrix
     {
-
         [System.Serializable]
         public class NodeMap
         {
@@ -22,8 +17,11 @@ namespace Darklight.UnityExt.Matrix
             Dictionary<Vector2Int, Node> _map = new Dictionary<Vector2Int, Node>();
             bool _cacheIsDirty = true;
 
-            [SerializeField] List<Vector2Int> _cachedKeys;
-            [SerializeField] List<Node> _cachedNodes;
+            [SerializeField]
+            List<Vector2Int> _cachedKeys;
+
+            [SerializeField]
+            List<Node> _cachedNodes;
 
             Info _info => _matrix._info;
 
@@ -47,17 +45,19 @@ namespace Darklight.UnityExt.Matrix
                 Refresh();
             }
 
-            #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================ 
+            #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
             void AddNode(Vector2Int key)
             {
-                if (_map.ContainsKey(key)) return;
+                if (_map.ContainsKey(key))
+                    return;
                 _map[key] = new Node(_matrix._info, key);
                 _cacheIsDirty = true;
             }
 
             void RemoveNode(Vector2Int key)
             {
-                if (!_map.ContainsKey(key)) return;
+                if (!_map.ContainsKey(key))
+                    return;
                 _map.Remove(key);
                 _cacheIsDirty = true;
             }
@@ -77,9 +77,9 @@ namespace Darklight.UnityExt.Matrix
                 }
 
                 // << ADD NEW NODES >>
-                for (int x = 0; x < _info.MatrixColumnCount; x++)
+                for (int x = 0; x < _info.ColumnCount; x++)
                 {
-                    for (int y = 0; y < _info.MatrixRowCount; y++)
+                    for (int y = 0; y < _info.RowCount; y++)
                     {
                         AddNode(new Vector2Int(x, y));
                     }
@@ -124,7 +124,7 @@ namespace Darklight.UnityExt.Matrix
                 UpdateCache();
             }
 
-            #region < PUBLIC_CLASS > [[ Context Preset ]] ================================================================ 
+            #region < PUBLIC_CLASS > [[ Context Preset ]] ================================================================
             public class MatrixContextPreset : ScriptableData<Info>
             {
                 public override void SetData(Info data)
@@ -138,7 +138,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
             #endregion
-
         }
     }
 }

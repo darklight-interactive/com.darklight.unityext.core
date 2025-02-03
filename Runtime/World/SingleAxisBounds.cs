@@ -27,6 +27,9 @@ namespace Darklight.UnityExt.World
         [SerializeField, DynamicRange("valueRange")]
         float _max;
 
+        [SerializeField]
+        bool _showPlaneGizmo;
+
         public WorldAxis Axis
         {
             get => _axis;
@@ -117,18 +120,20 @@ namespace Darklight.UnityExt.World
             Vector3 minPoint = origin + direction * Min;
             Vector3 maxPoint = origin + direction * Max;
 
-            // Determine the perpendicular vector based on the current axis
-            Vector3 perpendicular = Vector3.zero;
-
-            if (_axis == WorldAxis.X)
-                perpendicular = Vector3.up * length; // Move up for X axis
-            else if (_axis == WorldAxis.Y)
-                perpendicular = Vector3.right * length; // Move right for Y axis
-            else if (_axis == WorldAxis.Z)
-                perpendicular = Vector3.up * length; // Move up for Z axis
-
             // Draw the min and max points
             CustomGizmos.DrawLine(minPoint, maxPoint, color);
+
+            if (_showPlaneGizmo)
+            {
+                // Draw the plane parallel to the current axis
+                Color planeColor = new Color(color.r, color.g, color.b, 0.2f);
+                CustomGizmos.DrawSolidRect(
+                    origin,
+                    new Vector2(length, length),
+                    direction,
+                    planeColor
+                );
+            }
         }
     }
 }

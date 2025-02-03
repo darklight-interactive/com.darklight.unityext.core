@@ -2,12 +2,12 @@ using Darklight.UnityExt.Game;
 using Darklight.UnityExt.World;
 using UnityEngine;
 
-
 namespace Darklight.UnityExt.Core2D
 {
     public class CameraRig2D : CameraRig
     {
-        [SerializeField] WorldBounds _bounds;
+        [SerializeField]
+        WorldSpaceBounds _bounds;
 
         public Vector3 BoundsCenter
         {
@@ -50,17 +50,16 @@ namespace Darklight.UnityExt.Core2D
                 // Calculate the orbit position based on the radius and current offset (angle in degrees)
                 float orbitRadians = (Settings.OrbitAngle + 90) * Mathf.Deg2Rad; // Convert degrees to radians
 
-                // Set the radius to match the z offset 
+                // Set the radius to match the z offset
                 float orbitRadius = Settings.PositionOffsetZ;
 
-                // Calculate orbit based off of enforced bounds 
+                // Calculate orbit based off of enforced bounds
                 Vector3 orbitPosition = new Vector3(
                     adjustedPosition.x + Mathf.Cos(orbitRadians) * orbitRadius,
                     adjustedPosition.y, // Keep the camera at the desired height
                     Origin.z + Mathf.Sin(orbitRadians) * orbitRadius
                 );
                 adjustedPosition = orbitPosition;
-
             }
 
             return adjustedPosition;
@@ -72,12 +71,13 @@ namespace Darklight.UnityExt.Core2D
                 return Settings.FOV;
 
             // Get necessary parameters
-            float distance = CameraZOffset;         // Distance from the camera to the target (absolute value of z offset)
-            float aspectRatio = CameraAspect;       // Camera's aspect ratio (width divided by height)
-            float width = _bounds.Width;            // Width of the bounds to fit
+            float distance = CameraZOffset; // Distance from the camera to the target (absolute value of z offset)
+            float aspectRatio = CameraAspect; // Camera's aspect ratio (width divided by height)
+            float width = _bounds.Width; // Width of the bounds to fit
 
             // Calculate the maximum vertical FOV that fits within the bounds width
-            float maxVerticalFOVToFitWidth = 2f * Mathf.Atan(width / (2f * distance * aspectRatio)) * Mathf.Rad2Deg;
+            float maxVerticalFOVToFitWidth =
+                2f * Mathf.Atan(width / (2f * distance * aspectRatio)) * Mathf.Rad2Deg;
 
             // Clamp the target FOV to not exceed the maximum allowed FOV
             float minFOV = 1f; // Optional: Set a minimum FOV to prevent extreme zoom-in
@@ -120,7 +120,7 @@ namespace Darklight.UnityExt.Core2D
 
                 // ( X Axis Bounds ) ------------------------------------------------------
                 // If the corner is outside the bounds, adjust the offset
-                // If the offset is larger than the difference between the corner and the bound, 
+                // If the offset is larger than the difference between the corner and the bound,
                 //   keep the larger offset value
                 if (corner.x < minXBound)
                     frustrumOffset.x = Mathf.Max(frustrumOffset.x, minXBound - corner.x);
@@ -157,6 +157,5 @@ namespace Darklight.UnityExt.Core2D
 
             return frustumCorners;
         }
-
     }
 }

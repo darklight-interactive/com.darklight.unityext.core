@@ -11,15 +11,15 @@ namespace Darklight.UnityExt.Behaviour
     {
         private class PathNode : IComparable<PathNode>
         {
-            public Vector2Int Position { get; private set; }
+            public Vector2Int Coordinate { get; private set; }
             public float GCost { get; set; } // Cost from start to current node
             public float HCost { get; set; } // Estimated cost from current node to end
             public float FCost => GCost + HCost;
             public PathNode Parent { get; set; }
 
-            public PathNode(Vector2Int position)
+            public PathNode(Vector2Int coordinate)
             {
-                Position = position;
+                Coordinate = coordinate;
             }
 
             public int CompareTo(PathNode other)
@@ -33,11 +33,45 @@ namespace Darklight.UnityExt.Behaviour
             }
         }
 
-        private readonly Vector2Int[] _grid;
+        private List<Vector2Int> _grid;
+        private Vector2Int _gridMin;
+        private Vector2Int _gridMax;
 
-        public AStarPathfinder(Vector2Int[] grid)
+        public AStarPathfinder(List<Vector2Int> grid)
         {
             _grid = grid;
+            CalculateGridBounds();
+        }
+
+        private void CalculateGridBounds()
+        {
+            if (_grid == null || _grid.Count == 0)
+            {
+                _gridMin = _gridMax = Vector2Int.zero;
+                return;
+            }
+
+            _gridMin = _gridMax = _grid[0];
+            foreach (var pos in _grid)
+            {
+                _gridMin = Vector2Int.Min(_gridMin, pos);
+                _gridMax = Vector2Int.Max(_gridMax, pos);
+            }
+        }
+
+        private bool IsCoordinateValid(Vector2Int pos)
+        {
+            if (
+                pos.x < _gridMin.x
+                || pos.x > _gridMax.x
+                || pos.y < _gridMin.y
+                || pos.y > _gridMax.y
+            )
+            {
+                return false;
+            }
+
+            return _grid.Contains(pos);
         }
 
         /// <summary>
@@ -63,20 +97,20 @@ namespace Darklight.UnityExt.Behaviour
                 var currentNode = openSet.Min;
                 openSet.Remove(currentNode);
 
-                if (currentNode.Position == endPos)
+                if (currentNode.Coordinate == endPos)
                 {
                     return ReconstructPath(currentNode);
                 }
 
-                closedSet.Add(currentNode.Position);
+                closedSet.Add(currentNode.Coordinate);
 
-                foreach (var neighborPos in GetNeighbors(currentNode.Position))
+                foreach (var neighborPos in GetNeighbors(currentNode.Coordinate))
                 {
                     if (closedSet.Contains(neighborPos))
                         continue;
 
                     float tentativeGCost =
-                        currentNode.GCost + CalculateDistance(currentNode.Position, neighborPos);
+                        currentNode.GCost + CalculateDistance(currentNode.Coordinate, neighborPos);
 
                     PathNode neighborNode;
                     if (!nodeDict.TryGetValue(neighborPos, out neighborNode))
@@ -117,7 +151,6 @@ namespace Darklight.UnityExt.Behaviour
 
         private IEnumerable<Vector2Int> GetNeighbors(Vector2Int position)
         {
-            // Get orthogonal neighbors (up, right, down, left)
             var directions = new Vector2Int[]
             {
                 new Vector2Int(0, 1), // Up
@@ -128,7 +161,11 @@ namespace Darklight.UnityExt.Behaviour
 
             foreach (var dir in directions)
             {
-                yield return position + dir;
+                var neighborPos = position + dir;
+                if (IsCoordinateValid(neighborPos))
+                {
+                    yield return neighborPos;
+                }
             }
         }
 
@@ -139,7 +176,7 @@ namespace Darklight.UnityExt.Behaviour
 
             while (currentNode != null)
             {
-                path.Add(currentNode.Position);
+                path.Add(currentNode.Coordinate);
                 currentNode = currentNode.Parent;
             }
 

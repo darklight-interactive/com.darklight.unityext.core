@@ -12,7 +12,7 @@ namespace Darklight.UnityExt.Core3D
     public class Game3DManager : MonoBehaviourSingleton<Game3DManager>
     {
         public const string ASSET_PATH = "Assets/Resources/Darklight/Game3D";
-        public static WorldBounds WorldBounds
+        public static WorldSpaceBounds WorldBounds
         {
             get => Instance._bounds;
         }
@@ -21,7 +21,7 @@ namespace Darklight.UnityExt.Core3D
         bool _enableBounds = true;
 
         [SerializeField, Expandable, ShowIf("_enableBounds")]
-        WorldBounds _bounds;
+        WorldSpaceBounds _bounds;
 
         public override void Initialize()
         {
@@ -33,7 +33,7 @@ namespace Darklight.UnityExt.Core3D
 
             if (_bounds == null)
             {
-                _bounds = ScriptableObjectUtility.CreateOrLoadScriptableObject<WorldBounds>(
+                _bounds = ScriptableObjectUtility.CreateOrLoadScriptableObject<WorldSpaceBounds>(
                     ASSET_PATH + "/World",
                     "DefaultWorld3DBounds"
                 );
