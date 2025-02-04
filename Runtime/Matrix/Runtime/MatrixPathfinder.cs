@@ -15,7 +15,7 @@ namespace Darklight.UnityExt.Matrix
         AStarPathfinder _pathfinder;
         Vector2Int[] _validNodes;
 
-        public List<MatrixNode> FindPath(MatrixNode startNode, MatrixNode endNode)
+        public List<Matrix.Node> FindPath(Matrix.Node startNode, Matrix.Node endNode)
         {
             _matrix = GetComponent<Matrix>();
             _validNodes = _matrix.Map.Nodes.Select(node => node.Key).ToArray();

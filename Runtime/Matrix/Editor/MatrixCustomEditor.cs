@@ -91,12 +91,12 @@ namespace Darklight.UnityExt.Matrix.Editor
                 MatrixEditorWindow.ShowWindow(_script);
             }
 
-            if (_script.CurrentState == State.INVALID && GUILayout.Button("Preload"))
+            if (_script.CurrentState == Matrix.State.INVALID && GUILayout.Button("Preload"))
             {
                 _script.Preload();
             }
 
-            if (_script.CurrentState == State.PRELOADED && GUILayout.Button("Refresh"))
+            if (_script.CurrentState == Matrix.State.PRELOADED && GUILayout.Button("Refresh"))
             {
                 _script.Refresh();
             }

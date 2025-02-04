@@ -8,145 +8,135 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Matrix
 {
-    [System.Serializable]
-    public class MatrixNodeMap
+    public partial class Matrix
     {
-        Matrix _matrix;
-        Dictionary<Vector2Int, MatrixNode> _nodeLookup = new Dictionary<Vector2Int, MatrixNode>();
-        Dictionary<int, HashSet<Vector2Int>> _spatialPartitions =
-            new Dictionary<int, HashSet<Vector2Int>>();
-
-        bool _cacheIsDirty = true;
-
-        [SerializeField]
-        List<Vector2Int> _cachedKeys;
-
-        [SerializeField]
-        List<MatrixNode> _cachedNodes;
-
-        MatrixInfo _info => _matrix.Info;
-
-        public List<MatrixNode> Nodes => _cachedNodes;
-
-        public MatrixNodeMap(Matrix matrix)
+        [System.Serializable]
+        public class NodeMap
         {
-            _matrix = matrix;
-            Refresh();
-        }
+            MatrixInfo _info;
 
-        #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
-        void AddNode(Vector2Int key)
-        {
-            if (_nodeLookup.ContainsKey(key))
-                return;
-            _nodeLookup[key] = new MatrixNode(_matrix.Info, key);
-            MatrixNode node = _nodeLookup[key];
-            AddKeyToPartition(key, node.Partition);
-            _cacheIsDirty = true;
-        }
+            Dictionary<Vector2Int, Node> _nodeLookup = new Dictionary<Vector2Int, Node>();
+            Dictionary<int, HashSet<Vector2Int>> _spatialPartitions =
+                new Dictionary<int, HashSet<Vector2Int>>();
 
-        void AddKeyToPartition(Vector2Int key, int partitionKey)
-        {
-            // Add the partition if it doesn't exist
-            if (_spatialPartitions.ContainsKey(partitionKey) == false)
-                _spatialPartitions[partitionKey] = new HashSet<Vector2Int>();
-            // Return if the key already exists in the partition
-            else if (_spatialPartitions[partitionKey].Contains(key))
-                return;
+            bool _cacheIsDirty = true;
 
-            // Add the key to the partition
-            _spatialPartitions[partitionKey].Add(key);
-            _cacheIsDirty = true;
-        }
+            [SerializeField]
+            List<Vector2Int> _cachedKeys;
 
-        void RemoveNode(Vector2Int key)
-        {
-            if (!_nodeLookup.ContainsKey(key))
-                return;
-            _nodeLookup.Remove(key);
-            _cacheIsDirty = true;
-        }
+            [SerializeField]
+            List<Node> _cachedNodes;
 
-        void Clean()
-        {
-            if (_nodeLookup == null)
-                _nodeLookup = new Dictionary<Vector2Int, MatrixNode>();
+            public List<Node> Nodes => _cachedNodes;
 
-            // << REMOVE OUT OF BOUNDS NODES >>
-            foreach (var key in new List<Vector2Int>(_nodeLookup.Keys))
+            public NodeMap(MatrixInfo info)
             {
-                if (!_info.IsKeyInBounds(key))
+                _info = info;
+                Refresh();
+            }
+
+            #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
+            void AddNode(Vector2Int key)
+            {
+                if (_nodeLookup.ContainsKey(key))
+                    return;
+                _nodeLookup[key] = new Node(_info, key);
+                Node node = _nodeLookup[key];
+                AddKeyToPartition(key, node.Partition);
+                _cacheIsDirty = true;
+            }
+
+            void AddKeyToPartition(Vector2Int key, int partitionKey)
+            {
+                if (_spatialPartitions == null)
+                    _spatialPartitions = new Dictionary<int, HashSet<Vector2Int>>();
+
+                // Add the partition if it doesn't exist
+                if (_spatialPartitions.ContainsKey(partitionKey) == false)
+                    _spatialPartitions[partitionKey] = new HashSet<Vector2Int>();
+                // Return if the key already exists in the partition
+                else if (_spatialPartitions[partitionKey].Contains(key))
+                    return;
+
+                // Add the key to the partition
+                _spatialPartitions[partitionKey].Add(key);
+                _cacheIsDirty = true;
+            }
+
+            void RemoveNode(Vector2Int key)
+            {
+                if (!_nodeLookup.ContainsKey(key))
+                    return;
+                _nodeLookup.Remove(key);
+                _cacheIsDirty = true;
+            }
+
+            void Clean()
+            {
+                if (_nodeLookup == null)
+                    _nodeLookup = new Dictionary<Vector2Int, Node>();
+
+                // << REMOVE OUT OF BOUNDS NODES >>
+                foreach (var key in new List<Vector2Int>(_nodeLookup.Keys))
                 {
-                    RemoveNode(key);
+                    if (!_info.IsKeyInBounds(key))
+                    {
+                        RemoveNode(key);
+                    }
+                }
+
+                // << ADD NEW NODES >>
+                for (int x = 0; x < _info.ColumnCount; x++)
+                {
+                    for (int y = 0; y < _info.RowCount; y++)
+                    {
+                        AddNode(new Vector2Int(x, y));
+                    }
                 }
             }
 
-            // << ADD NEW NODES >>
-            for (int x = 0; x < _info.ColumnCount; x++)
+            void UpdateCache()
             {
-                for (int y = 0; y < _info.RowCount; y++)
+                if (_cacheIsDirty || _cachedKeys == null || _cachedNodes == null)
                 {
-                    AddNode(new Vector2Int(x, y));
+                    _cachedKeys = new List<Vector2Int>(_nodeLookup.Keys);
+                    _cachedNodes = new List<Node>(_nodeLookup.Values);
+                    _cacheIsDirty = false;
                 }
             }
-        }
+            #endregion
 
-        void UpdateCache()
-        {
-            if (_cacheIsDirty || _cachedKeys == null || _cachedNodes == null)
+            public Node GetNode(Vector2Int key)
             {
-                _cachedKeys = new List<Vector2Int>(_nodeLookup.Keys);
-                _cachedNodes = new List<MatrixNode>(_nodeLookup.Values);
-                _cacheIsDirty = false;
+                _nodeLookup.TryGetValue(key, out var node);
+                return node;
             }
-        }
-        #endregion
 
-        public MatrixNode GetNode(Vector2Int key)
-        {
-            _nodeLookup.TryGetValue(key, out var node);
-            return node;
-        }
-
-        public List<MatrixNode> GetNodes(List<Vector2Int> keys)
-        {
-            List<MatrixNode> nodes = new List<MatrixNode>(keys.Count);
-            foreach (Vector2Int key in keys)
+            public List<Node> GetNodes(List<Vector2Int> keys)
             {
-                if (_nodeLookup.TryGetValue(key, out var node))
+                List<Node> nodes = new List<Node>(keys.Count);
+                foreach (Vector2Int key in keys)
                 {
-                    nodes.Add(node);
+                    if (_nodeLookup.TryGetValue(key, out var node))
+                    {
+                        nodes.Add(node);
+                    }
                 }
+                return nodes;
             }
-            return nodes;
-        }
 
-        public Dictionary<int, HashSet<Vector2Int>> GetPartitions()
-        {
-            return _spatialPartitions;
-        }
-
-        public void Refresh()
-        {
-            _info.Validate();
-
-            Clean();
-            UpdateCache();
-        }
-
-        #region < PUBLIC_CLASS > [[ Context Preset ]] ================================================================
-        public class MatrixContextPreset : ScriptableData<MatrixInfo>
-        {
-            public override void SetData(MatrixInfo data)
+            public Dictionary<int, HashSet<Vector2Int>> GetPartitions()
             {
-                base.SetData(data);
+                return _spatialPartitions;
             }
 
-            public override MatrixInfo ToData()
+            public void Refresh()
             {
-                return data;
+                _info.Validate();
+
+                Clean();
+                UpdateCache();
             }
         }
-        #endregion
     }
 }

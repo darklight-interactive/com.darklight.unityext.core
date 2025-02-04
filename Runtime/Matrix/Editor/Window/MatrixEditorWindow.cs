@@ -20,7 +20,7 @@ namespace Darklight.UnityExt.Matrix.Editor
 
         SerializedObject _serializedMatrixObject;
         Matrix _matrix;
-        MatrixNode _selectedNode;
+        Matrix.Node _selectedNode;
         bool _selectedNodeIsExpanded = false;
         Vector2 _scrollPosition;
         bool _showNodeKeys = false;
@@ -34,12 +34,12 @@ namespace Darklight.UnityExt.Matrix.Editor
         Dictionary<int, bool> _partitionFoldouts = new Dictionary<int, bool>();
 
         private MatrixPathfinder _pathfinder;
-        private MatrixNode _pathStartNode;
-        private MatrixNode _pathEndNode;
-        private List<MatrixNode> _currentPath;
+        private Matrix.Node _pathStartNode;
+        private Matrix.Node _pathEndNode;
+        private List<Matrix.Node> _currentPath;
         private Color _pathColor = Color.yellow;
 
-        MatrixNode.Visitor SceneGUINodeVisitor => new MatrixNode.Visitor(node =>
+        Matrix.Node.Visitor SceneGUINodeVisitor => new Matrix.Node.Visitor(node =>
         {
             Vector3 position = node.Position;
             Vector2 dimensions = node.Dimensions;
@@ -226,7 +226,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             sceneView.Repaint();
         }
 
-        void SetSelectedNode(MatrixNode node)
+        void SetSelectedNode(Matrix.Node node)
         {
             _selectedNode = node;
 
