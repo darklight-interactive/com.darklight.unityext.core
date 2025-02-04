@@ -10,18 +10,18 @@ using UnityEngine;
 public class Game2DManager : MonoBehaviourSingleton<Game2DManager>
 {
     public const string ASSET_PATH = "Assets/Resources/Darklight/Game2D";
-    public static WorldSpaceBounds WorldBounds
+    public static TripleAxisBounds WorldBounds
     {
         get => Instance._bounds;
     }
 
     [SerializeField, Expandable]
-    WorldSpaceBounds _bounds;
+    TripleAxisBounds _bounds;
 
     public override void Initialize()
     {
         if (_bounds == null)
-            _bounds = ScriptableObjectUtility.CreateOrLoadScriptableObject<WorldSpaceBounds>(
+            _bounds = ScriptableObjectUtility.CreateOrLoadScriptableObject<TripleAxisBounds>(
                 ASSET_PATH + "/World",
                 "DefaultWorld2DBounds"
             );

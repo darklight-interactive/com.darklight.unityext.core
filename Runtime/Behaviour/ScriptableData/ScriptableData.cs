@@ -1,5 +1,4 @@
 using System;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
@@ -9,8 +8,11 @@ namespace Darklight.UnityExt.Behaviour
     public abstract class ScriptableData<T> : ScriptableDataBase
         where T : new()
     {
-        [SerializeField] protected T data = default;
+        [SerializeField]
+        protected T data = default;
+
         public virtual void SetData(T data) => this.data = data;
+
         public virtual T ToData() => data;
 
         public virtual void Refresh()

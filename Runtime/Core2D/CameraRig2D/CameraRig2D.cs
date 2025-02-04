@@ -7,7 +7,7 @@ namespace Darklight.UnityExt.Core2D
     public class CameraRig2D : CameraRig
     {
         [SerializeField]
-        WorldSpaceBounds _bounds;
+        TripleAxisBounds _bounds;
 
         public Vector3 BoundsCenter
         {

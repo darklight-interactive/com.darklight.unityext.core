@@ -47,6 +47,14 @@ namespace Darklight.UnityExt.World
         }
         public float Length => Mathf.Abs(Max - Min);
 
+        public SingleAxisBounds()
+        {
+            _axis = WorldAxis.X;
+            valueRange = new Vector2(-1000, 1000);
+            Min = valueRange.x / 2;
+            Max = valueRange.y / 2;
+        }
+
         public SingleAxisBounds(WorldAxis axis, Vector2 range)
         {
             _axis = axis;

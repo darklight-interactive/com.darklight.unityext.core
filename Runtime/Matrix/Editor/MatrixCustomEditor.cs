@@ -95,6 +95,11 @@ namespace Darklight.UnityExt.Matrix.Editor
             {
                 _script.Preload();
             }
+
+            if (_script.CurrentState == State.PRELOADED && GUILayout.Button("Refresh"))
+            {
+                _script.Refresh();
+            }
         }
 
         public override void OnInspectorGUI()

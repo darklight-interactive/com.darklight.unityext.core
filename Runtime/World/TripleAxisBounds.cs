@@ -6,11 +6,11 @@ using UnityEngine;
 namespace Darklight.UnityExt.World
 {
     [CreateAssetMenu(
-        fileName = "NewWorldSpaceBounds",
-        menuName = "Darklight/World/WorldSpaceBounds",
+        fileName = "NewTripleAxisBounds",
+        menuName = "Darklight/World/TripleAxisBounds",
         order = 1
     )]
-    public class WorldSpaceBounds : ScriptableObject
+    public class TripleAxisBounds : ScriptableObject
     {
         const int DEFAULT_RANGE_VALUE = 1000;
 

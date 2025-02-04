@@ -37,9 +37,9 @@ namespace Darklight.UnityExt.Behaviour
         private Vector2Int _gridMin;
         private Vector2Int _gridMax;
 
-        public AStarPathfinder(List<Vector2Int> grid)
+        public AStarPathfinder(IEnumerable<Vector2Int> grid)
         {
-            _grid = grid;
+            _grid = new List<Vector2Int>(grid);
             CalculateGridBounds();
         }
 
