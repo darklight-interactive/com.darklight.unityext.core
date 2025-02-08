@@ -84,13 +84,14 @@ namespace Darklight.UnityExt.Matrix
             }
             public bool HasParent => _parent != null;
 
+            public Vector3 OriginWorldPosition => _parent != null ? _parent.position : Vector3.zero;
             public Alignment OriginAlignment => _alignment;
             public int PartitionSize => _partitionSize;
             public Vector2Int Bounds => _bounds;
             public int ColumnCount => _bounds.x;
             public int RowCount => _bounds.y;
             public int Capacity => _bounds.x * _bounds.y;
-            public Vector2 Dimensions => CalculateMatrixDimensions();
+            public Vector2 Dimensions => CalculateMatrixDimensions(this);
             public Vector2Int TerminalKey => new Vector2Int(_bounds.x - 1, _bounds.y - 1);
             public Vector2Int OriginKey
             {
@@ -102,25 +103,18 @@ namespace Darklight.UnityExt.Matrix
                         : Vector2Int.zero;
                 }
             }
-            public Vector3 Center => CalculateMatrixCenter();
-            public Quaternion Rotation
-            {
-                get
-                {
-                    Quaternion swizzleRot = Matrix.CalculateSwizzleRotationOffset(_swizzle);
-                    if (HasParent)
-                    {
-                        return swizzleRot * _parent.rotation;
-                    }
-                    else
-                    {
-                        return swizzleRot;
-                    }
-                }
-            }
+            public Vector2 OriginAlignmentLocalDimensionOffset =>
+                CalculateLocalAlignmentOffset(OriginAlignment, Dimensions);
+
+            public Vector2 OriginAlignmentWorldDimensionOffset =>
+                CalculateWorldAlignmentOffset(OriginAlignment, Dimensions, Swizzle);
+
+            public Vector3 Center => CalculateMatrixCenter(this);
+            public Quaternion Rotation => CalculateSwizzleRotationOffset(_swizzle);
 
             public bool CenterNodes => _centerNodes;
             public Vector2 NodeSize => _nodeSize;
+            public Vector2 NodeHalfSize => _nodeSize / 2;
             public Vector2 NodeSpacing => _nodeSpacing;
             public Vector2 NodeBonding => _nodeBonding;
 
@@ -129,7 +123,7 @@ namespace Darklight.UnityExt.Matrix
             #endregion
 
             // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
-            public MatrixInfo(Transform parent = null)
+            public MatrixInfo(Transform parent)
             {
                 _grid = null;
                 _parent = parent;
@@ -148,7 +142,7 @@ namespace Darklight.UnityExt.Matrix
 
             public static MatrixInfo GetMatrixInfo(Grid grid, BoundsInt bounds)
             {
-                var info = new MatrixInfo
+                var info = new MatrixInfo(grid.transform)
                 {
                     _grid = grid,
                     _parent = grid.transform,
@@ -164,8 +158,6 @@ namespace Darklight.UnityExt.Matrix
                 info.Validate();
                 return info;
             }
-
-            public static MatrixInfo GetDefault() => new MatrixInfo();
 
             public void Validate()
             {
@@ -255,80 +247,6 @@ namespace Darklight.UnityExt.Matrix
                 float value = 0.8f + (((h * 0xe6546b64) % 20f) / 100f); // Range 0.8-1.0
 
                 return Color.HSVToRGB(hue, saturation, value);
-            }
-
-            /// <summary>
-            /// Gets the dimensions of the matrix in world space.
-            /// </summary>
-            /// <returns>The full dimensions of the matrix in world units.</returns>
-            public Vector3 CalculateMatrixDimensions()
-            {
-                Vector2 dimensions2D = new Vector2(
-                    _bounds.x * _nodeSize.x,
-                    _bounds.y * _nodeSize.y
-                );
-
-                dimensions2D *= (_nodeSpacing + Vector2.one);
-                return SwizzleVec2(dimensions2D, _swizzle);
-            }
-
-            /// <summary>
-            /// Calculates the center position of the matrix in world space using matrix data.
-            /// </summary>
-            /// <returns>The center position of the matrix in world coordinates.</returns>
-            public Vector3 CalculateMatrixCenter()
-            {
-                if (_grid != null)
-                {
-                    // Use grid's cell-to-world conversion for center calculation
-                    Vector2Int centerCoord = new Vector2Int(_bounds.x / 2, _bounds.y / 2);
-                    Vector3 gridCenter = _grid.CellToWorld(
-                        new Vector3Int(centerCoord.x, centerCoord.y, 0)
-                    );
-
-                    Vector3 originOffset = CalculateLocalAlignmentOffset(_alignment, Dimensions);
-
-                    return gridCenter + originOffset;
-                }
-
-                // Calculate the base position in 2D space
-                Vector2 centerPos2D = Vector2.zero;
-                Vector2 nodeHalfSize = _nodeSize * 0.5f;
-                if (_nodeSize.x < 1)
-                    nodeHalfSize.x = _nodeSize.x * 2;
-                if (_nodeSize.y < 1)
-                    nodeHalfSize.y = _nodeSize.y * 2;
-
-                // Calculate dimensions and half sizes
-                Vector2 fullDimensions =
-                    new Vector2(_bounds.x * _nodeSize.x, _bounds.y * _nodeSize.y)
-                    * (_nodeSpacing + Vector2.one);
-
-                // Add half of total dimensions for center point
-                centerPos2D = fullDimensions * 0.5f;
-
-                // Apply spacing
-                centerPos2D *= (_nodeSpacing + Vector2.one);
-
-                // Apply alignment offset
-                Vector2 alignmentOffset = CalculateWorldAlignmentOffset(
-                    _alignment,
-                    Dimensions,
-                    _swizzle
-                );
-                centerPos2D += alignmentOffset;
-
-                // Convert to 3D with proper swizzle
-                Vector3 centerPos3D = SwizzleVec2(centerPos2D, _swizzle);
-
-                // Get base world position and rotation
-                Vector3 worldPos = _parent != null ? _parent.position : Vector3.zero;
-                Quaternion worldRot =
-                    _parent != null
-                        ? _parent.rotation * CalculateSwizzleRotationOffset(_swizzle)
-                        : CalculateSwizzleRotationOffset(_swizzle);
-
-                return worldPos + (worldRot * centerPos3D);
             }
         }
     }

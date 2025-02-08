@@ -142,6 +142,14 @@ namespace Darklight.UnityExt.Matrix.Editor
             EditorGUILayout.LabelField("Origin Key", info.OriginKey.ToString());
             EditorGUILayout.LabelField("Terminal Key", info.TerminalKey.ToString());
             EditorGUILayout.LabelField("Alignment", info.OriginAlignment.ToString());
+            EditorGUILayout.LabelField(
+                "Local Alignment Dimension Offset",
+                info.OriginAlignmentLocalDimensionOffset.ToString()
+            );
+            EditorGUILayout.LabelField(
+                "World Alignment Dimension Offset",
+                info.OriginAlignmentWorldDimensionOffset.ToString()
+            );
 
             EditorGUILayout.LabelField("Partition Size", info.PartitionSize.ToString());
             EditorGUILayout.LabelField("Node Size", info.NodeSize.ToString());

@@ -11,32 +11,34 @@ namespace Darklight.UnityExt.Matrix
     [ExecuteAlways]
     public partial class Matrix : MonoBehaviour
     {
-        protected static readonly Dictionary<Matrix.Alignment, Vector2> AlignmentOffsets =
-            new Dictionary<Matrix.Alignment, Vector2>
-            {
-                { Matrix.Alignment.BottomLeft, Vector2.zero },
-                { Matrix.Alignment.BottomCenter, new Vector2(-0.5f, 0) },
-                { Matrix.Alignment.BottomRight, new Vector2(-1f, 0) },
-                { Matrix.Alignment.MiddleLeft, new Vector2(0, -0.5f) },
-                { Matrix.Alignment.MiddleCenter, new Vector2(-0.5f, -0.5f) },
-                { Matrix.Alignment.MiddleRight, new Vector2(-1f, -0.5f) },
-                { Matrix.Alignment.TopLeft, new Vector2(0, -1f) },
-                { Matrix.Alignment.TopCenter, new Vector2(-0.5f, -1f) },
-                { Matrix.Alignment.TopRight, new Vector2(-1f, -1f) },
-            };
+        protected static readonly Dictionary<Alignment, Vector2> AlignmentOffsets = new Dictionary<
+            Alignment,
+            Vector2
+        >
+        {
+            { Alignment.BottomLeft, Vector2.zero },
+            { Alignment.BottomCenter, new Vector2(-0.5f, 0) },
+            { Alignment.BottomRight, new Vector2(-1f, 0) },
+            { Alignment.MiddleLeft, new Vector2(0, -0.5f) },
+            { Alignment.MiddleCenter, new Vector2(-0.5f, -0.5f) },
+            { Alignment.MiddleRight, new Vector2(-1f, -0.5f) },
+            { Alignment.TopLeft, new Vector2(0, -1f) },
+            { Alignment.TopCenter, new Vector2(-0.5f, -1f) },
+            { Alignment.TopRight, new Vector2(-1f, -1f) },
+        };
 
         protected static readonly Dictionary<Alignment, Func<Vector2Int, Vector2Int>> OriginKeys =
             new Dictionary<Alignment, Func<Vector2Int, Vector2Int>>
             {
-                { Matrix.Alignment.BottomLeft, _ => new Vector2Int(0, 0) },
-                { Matrix.Alignment.BottomCenter, max => new Vector2Int(max.x / 2, 0) },
-                { Matrix.Alignment.BottomRight, max => new Vector2Int(max.x, 0) },
-                { Matrix.Alignment.MiddleLeft, max => new Vector2Int(0, max.y / 2) },
-                { Matrix.Alignment.MiddleCenter, max => new Vector2Int(max.x / 2, max.y / 2) },
-                { Matrix.Alignment.MiddleRight, max => new Vector2Int(max.x, max.y / 2) },
-                { Matrix.Alignment.TopLeft, max => new Vector2Int(0, max.y) },
-                { Matrix.Alignment.TopCenter, max => new Vector2Int(max.x / 2, max.y) },
-                { Matrix.Alignment.TopRight, max => new Vector2Int(max.x, max.y) },
+                { Alignment.BottomLeft, _ => new Vector2Int(0, 0) },
+                { Alignment.BottomCenter, max => new Vector2Int(max.x / 2, 0) },
+                { Alignment.BottomRight, max => new Vector2Int(max.x, 0) },
+                { Alignment.MiddleLeft, max => new Vector2Int(0, max.y / 2) },
+                { Alignment.MiddleCenter, max => new Vector2Int(max.x / 2, max.y / 2) },
+                { Alignment.MiddleRight, max => new Vector2Int(max.x, max.y / 2) },
+                { Alignment.TopLeft, max => new Vector2Int(0, max.y) },
+                { Alignment.TopCenter, max => new Vector2Int(max.x / 2, max.y) },
+                { Alignment.TopRight, max => new Vector2Int(max.x, max.y) },
             };
 
         StateMachine _stateMachine = new StateMachine();
@@ -70,8 +72,8 @@ namespace Darklight.UnityExt.Matrix
             INITIALIZED
         }
 
-        public MatrixInfo Info { get; protected set; }
-        public NodeMap Map { get; protected set; }
+        public MatrixInfo Info => _info;
+        public NodeMap Map => _map;
         public Node.Visitor UpdateNodeContextVisitor =>
             new Node.Visitor(node =>
             {
@@ -80,7 +82,6 @@ namespace Darklight.UnityExt.Matrix
             });
 
         public State CurrentState => _currentState = _stateMachine.currentStateEnum;
-
         public Node OriginNode => _map.GetNode(_info.OriginKey);
         public Node TerminalNode => _map.GetNode(_info.TerminalKey);
 
@@ -92,9 +93,11 @@ namespace Darklight.UnityExt.Matrix
                 _stateMachine.OnStateChanged += OnStateChanged;
             }
 
-            // Create a new cell map
-            if (_info.Parent == null)
-                _info.Parent = transform;
+            if (_info == null)
+            {
+                _info = new MatrixInfo(this.transform);
+                Debug.Log("Creating new MatrixInfo");
+            }
 
             if (_info.Grid == null)
             {
@@ -105,6 +108,7 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
 
+            Debug.Log("Preloading matrix");
             Initialize(_info);
 
             // Determine if the grid was preloaded
@@ -113,6 +117,7 @@ namespace Darklight.UnityExt.Matrix
 
         public virtual void Initialize(MatrixInfo info)
         {
+            Debug.Log("Initializing matrix");
             _info = info;
             _info.Validate();
             _map = new NodeMap(_info);
@@ -121,6 +126,7 @@ namespace Darklight.UnityExt.Matrix
 
         public virtual void Refresh()
         {
+            Debug.Log("Refreshing matrix");
             _info.Validate();
             _map.Refresh();
             SendVisitorToAllNodes(UpdateNodeContextVisitor);
@@ -149,22 +155,6 @@ namespace Darklight.UnityExt.Matrix
                 node.Accept(visitor);
         }
 
-        protected virtual void Awake() => Preload();
-
-        protected virtual void OnValidate() => Refresh();
-
-        protected virtual void OnEnable() => Refresh();
-
-        protected virtual void OnDisable() { }
-
-        protected virtual void OnDestroy() { }
-
-        protected virtual void OnDrawGizmosSelected()
-        {
-            CustomGizmos.DrawWireRect(_info.Center, _info.Dimensions, _info.Rotation, Color.green);
-            Gizmos.DrawSphere(_info.Center, 0.1f);
-        }
-
         protected static Vector2Int CalculateNodeKey(Vector2Int coordinate, Vector2Int originKey)
         {
             return coordinate + originKey;
@@ -189,6 +179,12 @@ namespace Darklight.UnityExt.Matrix
             return hash;
         }
 
+        /// <summary>
+        /// Calculates the alignment offset based on the alignment and size.
+        /// </summary>
+        /// <param name="alignment">The alignment to calculate the offset for.</param>
+        /// <param name="size">The size of the matrix.</param>
+        /// <returns>The alignment offset in local space Vector2.</returns>
         protected static Vector2 CalculateLocalAlignmentOffset(Alignment alignment, Vector2 size)
         {
             Vector2 alignmentOffset = AlignmentOffsets.TryGetValue(alignment, out Vector2 offset)
@@ -317,6 +313,42 @@ namespace Darklight.UnityExt.Matrix
         }
 
         /// <summary>
+        /// Gets the dimensions of the matrix in world space.
+        /// </summary>
+        /// <returns>The full dimensions of the matrix in local units.</returns>
+        protected static Vector2 CalculateMatrixDimensions(MatrixInfo info)
+        {
+            Vector2 dimensions2D = new Vector2(
+                info.Bounds.x * info.NodeSize.x,
+                info.Bounds.y * info.NodeSize.y
+            );
+
+            dimensions2D *= (info.NodeSpacing + Vector2.one);
+            return dimensions2D;
+        }
+
+        /// <summary>
+        /// Calculates the center position of the matrix in world space using matrix data.
+        /// </summary>
+        /// <returns>The center position of the matrix in world coordinates.</returns>
+        protected static Vector3 CalculateMatrixCenter(MatrixInfo info)
+        {
+            // Calculate alignment offset
+            Vector2 alignmentOffset = CalculateLocalAlignmentOffset(
+                info.OriginAlignment,
+                info.Dimensions - info.NodeSize
+            );
+            alignmentOffset -= info.NodeHalfSize;
+
+            Vector2 centerPos2D = info.Dimensions / 2;
+            centerPos2D += alignmentOffset;
+
+            // Convert to 3D with proper swizzle
+            Vector3 centerPos3D = SwizzleVec2(centerPos2D, info.Swizzle);
+            return info.OriginWorldPosition + centerPos3D;
+        }
+
+        /// <summary>
         /// Calculates the world position and rotation of a node based on its key.
         /// </summary>
         protected static void CalculateNodeValues(
@@ -363,9 +395,8 @@ namespace Darklight.UnityExt.Matrix
                 localPosition2D += bondingOffset;
                 localPosition2D += CalculateLocalAlignmentOffset(
                     info.OriginAlignment,
-                    info.Dimensions
+                    info.Dimensions - info.NodeSize
                 ); // offset from the origin
-                localPosition2D += nodeHalfSize;
 
                 // Convert the 2D local position to 3D and apply matrix rotation
                 Vector3 localPosition = new Vector3(localPosition2D.x, 0, localPosition2D.y);
@@ -375,7 +406,8 @@ namespace Darklight.UnityExt.Matrix
                 Vector3 rotatedPosition = matrixRotation * localPosition;
 
                 // Final world position by adding rotated local position to MatrixPosition
-                position = info.Parent.position + rotatedPosition;
+                position =
+                    (info?.Parent != null ? info.Parent.position : Vector3.zero) + rotatedPosition;
 
                 // Apply the same rotation to each node
                 rotation = matrixRotation;
@@ -385,6 +417,33 @@ namespace Darklight.UnityExt.Matrix
         protected static Vector2 ClampVector2(Vector2 value, float min, float max)
         {
             return new Vector2(Mathf.Clamp(value.x, min, max), Mathf.Clamp(value.y, min, max));
+        }
+
+        protected virtual void Awake() => Preload();
+
+        protected virtual void OnValidate() => Refresh();
+
+        protected virtual void OnEnable() => Refresh();
+
+        protected virtual void OnDisable() { }
+
+        protected virtual void OnDestroy() { }
+
+        protected virtual void OnDrawGizmosSelected()
+        {
+            CustomGizmos.DrawWireRect(_info.Center, _info.Dimensions, _info.Rotation, Color.green);
+            Gizmos.DrawSphere(_info.Center, 0.1f);
+
+#if UNITY_EDITOR
+            // Debug visualization of orientation
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.forward * 0.5f);
+            Gizmos.color = Color.green;
+            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.up * 0.5f);
+            Gizmos.color = Color.red;
+
+            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.right * 0.5f);
+#endif
         }
 
         void OnStateChanged(State state)
