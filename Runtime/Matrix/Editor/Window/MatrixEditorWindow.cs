@@ -17,6 +17,7 @@ namespace Darklight.UnityExt.Matrix.Editor
         readonly Color _textColor = Color.black;
         readonly Color _defaultColor = Color.white * new Color(1, 1, 1, 0.5f);
         readonly Color _selectedColor = Color.yellow * new Color(1, 1, 1, 0.5f);
+        readonly Color _disabledColor = Color.black * new Color(1, 1, 1, 0.25f);
 
         SerializedObject _serializedMatrixObject;
         Matrix _matrix;
@@ -27,6 +28,7 @@ namespace Darklight.UnityExt.Matrix.Editor
         bool _showNodeKeys = false;
         bool _showNodeCoordinates = false;
         bool _showNodePositions = false;
+        bool _drawNodeButtons = true;
 
 
         Vector2 _partitionScrollPosition;
@@ -35,6 +37,7 @@ namespace Darklight.UnityExt.Matrix.Editor
         Dictionary<int, bool> _partitionFoldouts = new Dictionary<int, bool>();
 
         private MatrixPathfinder _pathfinder;
+        private bool _findPathWithActiveNodes = false;
         private Matrix.Node _pathStartNode;
         private Matrix.Node _pathEndNode;
         private List<Matrix.Node> _currentPath;
@@ -47,15 +50,18 @@ namespace Darklight.UnityExt.Matrix.Editor
             Quaternion rotation = node.Rotation;
             Vector3 normal = node.Normal;
 
-
             // << GET COLOR >>
             Color color = _defaultColor;
             if (_showPartitions)
             {
                 color = _matrix.Info.GenerateColorFromPartitionKey(node.Partition);
             }
+            else if (node.Enabled == false)
+                color = _disabledColor;
+
             if (node == _selectedNode)
                 color = _selectedColor;
+
 
 
             // << DRAW BACKGROUND >>
@@ -182,7 +188,11 @@ namespace Darklight.UnityExt.Matrix.Editor
             if (_matrix == null) return;
             if (_matrix.isActiveAndEnabled == false) return;
 
-            _matrix.SendVisitorToAllNodes(SceneGUINodeVisitor);
+            if (_drawNodeButtons)
+            {
+                _matrix.SendVisitorToAllNodes(SceneGUINodeVisitor);
+            }
+
 
             // Draw path if exists
             if (_currentPath != null && _currentPath.Count > 1)
@@ -275,9 +285,13 @@ namespace Darklight.UnityExt.Matrix.Editor
                 }
             }
 
+            // Draw Node Buttons
+            _drawNodeButtons = EditorGUILayout.Toggle("Draw Node Buttons", _drawNodeButtons);
+
             // Show Partitions
             EditorGUILayout.Space();
             _showPartitions = EditorGUILayout.Toggle("Show Partitions", _showPartitions);
+
 
 
         }
@@ -331,7 +345,7 @@ namespace Darklight.UnityExt.Matrix.Editor
                                 // Indent the content
                                 GUILayout.Space(20);
 
-                                var node = _matrix.Map.GetNode(nodeKey);
+                                var node = _matrix.Map.GetNodeByKey(nodeKey);
                                 if (node != null)
 
                                 {
@@ -361,6 +375,8 @@ namespace Darklight.UnityExt.Matrix.Editor
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
+                _findPathWithActiveNodes = EditorGUILayout.Toggle("Find Path With Active Nodes", _findPathWithActiveNodes);
+
                 // Start Node
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("Start Node:", _pathStartNode != null ? _pathStartNode.Coordinate.ToString() : "Not Set");
@@ -413,7 +429,8 @@ namespace Darklight.UnityExt.Matrix.Editor
             if (_pathfinder == null || _pathStartNode == null || _pathEndNode == null)
                 return;
 
-            _currentPath = _pathfinder.FindPath(_pathStartNode, _pathEndNode);
+            List<Matrix.Node> nodes = _findPathWithActiveNodes ? _matrix.Map.ActiveNodes : _matrix.Map.InactiveNodes;
+            _currentPath = _pathfinder.FindPath(nodes, _pathStartNode, _pathEndNode);
             
             if (_currentPath == null || _currentPath.Count == 0)
             {

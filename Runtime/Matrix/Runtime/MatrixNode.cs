@@ -18,6 +18,9 @@ namespace Darklight.UnityExt.Matrix
             MatrixInfo _matrixInfo;
 
             [SerializeField, ShowOnly]
+            bool _enabled = true;
+
+            [SerializeField, ShowOnly]
             Vector2Int _key = Vector2Int.zero;
 
             [SerializeField, ShowOnly]
@@ -42,12 +45,20 @@ namespace Darklight.UnityExt.Matrix
             public delegate bool VisitNodeEvent(Node node);
 
             public MatrixInfo MatrixInfo => _matrixInfo;
+            public bool Enabled
+            {
+                get => _enabled;
+                set => _enabled = value;
+            }
             public Vector2Int Key => _key;
             public Vector2Int Coordinate => _coordinate;
+            public Vector3Int Coordinate_Vec3 => SwizzleVec2Int(Coordinate, _matrixInfo.Swizzle);
             public Vector3 Position => _position;
             public Quaternion Rotation => _rotation;
             public Vector3 Normal => _normal;
+
             public Vector2 Dimensions => _dimensions;
+
             public int Partition => _partition;
 
             #region ---- < PUBLIC_PROPERTIES > ( Span ) ---------------------------------

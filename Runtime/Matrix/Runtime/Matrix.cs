@@ -82,8 +82,8 @@ namespace Darklight.UnityExt.Matrix
             });
 
         public State CurrentState => _currentState = _stateMachine.currentStateEnum;
-        public Node OriginNode => _map.GetNode(_info.OriginKey);
-        public Node TerminalNode => _map.GetNode(_info.TerminalKey);
+        public Node OriginNode => _map.GetNodeByKey(_info.OriginKey);
+        public Node TerminalNode => _map.GetNodeByKey(_info.TerminalKey);
 
         public virtual void Preload()
         {
@@ -108,7 +108,6 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
 
-            Debug.Log("Preloading matrix");
             Initialize(_info);
 
             // Determine if the grid was preloaded
@@ -117,7 +116,6 @@ namespace Darklight.UnityExt.Matrix
 
         public virtual void Initialize(MatrixInfo info)
         {
-            Debug.Log("Initializing matrix");
             _info = info;
             _info.Validate();
             _map = new NodeMap(_info);
@@ -126,7 +124,6 @@ namespace Darklight.UnityExt.Matrix
 
         public virtual void Refresh()
         {
-            Debug.Log("Refreshing matrix");
             _info.Validate();
             _map.Refresh();
             SendVisitorToAllNodes(UpdateNodeContextVisitor);
@@ -136,7 +133,7 @@ namespace Darklight.UnityExt.Matrix
         {
             if (visitor == null)
                 return;
-            _map.GetNode(key)?.Accept(visitor);
+            _map.GetNodeByKey(key)?.Accept(visitor);
         }
 
         public void SendVisitorToNodes(List<Vector2Int> keys, IVisitor<Node> visitor)
@@ -144,7 +141,7 @@ namespace Darklight.UnityExt.Matrix
             if (visitor == null)
                 return;
             foreach (Vector2Int key in keys)
-                _map.GetNode(key)?.Accept(visitor);
+                _map.GetNodeByKey(key)?.Accept(visitor);
         }
 
         public void SendVisitorToAllNodes(IVisitor<Node> visitor)
@@ -218,6 +215,16 @@ namespace Darklight.UnityExt.Matrix
                 default:
                     return new Vector3(value.x, 0, value.y); // Default to XZY
             }
+        }
+
+        public static Vector3Int SwizzleVec2Int(Vector2Int value, GridLayout.CellSwizzle swizzle)
+        {
+            Vector3 vec3 = SwizzleVec2(value, swizzle);
+            return new Vector3Int(
+                Mathf.RoundToInt(vec3.x),
+                Mathf.RoundToInt(vec3.y),
+                Mathf.RoundToInt(vec3.z)
+            );
         }
 
         protected static Quaternion CalculateSwizzleRotationOffset(GridLayout.CellSwizzle swizzle)
@@ -299,14 +306,10 @@ namespace Darklight.UnityExt.Matrix
             Vector2 centerPos2D = info.Dimensions / 2;
             centerPos2D += alignmentOffset;
 
-            // If the matrix has a grid, we need to offset the center position by half the node size
-            // This is because the grid is centered on the nodes, but the matrix is centered on the grid
             if (info.HasGrid)
             {
-                if (info.Bounds.x % 2 == 0)
-                    centerPos2D.x += info.NodeHalfSize.x;
-                if (info.Bounds.y % 2 == 0)
-                    centerPos2D.y += info.NodeHalfSize.y;
+                centerPos2D.x += info.NodeHalfSize.x;
+                centerPos2D.y -= info.NodeHalfSize.y;
             }
 
             // Convert to 3D with proper swizzle
@@ -334,6 +337,9 @@ namespace Darklight.UnityExt.Matrix
             if (info.Grid != null)
             {
                 position = info.Grid.CellToWorld(new Vector3Int(coordinate.x, coordinate.y, 0));
+                position.x += info.NodeHalfSize.x;
+                position.y -= info.NodeHalfSize.y;
+
                 rotation = info.Grid.transform.rotation;
                 return;
             }
@@ -379,6 +385,16 @@ namespace Darklight.UnityExt.Matrix
             }
         }
 
+        protected static Vector2Int ConvertKeyToCoordinate(Vector2Int key, MatrixInfo info)
+        {
+            return CalculateNodeCoordinate(key, info.OriginKey);
+        }
+
+        protected static Vector2Int ConvertCoordinateToKey(Vector2Int coordinate, MatrixInfo info)
+        {
+            return CalculateNodeKey(coordinate, info.OriginKey);
+        }
+
         protected static Vector2 ClampVector2(Vector2 value, float min, float max)
         {
             return new Vector2(Mathf.Clamp(value.x, min, max), Mathf.Clamp(value.y, min, max));
@@ -398,17 +414,6 @@ namespace Darklight.UnityExt.Matrix
         {
             CustomGizmos.DrawWireRect(_info.Center, _info.Dimensions, _info.Rotation, Color.green);
             Gizmos.DrawSphere(_info.Center, 0.1f);
-
-#if UNITY_EDITOR
-            // Debug visualization of orientation
-            Gizmos.color = Color.blue;
-            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.forward * 0.5f);
-            Gizmos.color = Color.green;
-            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.up * 0.5f);
-            Gizmos.color = Color.red;
-
-            Gizmos.DrawRay(_info.Center, _info.Rotation * Vector3.right * 0.5f);
-#endif
         }
 
         void OnStateChanged(State state)

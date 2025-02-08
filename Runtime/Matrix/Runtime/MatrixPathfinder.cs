@@ -13,13 +13,16 @@ namespace Darklight.UnityExt.Matrix
     {
         Matrix _matrix;
         AStarPathfinder _pathfinder;
-        Vector2Int[] _validNodes;
 
-        public List<Matrix.Node> FindPath(Matrix.Node startNode, Matrix.Node endNode)
+        public List<Matrix.Node> FindPath(
+            List<Matrix.Node> nodes,
+            Matrix.Node startNode,
+            Matrix.Node endNode
+        )
         {
             _matrix = GetComponent<Matrix>();
-            _validNodes = _matrix.Map.Nodes.Select(node => node.Key).ToArray();
-            _pathfinder = new AStarPathfinder(_validNodes);
+            List<Vector2Int> validKeys = nodes.Select(node => node.Key).ToList();
+            _pathfinder = new AStarPathfinder(validKeys);
 
             List<Vector2Int> path = _pathfinder.FindPath(startNode.Key, endNode.Key);
             return _matrix.Map.GetNodes(path);

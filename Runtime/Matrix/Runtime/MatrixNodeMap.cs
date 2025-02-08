@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Utility;
@@ -28,6 +29,8 @@ namespace Darklight.UnityExt.Matrix
             List<Node> _cachedNodes;
 
             public List<Node> Nodes => _cachedNodes;
+            public List<Node> ActiveNodes => _cachedNodes.Where(node => node.Enabled).ToList();
+            public List<Node> InactiveNodes => _cachedNodes.Where(node => !node.Enabled).ToList();
 
             public NodeMap(MatrixInfo info)
             {
@@ -106,10 +109,16 @@ namespace Darklight.UnityExt.Matrix
             }
             #endregion
 
-            public Node GetNode(Vector2Int key)
+            public Node GetNodeByKey(Vector2Int key)
             {
                 _nodeLookup.TryGetValue(key, out var node);
                 return node;
+            }
+
+            public Node GetNodeByCoordinate(Vector2Int coordinate)
+            {
+                Vector2Int key = ConvertCoordinateToKey(coordinate, _info);
+                return GetNodeByKey(key);
             }
 
             public List<Node> GetNodes(List<Vector2Int> keys)
@@ -129,7 +138,6 @@ namespace Darklight.UnityExt.Matrix
             {
                 return _spatialPartitions;
             }
-
 
             public void Refresh()
             {
