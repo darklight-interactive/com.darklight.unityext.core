@@ -13,11 +13,19 @@ namespace Darklight.UnityExt.Input
     /// </summary>
     public class MouseClickInputListener : UniversalInputController
     {
+        [SerializeField, Foldout("Values"), ShowOnly]
         private Vector2 _currentMouseScreenPosition;
+
+        [SerializeField, Foldout("Values"), ShowOnly]
         private Vector3 _currentMouseWorldPosition;
+
+        [SerializeField, Foldout("Values"), ShowOnly]
         private Vector2 _lastClickScreenPosition;
+
+        [SerializeField, Foldout("Values"), ShowOnly]
         private Vector3 _lastClickWorldPosition;
         private bool _hasHit;
+
         private RaycastHit _lastHit;
 
         [Foldout("Debug")]
@@ -31,6 +39,10 @@ namespace Darklight.UnityExt.Input
         [Foldout("Debug")]
         [SerializeField, ShowIf("_debug")]
         private bool _drawLastClickWorldPosition = true;
+
+        [Foldout("Debug")]
+        [SerializeField, ShowIf("_debug")]
+        private float _gizmoSphereRadius = 0.5f;
 
         [Foldout("Camera")]
         [SerializeField]
@@ -102,7 +114,6 @@ namespace Darklight.UnityExt.Input
                 return _lastHit.point;
             else
             {
-                Debug.LogError("Could not find hitpoint");
                 return ray.GetPoint(_maxRayDistance);
             }
         }
@@ -120,26 +131,14 @@ namespace Darklight.UnityExt.Input
             if (_drawCurrentMouseWorldPosition)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawSphere(CurrentMouseWorldPosition, 0.5f);
+                Gizmos.DrawSphere(CurrentMouseWorldPosition, _gizmoSphereRadius);
+                Gizmos.DrawLine(_camera.transform.position, CurrentMouseWorldPosition);
             }
 
             if (_drawLastClickWorldPosition)
             {
                 Gizmos.color = Color.red;
-                Gizmos.DrawSphere(LastClickWorldPosition, 0.5f);
-
-                // Draw the ray that created the last hit
-                Ray lastRay = _camera.ScreenPointToRay(_lastClickScreenPosition);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawRay(lastRay.origin, lastRay.direction * _maxRayDistance);
-            }
-
-            // If we hit something, draw a line from the camera to the hit point
-            if (_hasHit)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(_lastHit.point, 0.2f);
-                Gizmos.DrawLine(_camera.transform.position, _lastHit.point);
+                Gizmos.DrawSphere(LastClickWorldPosition, _gizmoSphereRadius);
             }
         }
     }

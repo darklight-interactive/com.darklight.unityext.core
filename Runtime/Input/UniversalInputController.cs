@@ -42,6 +42,9 @@ namespace Darklight.UnityExt.Input
         protected virtual void Awake()
         {
             EnableInputs();
+
+            if (Application.isPlaying && UniversalInputManager.Instance == null)
+                Debug.LogError("UniversalInputManager is not attached to the scene!");
         }
 
         #region < NONPUBLIC_METHODS > [[ ENABLE/DISABLE INPUTS ]] ================================================================

@@ -85,6 +85,12 @@ namespace Darklight.UnityExt.Matrix
 
             public void Refresh()
             {
+                if (_matrixInfo == null)
+                {
+                    Debug.LogError("MatrixInfo is null on Node: " + _key);
+                    return;
+                }
+
                 CalculateNodeValues(
                     _key,
                     _matrixInfo,

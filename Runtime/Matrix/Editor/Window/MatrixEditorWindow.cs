@@ -127,7 +127,15 @@ namespace Darklight.UnityExt.Matrix.Editor
 
             // Select target Matrix
             _matrix = (Matrix)EditorGUILayout.ObjectField("Matrix", _matrix, typeof(Matrix), true);
+
+            if (_matrix == null)
+            {
+                EditorGUILayout.HelpBox("Please assign a target Matrix object.", MessageType.Warning);
+                return;
+            }
+
             _serializedMatrixObject = new SerializedObject(_matrix);
+
 
             DrawNodeVisualizationToggles();
 

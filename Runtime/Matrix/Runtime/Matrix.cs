@@ -329,6 +329,15 @@ namespace Darklight.UnityExt.Matrix
             out int partition
         )
         {
+            if (info == null)
+            {
+                coordinate = Vector2Int.zero;
+                position = Vector3.zero;
+                rotation = Quaternion.identity;
+                partition = 0;
+                return;
+            }
+
             coordinate = CalculateNodeCoordinate(key, info.OriginKey);
 
             // Calculate the partition of the node
@@ -401,8 +410,6 @@ namespace Darklight.UnityExt.Matrix
         }
 
         protected virtual void Awake() => Preload();
-
-        protected virtual void OnValidate() => Refresh();
 
         protected virtual void OnEnable() => Refresh();
 

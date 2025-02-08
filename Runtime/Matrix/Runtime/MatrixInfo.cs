@@ -162,12 +162,12 @@ namespace Darklight.UnityExt.Matrix
                     _swizzle = _grid.cellSwizzle;
                 }
 
-                // << CLAMP BOUNDS >>
+                // << CLAMP VALUES >>
                 int clampedX = Mathf.Max(1, _bounds.x);
                 int clampedY = Mathf.Max(1, _bounds.y);
                 _bounds = new Vector2Int(clampedX, clampedY);
+                _partitionSize = Mathf.Max(_partitionSize, 3);
 
-                // << CLAMP NODE VALUES >>
                 _nodeSize = ClampVector2(_nodeSize, MIN_NODE_DIMENSION, MAX_NODE_DIMENSION);
 
                 _nodeSpacing = ClampVector2(_nodeSpacing, MIN_NODE_SPACING, MAX_NODE_SPACING);
