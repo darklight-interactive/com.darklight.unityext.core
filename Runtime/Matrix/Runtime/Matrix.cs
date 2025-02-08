@@ -196,50 +196,6 @@ namespace Darklight.UnityExt.Matrix
         }
 
         /// <summary>
-        /// Calculates alignment offset taking swizzle into account.
-        /// </summary>
-        protected static Vector2 CalculateWorldAlignmentOffset(
-            Alignment alignment,
-            Vector2 size,
-            GridLayout.CellSwizzle swizzle
-        )
-        {
-            // Get base alignment offset
-            Vector2 baseOffset = AlignmentOffsets.TryGetValue(alignment, out Vector2 offset)
-                ? offset
-                : Vector2.zero;
-
-            // Adjust offset based on swizzle
-            switch (swizzle)
-            {
-                case GridLayout.CellSwizzle.XYZ:
-                    // For XYZ, we need to flip the Y offset
-                    return new Vector2(baseOffset.x * size.x, -baseOffset.y * size.y);
-
-                case GridLayout.CellSwizzle.YXZ:
-                    // For YXZ, we swap X and Y and flip Y
-                    return new Vector2(baseOffset.y * size.y, -baseOffset.x * size.x);
-
-                case GridLayout.CellSwizzle.ZYX:
-                    // For ZYX, we flip both X and Y
-                    return new Vector2(-baseOffset.x * size.x, -baseOffset.y * size.y);
-
-                case GridLayout.CellSwizzle.YZX:
-                    // For YZX, we flip X
-                    return new Vector2(-baseOffset.x * size.x, baseOffset.y * size.y);
-
-                case GridLayout.CellSwizzle.ZXY:
-                    // For ZXY, we swap X and Y
-                    return new Vector2(baseOffset.y * size.y, baseOffset.x * size.x);
-
-                case GridLayout.CellSwizzle.XZY:
-                default:
-                    // Default XZY behavior (original)
-                    return new Vector2(baseOffset.x * size.x, baseOffset.y * size.y);
-            }
-        }
-
-        /// <summary>
         /// Converts a 2D alignment value to 3D based on the cell swizzle.
         /// </summary>
         protected static Vector3 SwizzleVec2(Vector2 value, GridLayout.CellSwizzle swizzle)
@@ -343,6 +299,16 @@ namespace Darklight.UnityExt.Matrix
             Vector2 centerPos2D = info.Dimensions / 2;
             centerPos2D += alignmentOffset;
 
+            // If the matrix has a grid, we need to offset the center position by half the node size
+            // This is because the grid is centered on the nodes, but the matrix is centered on the grid
+            if (info.HasGrid)
+            {
+                if (info.Bounds.x % 2 == 0)
+                    centerPos2D.x += info.NodeHalfSize.x;
+                if (info.Bounds.y % 2 == 0)
+                    centerPos2D.y += info.NodeHalfSize.y;
+            }
+
             // Convert to 3D with proper swizzle
             Vector3 centerPos3D = SwizzleVec2(centerPos2D, info.Swizzle);
             return info.OriginWorldPosition + centerPos3D;
@@ -375,7 +341,6 @@ namespace Darklight.UnityExt.Matrix
             {
                 // Calculate the node position offset in world space based on dimensions
                 Vector2 keyOffsetPos = key * info.NodeSize;
-                Vector2 nodeHalfSize = info.NodeSize * 0.5f;
 
                 // Calculate the spacing offset and clamp to avoid overlapping cells
                 Vector2 spacingOffsetPos = info.NodeSpacing + Vector2.one;

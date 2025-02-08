@@ -46,9 +46,6 @@ namespace Darklight.UnityExt.Matrix
 
             [HorizontalLine]
             [Space(10), Header("Node Values")]
-            [SerializeField]
-            private bool _centerNodes;
-
             [SerializeField, DisableIf("HasGrid"), AllowNesting]
             private GridLayout.CellSwizzle _swizzle = GridLayout.CellSwizzle.XZY;
 
@@ -106,13 +103,9 @@ namespace Darklight.UnityExt.Matrix
             public Vector2 OriginAlignmentLocalDimensionOffset =>
                 CalculateLocalAlignmentOffset(OriginAlignment, Dimensions);
 
-            public Vector2 OriginAlignmentWorldDimensionOffset =>
-                CalculateWorldAlignmentOffset(OriginAlignment, Dimensions, Swizzle);
-
             public Vector3 Center => CalculateMatrixCenter(this);
             public Quaternion Rotation => CalculateSwizzleRotationOffset(_swizzle);
 
-            public bool CenterNodes => _centerNodes;
             public Vector2 NodeSize => _nodeSize;
             public Vector2 NodeHalfSize => _nodeSize / 2;
             public Vector2 NodeSpacing => _nodeSpacing;
@@ -132,7 +125,6 @@ namespace Darklight.UnityExt.Matrix
                 _alignment = Matrix.Alignment.MiddleCenter;
                 _partitionSize = DEFAULT_MAP_KEY;
 
-                _centerNodes = true;
                 _nodeSize = new Vector2(DEFAULT_NODE_DIMENSION, DEFAULT_NODE_DIMENSION);
                 _nodeSpacing = new Vector2(DEFAULT_NODE_SPACING, DEFAULT_NODE_SPACING);
                 _nodeBonding = new Vector2(DEFAULT_NODE_BONDING, DEFAULT_NODE_BONDING);
@@ -150,7 +142,6 @@ namespace Darklight.UnityExt.Matrix
                     _nodeSize = grid.cellSize,
                     _nodeSpacing = grid.cellGap,
                     _nodeBonding = Vector2.zero,
-                    _centerNodes = false,
                     _alignment = Matrix.Alignment.BottomLeft,
                     _swizzle = grid.cellSwizzle
                 };

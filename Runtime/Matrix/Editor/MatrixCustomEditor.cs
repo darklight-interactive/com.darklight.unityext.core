@@ -146,16 +146,11 @@ namespace Darklight.UnityExt.Matrix.Editor
                 "Local Alignment Dimension Offset",
                 info.OriginAlignmentLocalDimensionOffset.ToString()
             );
-            EditorGUILayout.LabelField(
-                "World Alignment Dimension Offset",
-                info.OriginAlignmentWorldDimensionOffset.ToString()
-            );
 
             EditorGUILayout.LabelField("Partition Size", info.PartitionSize.ToString());
             EditorGUILayout.LabelField("Node Size", info.NodeSize.ToString());
             EditorGUILayout.LabelField("Node Spacing", info.NodeSpacing.ToString());
             EditorGUILayout.LabelField("Node Bonding", info.NodeBonding.ToString());
-            EditorGUILayout.LabelField("Center Nodes", info.CenterNodes.ToString());
 
             EditorGUILayout.LabelField("Swizzle", info.Swizzle.ToString());
 
