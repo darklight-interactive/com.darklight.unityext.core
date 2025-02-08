@@ -23,6 +23,7 @@ namespace Darklight.UnityExt.Matrix.Editor
         Matrix.Node _selectedNode;
         bool _selectedNodeIsExpanded = false;
         Vector2 _scrollPosition;
+        bool _showMatrixInfo = false;
         bool _showNodeKeys = false;
         bool _showNodeCoordinates = false;
         bool _showNodePositions = false;
@@ -128,15 +129,20 @@ namespace Darklight.UnityExt.Matrix.Editor
             {
                 _serializedMatrixObject.Update();
 
+                // Draw Matrix Info
+                    MatrixCustomEditor.DrawMatrixInfo(_matrix.Info, ref _showMatrixInfo);
+
+
+
                 // Check for pathfinder
                 _pathfinder = _matrix.GetComponent<MatrixPathfinder>();
+
                 if (_pathfinder != null)
                 {
                     DrawPathfindingControls();
                 }
 
                 // Draw Partition List
-                _showPartitions = EditorGUILayout.Toggle("Show Partitions", _showPartitions);
                 if (_showPartitions)
                 {
                     _partitionFoldoutToggle = EditorGUILayout.Foldout(_partitionFoldoutToggle, "Partitions", true);
@@ -268,7 +274,14 @@ namespace Darklight.UnityExt.Matrix.Editor
                     _showNodeCoordinates = false;
                 }
             }
+
+            // Show Partitions
+            EditorGUILayout.Space();
+            _showPartitions = EditorGUILayout.Toggle("Show Partitions", _showPartitions);
+
+
         }
+
 
         private void DrawPartitionList()
         {

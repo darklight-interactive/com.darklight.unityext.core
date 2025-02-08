@@ -130,6 +130,7 @@ namespace Darklight.UnityExt.Matrix
                 return _spatialPartitions;
             }
 
+
             public void Refresh()
             {
                 _info.Validate();

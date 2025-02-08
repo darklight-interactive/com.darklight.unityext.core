@@ -1,7 +1,11 @@
 #if UNITY_EDITOR
 
+using System.Collections;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Darklight.UnityExt.Matrix;
+using static Darklight.UnityExt.Matrix.Matrix;
 
 namespace Darklight.UnityExt.Matrix.Editor
 {
@@ -14,6 +18,8 @@ namespace Darklight.UnityExt.Matrix.Editor
         // Fields to store the last-known transform state
         private Vector3 _lastPosition;
         private Quaternion _lastRotation;
+
+        private bool _showMatrixInfo = false;
 
         private void OnEnable()
         {
@@ -110,6 +116,7 @@ namespace Darklight.UnityExt.Matrix.Editor
             EditorGUI.BeginChangeCheck();
 
             DrawButtons();
+            DrawMatrixInfo(_script.Info, ref _showMatrixInfo);
             base.OnInspectorGUI();
 
             if (EditorGUI.EndChangeCheck())
@@ -117,6 +124,35 @@ namespace Darklight.UnityExt.Matrix.Editor
                 _serializedObject.ApplyModifiedProperties();
                 _script.Refresh();
             }
+        }
+
+        public static void DrawMatrixInfo(MatrixInfo info, ref bool showMatrixInfo)
+        {
+            showMatrixInfo = EditorGUILayout.Foldout(showMatrixInfo, "Matrix Info");
+
+            if (!showMatrixInfo)
+                return;
+
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField("Center", info.Center.ToString());
+            EditorGUILayout.LabelField("Rotation", info.Rotation.ToString());
+
+            EditorGUILayout.LabelField("Bounds", info.Bounds.ToString());
+            EditorGUILayout.LabelField("Dimensions", info.Dimensions.ToString());
+            EditorGUILayout.LabelField("Origin Key", info.OriginKey.ToString());
+            EditorGUILayout.LabelField("Terminal Key", info.TerminalKey.ToString());
+            EditorGUILayout.LabelField("Alignment", info.OriginAlignment.ToString());
+
+            EditorGUILayout.LabelField("Partition Size", info.PartitionSize.ToString());
+            EditorGUILayout.LabelField("Node Size", info.NodeSize.ToString());
+            EditorGUILayout.LabelField("Node Spacing", info.NodeSpacing.ToString());
+            EditorGUILayout.LabelField("Node Bonding", info.NodeBonding.ToString());
+            EditorGUILayout.LabelField("Center Nodes", info.CenterNodes.ToString());
+
+            EditorGUILayout.LabelField("Swizzle", info.Swizzle.ToString());
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
         }
     }
 }
