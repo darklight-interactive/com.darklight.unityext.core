@@ -22,12 +22,9 @@ namespace Darklight.UnityExt.Matrix
             BottomRight
         }
 
-        [Serializable]
         public struct Info
         {
             #region < PRIVATE_CONST > ================================================================
-            const float MIN_NODE_DIMENSION = 0.125f;
-            const float MAX_NODE_DIMENSION = 10f;
             const float MIN_NODE_SPACING = -0.5f;
             const float MAX_NODE_SPACING = 0.5f;
             const float MIN_NODE_BONDING = -1f;
@@ -40,69 +37,25 @@ namespace Darklight.UnityExt.Matrix
             #endregion
 
             Matrix _matrix;
-            Transform _parent;
-            Grid _grid;
-
-            [SerializeField]
-            Vector2Int _bounds;
-
-            [SerializeField]
-            Alignment _alignment;
-
-            [SerializeField, Range(5, 100)]
-            int _partitionSize;
-
-            [HorizontalLine]
-            [SerializeField, DisableIf("HasGrid"), AllowNesting]
-            private GridLayout.CellSwizzle _swizzle;
-
-            [SerializeField, DisableIf("HasGrid"), AllowNesting]
-            private Vector2 _nodeSize;
-
-            [SerializeField, DisableIf("HasGrid"), AllowNesting]
-            private Vector2 _nodeSpacing;
-
-            [SerializeField, HideIf("HasGrid")]
-            private Vector2 _nodeBonding;
 
             #region < PUBLIC_PROPERTIES > ================================================================
-            public Grid Grid
-            {
-                get => _grid;
-                set
-                {
-                    _grid = value;
-                    if (_grid != null)
-                    {
-                        _parent = value.transform;
-                        _swizzle = value.cellSwizzle;
-                    }
-                }
-            }
 
-            public Transform Parent
-            {
-                get => _parent;
-                set => _parent = value;
-            }
+            public Transform Parent { get; set; }
+            public Grid Grid { get; set; }
+            public Alignment OriginAlignment { get; set; }
+            public Vector2Int Bounds { get; set; }
+            public Vector2 NodeSize { get; set; }
+            public Vector2 NodeSpacing { get; set; }
+            public Vector2 NodeBonding { get; set; }
+            public GridLayout.CellSwizzle Swizzle { get; set; }
 
-            public Vector3 OriginWorldPosition => _parent != null ? _parent.position : Vector3.zero;
-            public Alignment OriginAlignment
-            {
-                get => _alignment;
-                set => _alignment = value;
-            }
-            public int PartitionSize => _partitionSize;
-            public Vector2Int Bounds
-            {
-                get => _bounds;
-                set => _bounds = value;
-            }
-            public int ColumnCount => _bounds.x;
-            public int RowCount => _bounds.y;
-            public int Capacity => _bounds.x * _bounds.y;
+            public int PartitionSize { get; set; }
+
+            public int ColumnCount => Bounds.x;
+            public int RowCount => Bounds.y;
+            public int Capacity => Bounds.x * Bounds.y;
             public Vector2 Dimensions => CalculateMatrixDimensions(this);
-            public Vector2Int TerminalKey => new Vector2Int(_bounds.x - 1, _bounds.y - 1);
+            public Vector2Int TerminalKey => new Vector2Int(Bounds.x - 1, Bounds.y - 1);
             public Vector2Int OriginKey
             {
                 get
@@ -114,73 +67,64 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
 
-            public Vector3 Center => CalculateMatrixCenter(this);
-            public Quaternion Rotation => CalculateMatrixRotation(_swizzle);
+            public Vector3 OriginPosition => Parent != null ? Parent.position : Vector3.zero;
+            public Vector3 CenterPosition => CalculateMatrixCenter(this);
+            public Quaternion Rotation => CalculateMatrixRotation(Swizzle);
             public Vector3 RightDirection => Rotation * Vector3.right;
             public Vector3 UpDirection => Rotation * Vector3.up;
             public Vector3 ForwardDirection => Rotation * Vector3.forward;
-
-            public Vector2 NodeSize => _nodeSize;
-            public Vector2 NodeHalfSize => _nodeSize / 2;
-            public float NodeAvgSize => (_nodeSize.x + _nodeSize.y) / 2;
-
-            public Vector2 NodeSpacing => _nodeSpacing;
-            public Vector2 NodeBonding => _nodeBonding;
-
-            public GridLayout.CellSwizzle Swizzle => _swizzle;
-
-            public bool HasParent => _parent != null;
-            public bool HasGrid => _grid != null;
+            public Vector2 NodeHalfSize => NodeSize / 2;
+            public float NodeAvgSize => (NodeSize.x + NodeSize.y) / 2;
             public bool IsValid => _matrix != null;
             #endregion
 
             public Info(Matrix matrix)
             {
                 _matrix = matrix;
-                _parent = matrix.transform;
-                _grid = matrix.GetGrid();
+                Parent = matrix.transform;
+                Grid = matrix.GetGrid();
+                OriginAlignment = Alignment.BottomLeft;
+                PartitionSize = DEFAULT_PARTITION_SIZE;
+                Bounds = Vector2Int.one * 5;
+                NodeSize = new Vector2(DEFAULT_NODE_SIZE, DEFAULT_NODE_SIZE);
+                NodeSpacing = new Vector2(DEFAULT_NODE_SPACING, DEFAULT_NODE_SPACING);
+                NodeBonding = new Vector2(DEFAULT_NODE_BONDING, DEFAULT_NODE_BONDING);
+                Swizzle = GridLayout.CellSwizzle.XYZ;
+            }
 
-                _bounds = Vector2Int.one * 5;
-
-                _alignment = Matrix.Alignment.MiddleCenter;
-                _partitionSize = DEFAULT_PARTITION_SIZE;
-                _swizzle = GridLayout.CellSwizzle.XYZ;
-
-                _nodeSize = new Vector2(DEFAULT_NODE_SIZE, DEFAULT_NODE_SIZE);
-                _nodeSpacing = new Vector2(DEFAULT_NODE_SPACING, DEFAULT_NODE_SPACING);
-                _nodeBonding = new Vector2(DEFAULT_NODE_BONDING, DEFAULT_NODE_BONDING);
-
-                Validate();
+            public Info(Info info)
+            {
+                _matrix = info._matrix;
+                Parent = info.Parent;
+                Grid = info.Grid;
+                OriginAlignment = info.OriginAlignment;
+                Bounds = info.Bounds;
+                NodeSize = info.NodeSize;
+                NodeSpacing = info.NodeSpacing;
+                NodeBonding = info.NodeBonding;
+                Swizzle = info.Swizzle;
+                PartitionSize = info.PartitionSize;
             }
 
             public void Validate()
             {
-                // << CALCULATE TRANSFORM VALUES >>
-                if (_grid != null)
+                if (Grid != null)
                 {
-                    _parent = _grid.transform;
-                    _swizzle = _grid.cellSwizzle;
-                    _nodeSize = _grid.cellSize;
-                    _nodeSpacing = _grid.cellGap;
+                    Parent = Grid.transform;
+                    OriginAlignment = Alignment.TopLeft;
+                    NodeSize = Grid.cellSize;
+                    NodeSpacing = Grid.cellGap;
+                    Swizzle = Grid.cellSwizzle;
                 }
 
                 // << CLAMP VALUES >>
-                int clampedX = Mathf.Max(1, _bounds.x);
-                int clampedY = Mathf.Max(1, _bounds.y);
-                _bounds = new Vector2Int(clampedX, clampedY);
-                _partitionSize = Mathf.Max(_partitionSize, 3);
+                int clampedX = Mathf.Max(1, Bounds.x);
+                int clampedY = Mathf.Max(1, Bounds.y);
+                Bounds = new Vector2Int(clampedX, clampedY);
+                PartitionSize = Mathf.Max(PartitionSize, 5);
 
-                _nodeSize = Utility.ClampVector2(_nodeSize, MIN_NODE_DIMENSION, MAX_NODE_DIMENSION);
-                _nodeSpacing = Utility.ClampVector2(
-                    _nodeSpacing,
-                    MIN_NODE_SPACING,
-                    MAX_NODE_SPACING
-                );
-                _nodeBonding = Utility.ClampVector2(
-                    _nodeBonding,
-                    MIN_NODE_BONDING,
-                    MAX_NODE_BONDING
-                );
+                NodeSpacing = Utility.ClampVector2(NodeSpacing, MIN_NODE_SPACING, MAX_NODE_SPACING);
+                NodeBonding = Utility.ClampVector2(NodeBonding, MIN_NODE_BONDING, MAX_NODE_BONDING);
             }
 
             #region < PRIVATE_METHODS > [[ Calculations ]] ==================================================================================
@@ -200,7 +144,7 @@ namespace Darklight.UnityExt.Matrix
                 Vector2 centerPos2D = info.Dimensions / 2;
                 centerPos2D += alignmentOffset;
 
-                if (info.HasGrid)
+                if (info.Grid != null)
                 {
                     centerPos2D.x += info.NodeHalfSize.x;
                     centerPos2D.y -= info.NodeHalfSize.y;
@@ -208,7 +152,7 @@ namespace Darklight.UnityExt.Matrix
 
                 // Convert to 3D with proper swizzle
                 Vector3 centerPos3D = Utility.SwizzleVec2(centerPos2D, info.Swizzle);
-                return info.OriginWorldPosition + centerPos3D;
+                return info.OriginPosition + centerPos3D;
             }
 
             /// <summary>
@@ -274,6 +218,19 @@ namespace Darklight.UnityExt.Matrix
                 return Quaternion.LookRotation(forward, up);
             }
             #endregion
+
+#if UNITY_EDITOR
+            public void OnGUI_DrawValues()
+            {
+                EditorGUILayout.LabelField("Bounds", Bounds.ToString());
+                EditorGUILayout.LabelField("Origin Alignment", OriginAlignment.ToString());
+                EditorGUILayout.LabelField("Node Size", NodeSize.ToString());
+                EditorGUILayout.LabelField("Node Spacing", NodeSpacing.ToString());
+                EditorGUILayout.LabelField("Node Bonding", NodeBonding.ToString());
+                EditorGUILayout.LabelField("Swizzle", Swizzle.ToString());
+                EditorGUILayout.LabelField("Partition Size", PartitionSize.ToString());
+            }
+#endif
         }
     }
 }

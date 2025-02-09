@@ -15,57 +15,54 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public struct Node : IVisitable<Node>
+        public class Node : IVisitable<Node>
         {
             Matrix _matrix;
             Vector2Int _key;
-            bool _isValid;
-            bool _isEnabled;
 
             public Vector2Int Key => _key;
-            public Vector2Int Coordinate => ConvertKeyToCoordinate(_matrix.GetInfo(), Key);
+            public Vector2Int Coordinate =>
+                IsValid ? ConvertKeyToCoordinate(_matrix._info, Key) : Vector2Int.zero;
             public Vector3Int Coordinate_Vec3 =>
-                Utility.SwizzleVec2Int(Coordinate, _matrix.GetInfo().Swizzle);
-            public Vector3 Center => CalculatePosition(_matrix.GetInfo(), Key);
-            public Vector3 NormalDir => _matrix._info.UpDirection;
-            public Vector2 Size => _matrix._info.NodeSize;
-            public float AvgSize => _matrix._info.NodeAvgSize;
-            public int PartitionKey => CalculatePartitionKey(_matrix.GetInfo(), Key);
-            public bool IsValid => _isValid;
-            public bool IsEnabled
+                IsValid
+                    ? Utility.SwizzleVec2Int(Coordinate, _matrix._info.Swizzle)
+                    : Vector3Int.zero;
+            public Vector3 Center => IsValid ? CalculatePosition(_matrix._info, Key) : Vector3.zero;
+            public Vector3 NormalDir => IsValid ? _matrix._info.UpDirection : Vector3.up;
+            public Vector2 Size => IsValid ? _matrix._info.NodeSize : Vector2.zero;
+            public float AvgSize => IsValid ? _matrix._info.NodeAvgSize : 0f;
+            public int PartitionKey => IsValid ? CalculatePartitionKey(_matrix._info, Key) : -1;
+            public bool IsValid
             {
-                get => _isEnabled;
-                set => _isEnabled = value;
+                get => _matrix != null && _key.x != -1 && _key.y != -1;
             }
-            public Color DebugColor => CustomGUIColors.white;
+            public bool IsEnabled { get; set; } = false;
+            public bool IsSelected { get; set; } = false;
+            public Color DebugColor
+            {
+                get
+                {
+                    if (!IsValid)
+                        return CustomGUIColors.black.WithAlpha(0.35f);
+                    if (IsSelected)
+                        return CustomGUIColors.selected;
+                    if (!IsEnabled)
+                        return CustomGUIColors.disabled;
+                    return Color.white;
+                }
+            }
 
             // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
             public Node(Matrix matrix, Vector2Int key)
             {
                 _matrix = matrix;
                 _key = key;
-                _isValid = true;
-                _isEnabled = true;
-
-                if (_matrix == null || key.x == -1 || key.y == -1)
-                {
-                    _isValid = false;
-                    _isEnabled = false;
-                }
             }
 
             // (( INTERFACE )) : IVisitable -------- ))
             public void AcceptVisitor(IVisitor<Node> visitor)
             {
                 visitor.Visit(this);
-            }
-
-            public void Reset()
-            {
-                _matrix = null;
-                _key = new Vector2Int(-1, -1);
-                _isValid = false;
-                _isEnabled = false;
             }
 
             public bool IsEqual(Node other)
@@ -110,8 +107,8 @@ namespace Darklight.UnityExt.Matrix
                 {
                     ConvertKeyToCoordinate(info, key, out Vector2Int coordinate);
                     position = info.Grid.CellToWorld(new Vector3Int(coordinate.x, coordinate.y, 0));
-                    position.x += info.NodeHalfSize.x;
-                    position.y -= info.NodeHalfSize.y;
+                    Vector2 offset = new Vector2(info.NodeHalfSize.x, -info.NodeHalfSize.y);
+                    position += Utility.SwizzleVec2(offset, info.Swizzle);
                 }
                 else
                 {
@@ -254,6 +251,7 @@ namespace Darklight.UnityExt.Matrix
             {
                 public enum LabelContent
                 {
+                    NONE,
                     KEY,
                     COORDINATE,
                     POSITION,
@@ -261,30 +259,106 @@ namespace Darklight.UnityExt.Matrix
                     PARTITION_KEY
                 }
 
-                public static void OnInspectorGUI(Node node)
+                static bool _isExpanded = false;
+
+                public static void OnInspectorGUI(Node node, string header = "Node Info")
                 {
-                    EditorGUILayout.LabelField("Key", node.Key.ToString());
-                    EditorGUILayout.LabelField("Coordinate", node.Coordinate.ToString());
-                    EditorGUILayout.LabelField("Position", node.Center.ToString());
-                    EditorGUILayout.LabelField("Dimensions", node.Size.ToString());
+                    if (node == null)
+                        return;
+
+                    _isExpanded = CustomInspectorGUI.DrawFoldoutPropertyGroup(
+                        header,
+                        _isExpanded,
+                        () =>
+                        {
+                            using (new EditorGUI.DisabledGroupScope(true))
+                            {
+                                EditorGUILayout.LabelField("Key", node.Key.ToString());
+                                EditorGUILayout.LabelField(
+                                    "Coordinate",
+                                    node.Coordinate.ToString()
+                                );
+                                EditorGUILayout.LabelField("Position", node.Center.ToString());
+                                EditorGUILayout.LabelField("Dimensions", node.Size.ToString());
+                                EditorGUILayout.LabelField(
+                                    "Partition Key",
+                                    node.PartitionKey.ToString()
+                                );
+                                EditorGUILayout.LabelField("IsValid", node.IsValid.ToString());
+                                EditorGUILayout.LabelField("IsEnabled", node.IsEnabled.ToString());
+                            }
+                        }
+                    );
                 }
 
-                public static void OnSceneGUI(Node node)
+                public static void OnSceneGUI(Node node, Action<Node> onClick)
                 {
+                    if (node == null || !node.IsValid)
+                        return;
+
                     DrawNodeLabel(node);
 
+                    if (Preferences.NodePrefs.DrawDimensions)
+                    {
+                        DrawNodeDimensions(node);
+                    }
+
                     if (Preferences.NodePrefs.DrawButtons)
-                        DrawNodeButton(
-                            node,
-                            () =>
-                            {
-                                Debug.Log($"Clicked Button {node.Key}");
-                            }
+                        DrawNodeButton(node, () => onClick?.Invoke(node));
+                }
+
+                public static void Focus(Node node)
+                {
+                    if (SceneView.lastActiveSceneView != null)
+                    {
+                        SceneView.lastActiveSceneView.LookAt(
+                            node.Center,
+                            SceneView.lastActiveSceneView.rotation,
+                            node.AvgSize
                         );
+                    }
+                }
+
+                static void DrawNodeDimensions(Node node)
+                {
+                    if (node == null || !node.IsValid || node._matrix == null)
+                        return;
+
+                    Vector3 center = node.Center;
+                    Vector2 size = node.Size;
+                    Vector3 normalDir = node.NormalDir;
+
+                    if (size == Vector2.zero)
+                        return;
+
+                    // Draw wireframe rectangle using CustomGizmos
+                    CustomGizmos.DrawWireRect(center, size, normalDir, node.DebugColor);
+                }
+
+                static void DrawNodeButton(Node node, Action onClick)
+                {
+                    if (node == null || !node.IsValid)
+                        return;
+
+                    CustomGizmos.DrawButtonHandle(
+                        node.Center,
+                        node.AvgSize / 2,
+                        node.NormalDir,
+                        node.DebugColor,
+                        onClick,
+                        Handles.CubeHandleCap
+                    );
                 }
 
                 static void DrawNodeLabel(Node node)
                 {
+                    if (
+                        node == null
+                        || !node.IsValid
+                        || Preferences.NodePrefs.labelContent == LabelContent.NONE
+                    )
+                        return;
+
                     string label = "";
                     GUIStyle labelStyle = new GUIStyle(EditorStyles.label)
                     {
@@ -313,20 +387,7 @@ namespace Darklight.UnityExt.Matrix
                             break;
                     }
 
-                    Vector3 pivot = CalculatePivot(node, Alignment.TopCenter, 0.25f);
-                    Handles.Label(pivot, label, labelStyle);
-                }
-
-                static void DrawNodeButton(Node node, Action onClick)
-                {
-                    CustomGizmos.DrawButtonHandle(
-                        node.Center,
-                        node.AvgSize / 2,
-                        node.NormalDir,
-                        node.DebugColor,
-                        onClick,
-                        Handles.CubeHandleCap
-                    );
+                    Handles.Label(node.Center, label, labelStyle);
                 }
             }
 #endif

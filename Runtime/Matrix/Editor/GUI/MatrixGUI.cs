@@ -23,17 +23,29 @@ namespace Darklight.UnityExt.Matrix
                 fontSize = 10,
             };
 
+            public enum NodeFilter
+            {
+                NONE, // Draw all nodes
+                SELECTED, // Draw only selected node
+                ENABLED, // Draw only enabled nodes
+                DISABLED // Draw only disabled nodes
+            }
+
             public static void ResetToDefaults()
             {
                 Preferences.ResetToDefaults();
             }
 
-            public static void DrawGUI(Matrix matrix)
+            public static void DrawGUI(Matrix matrix, ref Node selectedNode)
             {
-                Matrix.Info info = matrix.GetInfo();
-                Matrix.Map map = matrix.GetMap();
-
                 CustomInspectorGUI.DrawButton("Reset to Defaults", ResetToDefaults);
+
+                CustomInspectorGUI.DrawHorizontalLine(Color.grey, 5);
+
+                OnGUI_DrawSelectedNode(ref selectedNode);
+
+                CustomInspectorGUI.DrawHorizontalLine(Color.grey, 5);
+                CustomInspectorGUI.DrawHeader("Matrix Properties");
 
                 // << MATRIX PROPERTIES >>
                 Preferences.GroupPrefs.ShowMatrixProperties =
@@ -42,14 +54,33 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowMatrixProperties,
                         () =>
                         {
-                            EditorGUILayout.LabelField("Bounds", info.Bounds.ToString());
-                            EditorGUILayout.LabelField("Dimensions", info.Dimensions.ToString());
-                            EditorGUILayout.LabelField("Swizzle", info.Swizzle.ToString());
-                            EditorGUILayout.LabelField("Origin Key", info.OriginKey.ToString());
-                            EditorGUILayout.LabelField("Terminal Key", info.TerminalKey.ToString());
+                            matrix._info.Bounds = EditorGUILayout.Vector2IntField(
+                                "Bounds",
+                                matrix._info.Bounds
+                            );
+
+                            // ( SWIZZLE PROPERTY ) - Disabled if Grid is not set
+                            EditorGUI.BeginDisabledGroup(matrix._info.Grid != null);
+                            matrix._info.Swizzle = (GridLayout.CellSwizzle)
+                                EditorGUILayout.EnumPopup("Swizzle", matrix._info.Swizzle);
+                            EditorGUI.EndDisabledGroup();
+
+                            EditorGUILayout.LabelField(
+                                "Dimensions",
+                                matrix._info.Dimensions.ToString()
+                            );
+                            EditorGUILayout.LabelField(
+                                "Origin Key",
+                                matrix._info.OriginKey.ToString()
+                            );
+
+                            EditorGUILayout.LabelField(
+                                "Terminal Key",
+                                matrix._info.TerminalKey.ToString()
+                            );
                             EditorGUILayout.LabelField(
                                 "Origin Alignment",
-                                info.OriginAlignment.ToString()
+                                matrix._info.OriginAlignment.ToString()
                             );
                         }
                     );
@@ -61,18 +92,31 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowNodeProperties,
                         () =>
                         {
-                            EditorGUILayout.LabelField("Node Size", info.NodeSize.ToString());
-
-                            EditorGUILayout.LabelField("Node Spacing", info.NodeSpacing.ToString());
-                            EditorGUILayout.LabelField("Node Bonding", info.NodeBonding.ToString());
-                            EditorGUILayout.LabelField("Total Nodes", map.NodeCount.ToString());
                             EditorGUILayout.LabelField(
-                                "Enabled Nodes",
-                                map.GetEnabledNodes().Count.ToString()
+                                "Node Size",
+                                matrix._info.NodeSize.ToString()
                             );
                             EditorGUILayout.LabelField(
+                                "Node Spacing",
+                                matrix._info.NodeSpacing.ToString()
+                            );
+                            EditorGUILayout.LabelField(
+                                "Node Bonding",
+                                matrix._info.NodeBonding.ToString()
+                            );
+                            EditorGUILayout.LabelField(
+                                "Total Nodes",
+                                matrix._map.NodeCount.ToString()
+                            );
+
+                            EditorGUILayout.LabelField(
+                                "Enabled Nodes",
+                                matrix._map.GetEnabledNodes().Count.ToString()
+                            );
+
+                            EditorGUILayout.LabelField(
                                 "Disabled Nodes",
-                                map.GetDisabledNodes().Count.ToString()
+                                matrix._map.GetDisabledNodes().Count.ToString()
                             );
                         }
                     );
@@ -84,23 +128,33 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowPartitionProperties,
                         () =>
                         {
-                            EditorGUILayout.LabelField(
+                            matrix._info.PartitionSize = EditorGUILayout.IntField(
                                 "Partition Size",
-                                info.PartitionSize.ToString()
+                                matrix._info.PartitionSize
+                            );
+                            EditorGUILayout.LabelField(
+                                "Total Partitions",
+                                matrix._map.PartitionCount.ToString()
                             );
 
                             EditorGUILayout.LabelField(
-                                "Total Partitions",
-                                map.PartitionCount.ToString()
+                                "Origin Key",
+                                matrix._info.OriginKey.ToString()
                             );
-                            EditorGUILayout.LabelField("Origin Key", info.OriginKey.ToString());
-                            EditorGUILayout.LabelField("Terminal Key", info.TerminalKey.ToString());
+                            EditorGUILayout.LabelField(
+                                "Terminal Key",
+                                matrix._info.TerminalKey.ToString()
+                            );
+
                             EditorGUILayout.LabelField(
                                 "Alignment",
-                                info.OriginAlignment.ToString()
+                                matrix._info.OriginAlignment.ToString()
                             );
                         }
                     );
+
+                CustomInspectorGUI.DrawHorizontalLine(Color.grey, 5);
+                CustomInspectorGUI.DrawHeader("Gizmos");
 
                 // << MATRIX GIZMOS >>
                 Preferences.GroupPrefs.DrawMatrixGizmos =
@@ -160,6 +214,10 @@ namespace Darklight.UnityExt.Matrix
                     Preferences.GroupPrefs.DrawNodeGizmos,
                     () =>
                     {
+                        // Add filter dropdown
+                        Preferences.NodePrefs.Filter = (NodeFilter)
+                            EditorGUILayout.EnumPopup("Node Filter", Preferences.NodePrefs.Filter);
+
                         Preferences.NodePrefs.labelContent = (Node.GUI.LabelContent)
                             EditorGUILayout.EnumPopup(
                                 "Label Content",
@@ -171,18 +229,95 @@ namespace Darklight.UnityExt.Matrix
                             Preferences.NodePrefs.DrawButtons,
                             "Draw buttons on nodes"
                         );
+
+                        // Add new toggle for dimensions
+                        Preferences.NodePrefs.DrawDimensions = CustomInspectorGUI.DrawToggleLeft(
+                            "Draw Node Dimensions",
+                            Preferences.NodePrefs.DrawDimensions,
+                            "Draw wireframe showing node dimensions"
+                        );
                     }
                 );
 
+                // << PARTITION GIZMOS >>
+                Preferences.GroupPrefs.DrawPartitionGizmos =
+                    CustomInspectorGUI.DrawTogglePropertyGroup(
+                        "Draw Partition Gizmos",
+                        Preferences.GroupPrefs.DrawPartitionGizmos,
+                        () =>
+                        {
+                            var results = CustomInspectorGUI.DrawToggleGroup(
+                                new Dictionary<string, (bool, string)>
+                                {
+                                    {
+                                        "Draw Partition Bounds",
+                                        (
+                                            Preferences.PartitionPrefs.DrawBounds,
+                                            "Display the bounding box of each partition"
+                                        )
+                                    },
+                                    {
+                                        "Draw Partition Centers",
+                                        (
+                                            Preferences.PartitionPrefs.DrawCenters,
+                                            "Display the center point of each partition"
+                                        )
+                                    },
+                                    {
+                                        "Draw Partition Labels",
+                                        (
+                                            Preferences.PartitionPrefs.DrawLabels,
+                                            "Display partition key labels"
+                                        )
+                                    }
+                                }
+                            );
+
+                            Preferences.PartitionPrefs.DrawBounds = results[
+                                "Draw Partition Bounds"
+                            ];
+                            Preferences.PartitionPrefs.DrawCenters = results[
+                                "Draw Partition Centers"
+                            ];
+                            Preferences.PartitionPrefs.DrawLabels = results[
+                                "Draw Partition Labels"
+                            ];
+                        }
+                    );
+
                 EditorGUILayout.Space();
+            }
+
+            static void OnGUI_DrawSelectedNode(ref Node selectedNode)
+            {
+                CustomInspectorGUI.DrawHeader("Selected Node");
+                if (selectedNode == null || !selectedNode.IsValid)
+                {
+                    EditorGUILayout.HelpBox("No node selected", MessageType.Info);
+                    return;
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Focus"))
+                        Node.GUI.Focus(selectedNode);
+
+                    if (GUILayout.Button("Clear"))
+                    {
+                        selectedNode.IsSelected = false;
+                        selectedNode = null;
+                    }
+                }
+
+                Node.GUI.OnInspectorGUI(selectedNode, "Selected Node Info");
             }
 
             /// <summary>
             /// Draws the matrix visualization in the scene view based on toggle states
             /// </summary>
             /// <param name="matrix">The matrix to visualize</param>
-            /// <param name="onNodeSelected">Callback when a node is selected</param>
-            public static void DrawSceneGUI(Matrix matrix, Action<Matrix.Node> onNodeSelected)
+            /// <param name="onClick">Callback when a node is selected</param>
+            public static void DrawSceneGUI(Matrix matrix, Action<Matrix.Node> onClick)
             {
                 if (!matrix)
                     return;
@@ -206,30 +341,65 @@ namespace Darklight.UnityExt.Matrix
                         OnSceneGUI_DrawMatrixDirectionVectors(matrix);
                 }
 
-                // Draw Matrix Nodes
+                // Draw Matrix Nodes with filter
                 if (Preferences.GroupPrefs.DrawNodeGizmos)
                 {
                     matrix.SendVisitorToAllNodes(
                         new Node.Visitor(node =>
                         {
-                            Node.GUI.OnSceneGUI(node);
+                            bool shouldDraw = false;
+
+                            switch (Preferences.NodePrefs.Filter)
+                            {
+                                case NodeFilter.NONE:
+                                    shouldDraw = false;
+                                    break;
+                                case NodeFilter.SELECTED:
+                                    shouldDraw = node.IsSelected;
+                                    break;
+                                case NodeFilter.ENABLED:
+                                    shouldDraw = node.IsEnabled;
+
+                                    break;
+                                case NodeFilter.DISABLED:
+                                    shouldDraw = !node.IsEnabled;
+                                    break;
+                            }
+
+                            if (shouldDraw)
+                            {
+                                Node.GUI.OnSceneGUI(node, onClick);
+                            }
                             return true;
                         })
                     );
+                }
+
+                // Draw Matrix Partitions
+                if (Preferences.GroupPrefs.DrawPartitionGizmos)
+                {
+                    var partitions = matrix.GetMap().GetAllPartitions();
+                    foreach (var partition in partitions)
+                    {
+                        Partition.GUI.DrawSceneGUI(matrix, partition);
+                    }
                 }
             }
 
             static void OnSceneGUI_DrawMatrixBounds(Matrix matrix)
             {
                 Handles.DrawWireCube(
-                    matrix.GetInfo().Center,
-                    Matrix.Utility.SwizzleVec2(matrix.GetInfo().Bounds, matrix.GetInfo().Swizzle)
+                    matrix.GetInfo().CenterPosition,
+                    Matrix.Utility.SwizzleVec2(
+                        matrix.GetInfo().Dimensions,
+                        matrix.GetInfo().Swizzle
+                    )
                 );
             }
 
             static void OnSceneGUI_DrawMatrixOrigin(Matrix matrix)
             {
-                Vector3 position = matrix.GetInfo().Center;
+                Vector3 position = matrix.GetInfo().CenterPosition;
 
                 // Draw Center Label
                 Handles.color = Color.white;
@@ -238,7 +408,7 @@ namespace Darklight.UnityExt.Matrix
 
             static void OnSceneGUI_DrawMatrixDirectionVectors(Matrix matrix)
             {
-                Vector3 position = matrix.GetInfo().Center;
+                Vector3 position = matrix.GetInfo().CenterPosition;
                 float size = 1f;
                 Color xAxisColor = CustomGUIColors.xAxis;
                 Color yAxisColor = CustomGUIColors.yAxis;
@@ -280,7 +450,7 @@ namespace Darklight.UnityExt.Matrix
             {
                 float size = 1f;
 
-                Vector3 position = matrix.GetInfo().Center;
+                Vector3 position = matrix.GetInfo().CenterPosition;
                 Quaternion rotation = matrix.GetInfo().Rotation;
                 Vector3 right = matrix.GetInfo().RightDirection;
 
@@ -311,6 +481,7 @@ namespace Darklight.UnityExt.Matrix
             private static string SHOW_PARTITION_PROPERTIES = PREFIX + "ShowPartitionProperties";
             private static string SHOW_MATRIX_GIZMOS = PREFIX + "ShowMatrixGizmos";
             private static string SHOW_NODE_GIZMOS = PREFIX + "ShowNodeGizmos";
+            private static string SHOW_PARTITION_GIZMOS = PREFIX + "ShowPartitionGizmos";
 
             // Matrix Gizmos
             private static string DRAW_MATRIX_BOUNDS = PREFIX + "DrawMatrixBounds";
@@ -321,6 +492,13 @@ namespace Darklight.UnityExt.Matrix
             // Node Gizmos
             private static string NODE_LABEL_CONTENT = PREFIX + "NodeLabelContent";
             private static string NODE_DRAW_BUTTONS = PREFIX + "NodeDrawButtons";
+            private static string NODE_DRAW_DIMENSIONS = PREFIX + "NodeDrawDimensions";
+            private static string NODE_FILTER = PREFIX + "NodeFilter";
+
+            // Partition Gizmos
+            private static string PARTITION_DRAW_BOUNDS = PREFIX + "PartitionDrawBounds";
+            private static string PARTITION_DRAW_CENTERS = PREFIX + "PartitionDrawCenters";
+            private static string PARTITION_DRAW_LABELS = PREFIX + "PartitionDrawLabels";
 
             public static class GroupPrefs
             {
@@ -352,6 +530,12 @@ namespace Darklight.UnityExt.Matrix
                 {
                     get => EditorPrefs.GetBool(SHOW_NODE_GIZMOS, false);
                     set => EditorPrefs.SetBool(SHOW_NODE_GIZMOS, value);
+                }
+
+                public static bool DrawPartitionGizmos
+                {
+                    get => EditorPrefs.GetBool(SHOW_PARTITION_GIZMOS, false);
+                    set => EditorPrefs.SetBool(SHOW_PARTITION_GIZMOS, value);
                 }
             }
 
@@ -395,6 +579,39 @@ namespace Darklight.UnityExt.Matrix
                     get => EditorPrefs.GetBool(NODE_DRAW_BUTTONS, false);
                     set => EditorPrefs.SetBool(NODE_DRAW_BUTTONS, value);
                 }
+
+                public static bool DrawDimensions
+                {
+                    get => EditorPrefs.GetBool(NODE_DRAW_DIMENSIONS, false);
+                    set => EditorPrefs.SetBool(NODE_DRAW_DIMENSIONS, value);
+                }
+
+                public static GUI.NodeFilter Filter
+                {
+                    get => (GUI.NodeFilter)EditorPrefs.GetInt(NODE_FILTER, 0);
+                    set => EditorPrefs.SetInt(NODE_FILTER, (int)value);
+                }
+            }
+
+            public static class PartitionPrefs
+            {
+                public static bool DrawBounds
+                {
+                    get => EditorPrefs.GetBool(PARTITION_DRAW_BOUNDS, false);
+                    set => EditorPrefs.SetBool(PARTITION_DRAW_BOUNDS, value);
+                }
+
+                public static bool DrawCenters
+                {
+                    get => EditorPrefs.GetBool(PARTITION_DRAW_CENTERS, false);
+                    set => EditorPrefs.SetBool(PARTITION_DRAW_CENTERS, value);
+                }
+
+                public static bool DrawLabels
+                {
+                    get => EditorPrefs.GetBool(PARTITION_DRAW_LABELS, false);
+                    set => EditorPrefs.SetBool(PARTITION_DRAW_LABELS, value);
+                }
             }
 
             public static void ResetToDefaults()
@@ -405,6 +622,7 @@ namespace Darklight.UnityExt.Matrix
                 GroupPrefs.ShowPartitionProperties = false;
                 GroupPrefs.DrawMatrixGizmos = true;
                 GroupPrefs.DrawNodeGizmos = false;
+                GroupPrefs.DrawPartitionGizmos = false;
 
                 // Reset Matrix Gizmos
                 MatrixPrefs.DrawBounds = true;
@@ -415,6 +633,13 @@ namespace Darklight.UnityExt.Matrix
                 // Reset Node Gizmos
                 NodePrefs.labelContent = Node.GUI.LabelContent.KEY;
                 NodePrefs.DrawButtons = false;
+                NodePrefs.DrawDimensions = false;
+                NodePrefs.Filter = GUI.NodeFilter.NONE;
+
+                // Reset Partition Gizmos
+                PartitionPrefs.DrawBounds = true;
+                PartitionPrefs.DrawCenters = false;
+                PartitionPrefs.DrawLabels = true;
             }
         }
     }

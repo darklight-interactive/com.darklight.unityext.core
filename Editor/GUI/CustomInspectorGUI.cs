@@ -317,7 +317,7 @@ namespace Darklight.UnityExt.Editor
         /// Draws a header label if one is provided.
         /// </summary>
         /// <param name="header">The header label to draw, or null if no header should be displayed.</param>
-        private static void DrawHeader(string header)
+        public static void DrawHeader(string header)
         {
             if (!string.IsNullOrEmpty(header))
             {
@@ -448,18 +448,21 @@ namespace Darklight.UnityExt.Editor
                 backgroundColor == default
                     ? EditorStyles.helpBox
                     : GetColoredHelpBoxStyle(backgroundColor);
+            bool newState = false;
             using (new EditorGUILayout.VerticalScope(style))
             {
-                bool newState = EditorGUILayout.Foldout(foldoutState, title);
-                if (!newState)
-                    return false;
-
                 EditorGUI.indentLevel++;
-                drawProperties?.Invoke();
-                EditorGUI.indentLevel--;
 
-                return true;
+                newState = EditorGUILayout.Foldout(foldoutState, title);
+                if (newState)
+                {
+                    EditorGUI.indentLevel++;
+                    drawProperties?.Invoke();
+                    EditorGUI.indentLevel--;
+                }
+                EditorGUI.indentLevel--;
             }
+            return newState;
         }
 
         public static void DrawFoldoutPropertyGroup(

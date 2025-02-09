@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 
 using System.Collections.Generic;
+using Darklight.UnityExt.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -28,6 +29,10 @@ namespace Darklight.UnityExt.Matrix
         private Matrix.Node _pathEndNode;
         private List<Matrix.Node> _currentPath;
         private Color _pathColor = Color.yellow;
+
+        // Add new fields for node inspection
+        private bool _selectedNodeIsExpanded = false;
+        private Vector2 _nodeInfoScrollPosition;
 
         [MenuItem("Darklight/Window/Matrix Editor")]
         private static void ShowWindow()
@@ -88,33 +93,7 @@ namespace Darklight.UnityExt.Matrix
             _serializedMatrixObject = new SerializedObject(_matrix);
             _serializedMatrixObject.Update();
 
-            Matrix.GUI.DrawGUI(_matrix);
-
-            /*
-            // Draw Selected Node Info
-            Matrix.GUI.DrawNodeInfoGUI(_selectedNode, ref _selectedNodeIsExpanded);
-
-            // Draw Partition Toggle and List
-            MatrixPartitionGUI.DrawPartitionToggle(ref _showPartitions);
-            if (_showPartitions)
-            {
-                _partitionFoldoutToggle = EditorGUILayout.Foldout(
-                    _partitionFoldoutToggle,
-                    "Partitions",
-                    true
-                );
-                if (_partitionFoldoutToggle)
-                {
-                    MatrixPartitionGUI.DrawPartitionList(
-                        _matrix,
-                        ref _partitionScrollPosition,
-                        _partitionFoldouts,
-                        SetSelectedNode,
-                        (node) => SceneView.lastActiveSceneView?.LookAt(node.Position)
-                    );
-                }
-            }
-            */
+            Matrix.GUI.DrawGUI(_matrix, ref _selectedNode);
 
             // Check for pathfinder and draw controls
             _pathfinder = _matrix.GetComponent<MatrixPathfinder>();
@@ -141,15 +120,6 @@ namespace Darklight.UnityExt.Matrix
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
 
-            if (_isPartitionSelected)
-            {
-                if (GUILayout.Button("Back to Partitions"))
-                {
-                    ClearPartitionSelection();
-                }
-                EditorGUILayout.LabelField($"Viewing Partition {_selectedPartition}");
-            }
-
             EditorGUILayout.EndHorizontal();
         }
 
@@ -167,8 +137,15 @@ namespace Darklight.UnityExt.Matrix
 
         void SetSelectedNode(Matrix.Node node)
         {
+            if (_selectedNode != null)
+                _selectedNode.IsSelected = false;
+
             _selectedNode = node;
+            _selectedNode.IsSelected = true;
+
             Repaint();
+
+            Debug.Log($"Selected Node: {node.Key}");
         }
 
         private void FindPath()
@@ -192,31 +169,9 @@ namespace Darklight.UnityExt.Matrix
         private void ClearPath()
         {
             _currentPath = null;
-            _pathStartNode.Reset();
-            _pathEndNode.Reset();
+            _pathStartNode = null;
+            _pathEndNode = null;
             SceneView.RepaintAll();
-        }
-
-        private void SelectPartition(int partitionKey, Vector3 center)
-        {
-            _selectedPartition = partitionKey;
-            _selectedPartitionCenter = center;
-            _selectedNode.Reset();
-
-            if (SceneView.lastActiveSceneView != null)
-            {
-                SceneView.lastActiveSceneView.LookAt(
-                    _selectedPartitionCenter,
-                    SceneView.lastActiveSceneView.rotation,
-                    5f
-                );
-            }
-        }
-
-        private void ClearPartitionSelection()
-        {
-            _selectedPartition = -1;
-            _selectedNode.Reset();
         }
     }
 }

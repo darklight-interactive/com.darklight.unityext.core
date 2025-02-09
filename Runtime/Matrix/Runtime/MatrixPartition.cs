@@ -110,10 +110,14 @@ namespace Darklight.UnityExt.Matrix
                     max.y = Mathf.Max(max.y, node.Key.y);
                 }
 
-                return new Vector2(max.x - min.x, max.y - min.y);
+                int columnCount = max.x - min.x + 1;
+                int rowCount = max.y - min.y + 1;
+
+                return new Vector2(columnCount, rowCount) * _matrix.GetInfo().NodeSize;
             }
 
             #region < PRIVATE_METHOD > : IVisitable ========================================================================================
+
             public void AcceptVisitor(IVisitor<Partition> visitor)
             {
                 visitor.Visit(this);
@@ -129,12 +133,50 @@ namespace Darklight.UnityExt.Matrix
                         return;
 
                     Color partitionColor = GenerateColorFromPartitionKey(partition.Key);
-                    CustomGizmos.DrawWireRect(
-                        partition.CenterWorldPosition,
-                        partition.Dimensions,
-                        matrix.GetInfo().Rotation,
-                        partitionColor
-                    );
+
+                    // Draw Partition Bounds
+                    if (Preferences.PartitionPrefs.DrawBounds)
+                    {
+                        CustomGizmos.DrawWireRect(
+                            partition.CenterWorldPosition,
+                            partition.Dimensions,
+                            matrix.GetInfo().UpDirection,
+                            partitionColor
+                        );
+                    }
+
+                    // Draw Partition Center
+                    if (Preferences.PartitionPrefs.DrawCenters)
+                    {
+                        Handles.color = partitionColor;
+                        float sphereSize = 0.2f;
+                        Handles.SphereHandleCap(
+                            0,
+                            partition.CenterWorldPosition,
+                            Quaternion.identity,
+                            sphereSize,
+                            EventType.Repaint
+                        );
+                    }
+
+                    // Draw Partition Label
+                    if (Preferences.PartitionPrefs.DrawLabels)
+
+                    {
+                        GUIStyle labelStyle = new GUIStyle()
+                        {
+                            normal = { textColor = partitionColor },
+                            alignment = TextAnchor.MiddleCenter,
+                            fontSize = 12,
+                            fontStyle = FontStyle.Bold
+                        };
+
+                        Handles.Label(
+                            partition.CenterWorldPosition,
+                            $"Partition {partition.Key}\n({partition.ChildNodes.Count} nodes)",
+                            labelStyle
+                        );
+                    }
                 }
 
                 public static Color GenerateColorFromPartitionKey(int partitionKey)
@@ -212,34 +254,27 @@ namespace Darklight.UnityExt.Matrix
                             // Draw partition contents if expanded
                             if (partitionFoldouts[partition.Key])
                             {
-                                /*
                                 EditorGUI.indentLevel++;
                                 foreach (var node in partition.ChildNodes)
                                 {
                                     EditorGUILayout.BeginHorizontal();
                                     {
                                         // Indent the content
-        
                                         GUILayout.Space(20);
-        
-                                        var node = matrix.GetMap().GetNodeByKey(node.Key);
-                                        if (node != null)
+
+                                        // Draw node info
+                                        EditorGUILayout.LabelField($"Key: {node.Key}");
+
+                                        // Add a select button
+                                        if (GUILayout.Button("Select", GUILayout.Width(60)))
                                         {
-                                            // Draw node info
-                                            EditorGUILayout.LabelField($"Key: {nodeKey}");
-        
-                                            // Add a select button
-                                            if (GUILayout.Button("Select", GUILayout.Width(60)))
-                                            {
-                                                onNodeSelected?.Invoke(node);
-                                                onSceneViewFocus?.Invoke(node);
-                                            }
+                                            onNodeSelected?.Invoke(node);
+                                            onSceneViewFocus?.Invoke(node);
                                         }
                                     }
                                     EditorGUILayout.EndHorizontal();
                                 }
                                 EditorGUI.indentLevel--;
-                                */
                             }
                         }
                     }

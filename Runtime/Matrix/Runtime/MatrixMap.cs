@@ -33,8 +33,6 @@ namespace Darklight.UnityExt.Matrix
                 _cachedNodes = new List<Node>();
                 _cachedPartitions = new List<Partition>();
                 _isDirty = true;
-
-                Refresh();
             }
 
             #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
@@ -42,20 +40,44 @@ namespace Darklight.UnityExt.Matrix
             {
                 // << RETURN IF NODE EXISTS >>
                 if (_nodeLookup.ContainsKey(key))
-                    return;
+                {
+                    // Check if the node is valid and not already in the partition
+                    Node node = _nodeLookup[key];
+                    if (!node.IsValid)
+                        return;
 
-                // << CREATE NEW NODE >>
-                Node newNode = new Node(_matrix, key);
-                _nodeLookup.Add(key, newNode);
-
-                // << ADD KEY TO PARTITION >>
-                if (_partitionLookup.TryGetValue(newNode.PartitionKey, out var partition))
-                    partition.ChildNodes.Add(newNode);
+                    if (!_partitionLookup.Keys.Contains(node.PartitionKey))
+                    {
+                        // << ADD NODE TO PARTITION >>
+                        if (
+                            _partitionLookup.TryGetValue(
+                                node.PartitionKey,
+                                out Partition partitionValue
+                            )
+                        )
+                            partitionValue.ChildNodes.Add(node);
+                        else
+                            _partitionLookup[node.PartitionKey] = new Partition(
+                                _matrix,
+                                node.PartitionKey
+                            );
+                    }
+                }
                 else
-                    _partitionLookup[newNode.PartitionKey] = new Partition(
-                        _matrix,
-                        newNode.PartitionKey
-                    );
+                {
+                    // << CREATE NEW NODE >>
+                    Node newNode = new Node(_matrix, key);
+                    _nodeLookup.Add(key, newNode);
+
+                    // << ADD KEY TO PARTITION >>
+                    if (_partitionLookup.TryGetValue(newNode.PartitionKey, out var partition))
+                        partition.ChildNodes.Add(newNode);
+                    else
+                        _partitionLookup[newNode.PartitionKey] = new Partition(
+                            _matrix,
+                            newNode.PartitionKey
+                        );
+                }
 
                 // << MARK CACHE AS DIRTY >>
                 _isDirty = true;
@@ -66,6 +88,7 @@ namespace Darklight.UnityExt.Matrix
                 if (!_nodeLookup.ContainsKey(key))
                     return;
 
+                Node node = _nodeLookup[key];
                 _nodeLookup.Remove(key);
                 _isDirty = true;
             }
@@ -91,13 +114,6 @@ namespace Darklight.UnityExt.Matrix
                     }
                 }
 
-                // << REMOVE EMPTY PARTITIONS >>
-                foreach (Partition partition in new List<Partition>(_partitionLookup.Values))
-                {
-                    if (partition.ChildNodes.Count == 0)
-                        _partitionLookup.Remove(partition.Key);
-                }
-
                 // << ADD NEW NODES >>
                 for (int x = 0; x < _matrix.GetInfo().ColumnCount; x++)
                 {
@@ -116,7 +132,17 @@ namespace Darklight.UnityExt.Matrix
                 }
                 Debug.Log($"Map Refreshed: {NodeCount} nodes, {PartitionCount} partitions");
             }
+
+            public void Clear()
+            {
+                _nodeLookup.Clear();
+                _partitionLookup.Clear();
+                _cachedNodes.Clear();
+                _cachedPartitions.Clear();
+                _isDirty = true;
+            }
             #endregion
+
 
             #region < PUBLIC_METHODS > [[ Get Nodes ]] ==================================================================================
 
@@ -189,7 +215,7 @@ namespace Darklight.UnityExt.Matrix
             /// </summary>
             /// <param name="position">The world position to check against</param>
             /// <returns>The closest node, or null if no nodes are found</returns>
-            public bool GetClosestNodeToPosition(Vector3 position, out Node? closestNode)
+            public bool GetClosestNodeToPosition(Vector3 position, out Node closestNode)
             {
                 closestNode = null;
 
@@ -232,7 +258,7 @@ namespace Darklight.UnityExt.Matrix
                 // If we found a node, check its neighbors
                 if (closestNode != null)
                 {
-                    List<Node> neighbors = GetNodeNeighbors(closestNode.Value.Key);
+                    List<Node> neighbors = GetNodeNeighbors(closestNode.Key);
                     foreach (Node neighbor in neighbors)
                     {
                         if (checkedNodes.Contains(neighbor))

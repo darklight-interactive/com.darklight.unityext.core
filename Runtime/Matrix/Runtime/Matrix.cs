@@ -47,14 +47,11 @@ namespace Darklight.UnityExt.Matrix
         [SerializeField]
         Grid _grid;
 
-        [SerializeField]
         protected StateMachine _stateMachine = new StateMachine();
+        protected Map _map;
 
         [SerializeField]
         protected Info _info;
-
-        [SerializeField]
-        protected Map _map;
 
         public delegate bool VisitNodeEvent(Node node);
         public delegate bool VisitPartitionEvent(Partition partition);
@@ -75,19 +72,23 @@ namespace Darklight.UnityExt.Matrix
         protected virtual void Initialize(Info info = default)
         {
             if (_grid == null)
-                _grid = GetComponent<Grid>();
+                GetGrid();
 
             _info = info;
             if (!_info.IsValid)
                 _info = new Info(this);
-            _info.Validate();
-
             _map = new Map(this);
             _stateMachine = new StateMachine();
+
+            Refresh();
         }
 
         protected virtual void Refresh()
         {
+            if (_grid == null)
+                GetGrid();
+
+            _info.Validate();
             _map.Refresh();
         }
 
@@ -131,27 +132,26 @@ namespace Darklight.UnityExt.Matrix
         [CustomEditor(typeof(Matrix), true)]
         public class MatrixCustomEditor : UnityEditor.Editor
         {
-            SerializedObject _serializedObject;
-            Matrix _script;
-            SerializedProperty _infoProperty;
+            protected SerializedObject _serializedObject;
+            protected Matrix _script;
 
             // Fields to store the last-known transform and info state
             private Vector3 _lastPosition;
             private Quaternion _lastRotation;
-            private SerializedProperty _lastGridValues;
+
+            bool _referencesFoldout = false;
+            bool _infoFoldout = false;
 
             private void OnEnable()
             {
                 _serializedObject = new SerializedObject(target);
                 _script = (Matrix)target;
-                _infoProperty = _serializedObject.FindProperty("_info");
 
                 // Initialize transform state
                 if (_script != null)
                 {
                     _lastPosition = _script.transform.position;
                     _lastRotation = _script.transform.rotation;
-                    _lastGridValues = _infoProperty.Copy();
                 }
 
                 EditorApplication.update += CheckTransformChanges;
@@ -184,13 +184,6 @@ namespace Darklight.UnityExt.Matrix
                     hasChanged = true;
                 }
 
-                // Check for changes in grid values
-                if (!SerializedProperty.EqualContents(_infoProperty, _lastGridValues))
-                {
-                    _lastGridValues = _infoProperty.Copy();
-                    hasChanged = true;
-                }
-
                 if (hasChanged)
                 {
                     _script.Refresh();
@@ -204,7 +197,6 @@ namespace Darklight.UnityExt.Matrix
                 {
                     _lastPosition = _script.transform.position;
                     _lastRotation = _script.transform.rotation;
-                    _lastGridValues = _infoProperty.Copy();
                     _script.Refresh();
                     SceneView.RepaintAll();
                 }
@@ -219,19 +211,49 @@ namespace Darklight.UnityExt.Matrix
                     MatrixEditorWindow.ShowWindow(_script);
                 }
 
-                if (GUILayout.Button("Refresh"))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    _script.Refresh();
+                    if (GUILayout.Button("Refresh"))
+                    {
+                        _script.Refresh();
+                    }
+
+                    if (GUILayout.Button("Clear"))
+                    {
+                        _script.GetMap().Clear();
+                    }
                 }
+            }
+
+            protected virtual void DrawReferences()
+            {
+                SerializedProperty gridProperty = _serializedObject.FindProperty("_grid");
+                EditorGUILayout.PropertyField(gridProperty);
             }
 
             public override void OnInspectorGUI()
             {
-                DrawButtons();
-
                 EditorGUI.BeginChangeCheck();
 
-                base.OnInspectorGUI();
+                DrawButtons();
+
+                _referencesFoldout = CustomInspectorGUI.DrawFoldoutPropertyGroup(
+                    "References",
+                    _referencesFoldout,
+                    () =>
+                    {
+                        DrawReferences();
+                    }
+                );
+
+                _infoFoldout = CustomInspectorGUI.DrawFoldoutPropertyGroup(
+                    "Info",
+                    _infoFoldout,
+                    () =>
+                    {
+                        _script._info.OnGUI_DrawValues();
+                    }
+                );
 
                 if (EditorGUI.EndChangeCheck())
                 {
