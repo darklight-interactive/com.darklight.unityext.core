@@ -1,7 +1,5 @@
 using Darklight.UnityExt.Editor.Utility;
-
 using UnityEditor;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Editor
@@ -16,7 +14,11 @@ namespace Darklight.UnityExt.Editor
         {
             float height = EditorGUIUtility.singleLineHeight;
 
-            if (prop.propertyType == SerializedPropertyType.Generic && IsSerializableClass(prop) && prop.isExpanded)
+            if (
+                prop.propertyType == SerializedPropertyType.Generic
+                && IsSerializableClass(prop)
+                && prop.isExpanded
+            )
             {
                 height += CalculateShowOnlyClassHeight(prop);
             }
@@ -32,7 +34,10 @@ namespace Darklight.UnityExt.Editor
             {
                 CustomInspectorGUI.DrawShowOnlyListFoldout(prop, label.text);
             }
-            else if (prop.propertyType == SerializedPropertyType.Generic && IsSerializableClass(prop))
+            else if (
+                prop.propertyType == SerializedPropertyType.Generic
+                && IsSerializableClass(prop)
+            )
             {
                 CustomInspectorGUI.DrawAllFieldsInPropertyAsShowOnly(prop);
             }
@@ -66,12 +71,12 @@ namespace Darklight.UnityExt.Editor
                     break; // Exit when reaching next sibling property
                 }
 
-                totalHeight += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                totalHeight +=
+                    EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
             }
 
             return totalHeight;
         }
-
     }
 #endif
 }

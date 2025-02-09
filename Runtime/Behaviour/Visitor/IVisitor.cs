@@ -17,6 +17,6 @@ namespace Darklight.UnityExt.Behaviour
     /// <typeparam name="T"></typeparam>
     public interface IVisitable<T>
     {
-        void Accept(IVisitor<T> visitor);
+        void AcceptVisitor(IVisitor<T> visitor);
     }
 }

@@ -25,7 +25,7 @@ namespace Darklight.UnityExt.Matrix
             _pathfinder = new AStarPathfinder(validKeys);
 
             List<Vector2Int> path = _pathfinder.FindPath(startNode.Key, endNode.Key);
-            return _matrix.Map.GetNodes(path);
+            return _matrix.GetMap().GetNodes(path);
         }
     }
 }

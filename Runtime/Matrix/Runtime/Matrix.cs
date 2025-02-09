@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.World;
-using NaughtyAttributes;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Darklight.UnityExt.Matrix
 {
     [ExecuteAlways]
     public partial class Matrix : MonoBehaviour
     {
+        #region < STATIC_FIELDS > ======================================================================
         protected static readonly Dictionary<Alignment, Vector2> AlignmentOffsets = new Dictionary<
             Alignment,
             Vector2
@@ -40,398 +42,190 @@ namespace Darklight.UnityExt.Matrix
                 { Alignment.TopCenter, max => new Vector2Int(max.x / 2, max.y) },
                 { Alignment.TopRight, max => new Vector2Int(max.x, max.y) },
             };
-
-        StateMachine _stateMachine = new StateMachine();
-
-        [SerializeField, ShowOnly]
-        State _currentState;
-
-        [SerializeField, AllowNesting]
-        MatrixInfo _info;
+        #endregion
 
         [SerializeField]
-        NodeMap _map;
+        StateMachine _stateMachine = new StateMachine();
 
-        public enum Alignment
-        {
-            TopLeft,
-            TopCenter,
-            TopRight,
-            MiddleLeft,
-            MiddleCenter,
-            MiddleRight,
-            BottomLeft,
-            BottomCenter,
-            BottomRight
-        }
+        [SerializeField]
+        Info _info;
 
-        public enum State
-        {
-            INVALID,
-            PRELOADED,
-            INITIALIZED
-        }
+        [SerializeField]
+        Map _map;
 
-        public MatrixInfo Info => _info;
-        public NodeMap Map => _map;
-        public Node.Visitor UpdateNodeContextVisitor =>
-            new Node.Visitor(node =>
-            {
-                node.Refresh();
-                return true;
-            });
+        public delegate bool VisitNodeEvent(Node node);
+        public delegate bool VisitPartitionEvent(Partition partition);
 
-        public State CurrentState => _currentState = _stateMachine.currentStateEnum;
-        public Node OriginNode => _map.GetNodeByKey(_info.OriginKey);
-        public Node TerminalNode => _map.GetNodeByKey(_info.TerminalKey);
+        public Info GetInfo() => _info;
 
-        public virtual void Preload()
-        {
-            if (_stateMachine == null)
-            {
-                _stateMachine = new StateMachine();
-                _stateMachine.OnStateChanged += OnStateChanged;
-            }
+        public Map GetMap() => _map;
 
-            if (_info == null)
-            {
-                _info = new MatrixInfo(this.transform);
-                Debug.Log("Creating new MatrixInfo");
-            }
+        #region < PROTECTED_METHODS > [[ Initializer Methods ]] ==================================================================================
 
-            if (_info.Grid == null)
-            {
-                if (GetComponentInChildren<Grid>() != null)
-                {
-                    _info.Grid = GetComponentInChildren<Grid>();
-                    _info.Parent = _info.Grid.transform;
-                }
-            }
-
-            Initialize(_info);
-
-            // Determine if the grid was preloaded
-            _stateMachine.GoToState(State.PRELOADED);
-        }
-
-        public virtual void Initialize(MatrixInfo info)
+        protected virtual void Initialize(Info info = null)
         {
             _info = info;
+            if (_info == null)
+                _info = new Info(this.transform);
             _info.Validate();
-            _map = new NodeMap(_info);
-            Refresh();
+
+            _map = new Map(this);
+            _stateMachine = new StateMachine();
         }
 
-        public virtual void Refresh()
+        protected virtual void Refresh()
         {
-            _info.Validate();
             _map.Refresh();
-            SendVisitorToAllNodes(UpdateNodeContextVisitor);
+            SendVisitorToAllNodes(
+                new Node.Visitor(node =>
+                {
+                    node.Refresh();
+                    return true;
+                })
+            );
         }
 
-        public void SendVisitorToNode(Vector2Int key, IVisitor<Node> visitor)
+        #endregion
+
+
+
+        #region < PROTECTED_METHODS > [[ Send Visitor Methods ]] ==================================================================================
+        protected void SendVisitorToNode(Vector2Int key, IVisitor<Node> visitor)
         {
             if (visitor == null)
                 return;
-            _map.GetNodeByKey(key)?.Accept(visitor);
+            _map.GetNodeByKey(key)?.AcceptVisitor(visitor);
         }
 
-        public void SendVisitorToNodes(List<Vector2Int> keys, IVisitor<Node> visitor)
+        protected void SendVisitorToNodes(List<Vector2Int> keys, IVisitor<Node> visitor)
         {
             if (visitor == null)
                 return;
             foreach (Vector2Int key in keys)
-                _map.GetNodeByKey(key)?.Accept(visitor);
+                _map.GetNodeByKey(key)?.AcceptVisitor(visitor);
         }
 
-        public void SendVisitorToAllNodes(IVisitor<Node> visitor)
+        protected void SendVisitorToAllNodes(IVisitor<Node> visitor)
         {
             if (visitor == null)
                 return;
-            foreach (Node node in _map.Nodes)
-                node.Accept(visitor);
+            foreach (Node node in _map.GetAllNodes())
+                node.AcceptVisitor(visitor);
         }
+        #endregion
 
-        protected static Vector2Int CalculateNodeKey(Vector2Int coordinate, Vector2Int originKey)
+        #region < PROTECTED_METHODS > [[ Unity Methods ]] ==================================================================================
+        protected virtual void Awake() => Initialize();
+        #endregion
+
+
+#if UNITY_EDITOR
+
+
+        [CustomEditor(typeof(Matrix), true)]
+        public class MatrixCustomEditor : UnityEditor.Editor
         {
-            return coordinate + originKey;
-        }
+            SerializedObject _serializedObject;
+            Matrix _script;
 
-        protected static Vector2Int CalculateNodeCoordinate(Vector2Int key, Vector2Int originKey)
-        {
-            return key - originKey;
-        }
+            // Fields to store the last-known transform state
+            private Vector3 _lastPosition;
+            private Quaternion _lastRotation;
 
-        protected static int CalculateCellPartition(Vector2Int key, int partitionSize)
-        {
-            int partitionX = Mathf.FloorToInt(key.x / (float)partitionSize);
-            int partitionY = Mathf.FloorToInt(key.y / (float)partitionSize);
+            private bool _showMatrixInfo = false;
 
-            // Using a more robust hash function for partition key
-            // This handles negative coordinates better
-            const int PRIME = 31;
-            int hash = 17;
-            hash = hash * PRIME + partitionX;
-            hash = hash * PRIME + partitionY;
-            return hash;
-        }
-
-        /// <summary>
-        /// Calculates the alignment offset based on the alignment and size.
-        /// </summary>
-        /// <param name="alignment">The alignment to calculate the offset for.</param>
-        /// <param name="size">The size of the matrix.</param>
-        /// <returns>The alignment offset in local space Vector2.</returns>
-        protected static Vector2 CalculateLocalAlignmentOffset(Alignment alignment, Vector2 size)
-        {
-            Vector2 alignmentOffset = AlignmentOffsets.TryGetValue(alignment, out Vector2 offset)
-                ? offset
-                : Vector2.zero;
-
-            alignmentOffset *= size;
-            return alignmentOffset;
-        }
-
-        /// <summary>
-        /// Converts a 2D alignment value to 3D based on the cell swizzle.
-        /// </summary>
-        protected static Vector3 SwizzleVec2(Vector2 value, GridLayout.CellSwizzle swizzle)
-        {
-            switch (swizzle)
+            private void OnEnable()
             {
-                case GridLayout.CellSwizzle.XYZ:
-                    return new Vector3(value.x, value.y, 0);
+                _serializedObject = new SerializedObject(target);
+                _script = (Matrix)target;
 
-                case GridLayout.CellSwizzle.XZY:
-                    return new Vector3(value.x, 0, value.y);
-                case GridLayout.CellSwizzle.YXZ:
-                    return new Vector3(value.y, value.x, 0);
-                case GridLayout.CellSwizzle.YZX:
-                    return new Vector3(0, value.x, value.y);
-                case GridLayout.CellSwizzle.ZXY:
-                    return new Vector3(value.y, 0, value.x);
-                case GridLayout.CellSwizzle.ZYX:
-                    return new Vector3(0, value.y, value.x);
-                default:
-                    return new Vector3(value.x, 0, value.y); // Default to XZY
-            }
-        }
+                // Initialize transform state and set up change listeners
+                if (_script != null)
+                {
+                    _lastPosition = _script.transform.position;
+                    _lastRotation = _script.transform.rotation;
+                }
 
-        public static Vector3Int SwizzleVec2Int(Vector2Int value, GridLayout.CellSwizzle swizzle)
-        {
-            Vector3 vec3 = SwizzleVec2(value, swizzle);
-            return new Vector3Int(
-                Mathf.RoundToInt(vec3.x),
-                Mathf.RoundToInt(vec3.y),
-                Mathf.RoundToInt(vec3.z)
-            );
-        }
+                EditorApplication.update += CheckTransformChanges;
+                Undo.undoRedoPerformed += OnUndoRedo;
 
-        protected static Quaternion CalculateSwizzleRotationOffset(GridLayout.CellSwizzle swizzle)
-        {
-            Vector3 up = Vector3.up;
-            Vector3 forward = Vector3.forward;
-
-            switch (swizzle)
-            {
-                case GridLayout.CellSwizzle.XYZ:
-                    // Default Unity 2D orientation (vertical plane)
-                    up = Vector3.back;
-                    forward = Vector3.up;
-                    break;
-
-                case GridLayout.CellSwizzle.XZY:
-                    // Default Unity 3D orientation (horizontal plane)
-                    // up = Vector3.up;
-                    // forward = Vector3.forward;
-                    break;
-
-                case GridLayout.CellSwizzle.YXZ:
-                    // Vertical plane, rotated 90° counter-clockwise around Z
-                    up = Vector3.back;
-                    forward = Vector3.right;
-                    break;
-
-                case GridLayout.CellSwizzle.YZX:
-                    // Vertical plane, facing right
-                    up = Vector3.right;
-                    forward = Vector3.forward;
-                    break;
-
-                case GridLayout.CellSwizzle.ZXY:
-                    // Horizontal plane, rotated 90° counter-clockwise around Y
-                    up = Vector3.up;
-                    forward = Vector3.right;
-                    break;
-
-                case GridLayout.CellSwizzle.ZYX:
-                    // Vertical plane, rotated 90° clockwise around X
-                    up = Vector3.back;
-                    forward = Vector3.right;
-                    break;
+                _script.Initialize(_script.GetInfo());
             }
 
-            // Create rotation from the up and forward vectors
-            return Quaternion.LookRotation(forward, up);
-        }
-
-        /// <summary>
-        /// Gets the dimensions of the matrix in world space.
-        /// </summary>
-        /// <returns>The full dimensions of the matrix in local units.</returns>
-        protected static Vector2 CalculateMatrixDimensions(MatrixInfo info)
-        {
-            Vector2 dimensions2D = new Vector2(
-                info.Bounds.x * info.NodeSize.x,
-                info.Bounds.y * info.NodeSize.y
-            );
-
-            dimensions2D *= (info.NodeSpacing + Vector2.one);
-            return dimensions2D;
-        }
-
-        /// <summary>
-        /// Calculates the center position of the matrix in world space using matrix data.
-        /// </summary>
-        /// <returns>The center position of the matrix in world coordinates.</returns>
-        protected static Vector3 CalculateMatrixCenter(MatrixInfo info)
-        {
-            // Calculate alignment offset
-            Vector2 alignmentOffset = CalculateLocalAlignmentOffset(
-                info.OriginAlignment,
-                info.Dimensions - info.NodeSize
-            );
-            alignmentOffset -= info.NodeHalfSize;
-
-            Vector2 centerPos2D = info.Dimensions / 2;
-            centerPos2D += alignmentOffset;
-
-            if (info.HasGrid)
+            private void OnDisable()
             {
-                centerPos2D.x += info.NodeHalfSize.x;
-                centerPos2D.y -= info.NodeHalfSize.y;
+                EditorApplication.update -= CheckTransformChanges;
+                Undo.undoRedoPerformed -= OnUndoRedo;
             }
 
-            // Convert to 3D with proper swizzle
-            Vector3 centerPos3D = SwizzleVec2(centerPos2D, info.Swizzle);
-            return info.OriginWorldPosition + centerPos3D;
-        }
-
-        /// <summary>
-        /// Calculates the world position and rotation of a node based on its key.
-        /// </summary>
-        protected static void CalculateNodeValues(
-            Vector2Int key,
-            MatrixInfo info,
-            out Vector2Int coordinate,
-            out Vector3 position,
-            out Quaternion rotation,
-            out int partition
-        )
-        {
-            if (info == null)
+            #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
+            private void CheckTransformChanges()
             {
-                coordinate = Vector2Int.zero;
-                position = Vector3.zero;
-                rotation = Quaternion.identity;
-                partition = 0;
-                return;
+                if (_script == null)
+                    return;
+
+                // Check for changes in the position, rotation, or scale
+                if (
+                    _script.transform.position != _lastPosition
+                    || _script.transform.rotation != _lastRotation
+                )
+                {
+                    // Update the last-known state
+                    _lastPosition = _script.transform.position;
+                    _lastRotation = _script.transform.rotation;
+
+                    // Respond to the change
+                    //Debug.Log("Transform has changed!");
+                    _script.Refresh();
+
+                    // Refresh the editor if needed
+                    Repaint();
+                }
             }
 
-            coordinate = CalculateNodeCoordinate(key, info.OriginKey);
-
-            // Calculate the partition of the node
-            partition = CalculateCellPartition(key, info.PartitionSize);
-
-            if (info.Grid != null)
+            private void OnUndoRedo()
             {
-                position = info.Grid.CellToWorld(new Vector3Int(coordinate.x, coordinate.y, 0));
-                position.x += info.NodeHalfSize.x;
-                position.y -= info.NodeHalfSize.y;
+                if (_script != null)
+                {
+                    // Handle undo/redo for the transform changes
+                    //Debug.Log("Transform changed due to undo/redo!");
+                    _script.Refresh();
 
-                rotation = info.Grid.transform.rotation;
-                return;
+                    // Update last-known transform state in case it has changed
+                    _lastPosition = _script.transform.position;
+                    _lastRotation = _script.transform.rotation;
+
+                    // Refresh the editor if needed
+                    Repaint();
+                }
             }
-            else
+            #endregion
+
+            protected virtual void DrawButtons()
             {
-                // Calculate the node position offset in world space based on dimensions
-                Vector2 keyOffsetPos = key * info.NodeSize;
+                // Add a button to open the Matrix Editor Window
+                if (GUILayout.Button("Open Matrix Editor"))
+                {
+                    // Open the MatrixEditorWindow and pass the current Matrix instance
+                    MatrixEditorWindow.ShowWindow(_script);
+                }
+            }
 
-                // Calculate the spacing offset and clamp to avoid overlapping cells
-                Vector2 spacingOffsetPos = info.NodeSpacing + Vector2.one;
-                spacingOffsetPos.x = Mathf.Max(spacingOffsetPos.x, 0.5f);
-                spacingOffsetPos.y = Mathf.Max(spacingOffsetPos.y, 0.5f);
+            public override void OnInspectorGUI()
+            {
+                DrawButtons();
 
-                // Calculate bonding offsets
-                Vector2 bondingOffset = Vector2.zero;
-                if (key.y % 2 == 0)
-                    bondingOffset.x = info.NodeBonding.x;
-                if (key.x % 2 == 0)
-                    bondingOffset.y = info.NodeBonding.y;
+                EditorGUI.BeginChangeCheck();
 
-                // Combine offsets and apply spacing
-                Vector2 localPosition2D = keyOffsetPos;
-                localPosition2D *= spacingOffsetPos;
-                localPosition2D += bondingOffset;
-                localPosition2D += CalculateLocalAlignmentOffset(
-                    info.OriginAlignment,
-                    info.Dimensions - info.NodeSize
-                ); // offset from the origin
+                base.OnInspectorGUI();
 
-                // Convert the 2D local position to 3D and apply matrix rotation
-                Vector3 localPosition = new Vector3(localPosition2D.x, 0, localPosition2D.y);
-
-                // Apply the matrix rotation
-                Quaternion matrixRotation = info.Rotation;
-                Vector3 rotatedPosition = matrixRotation * localPosition;
-
-                // Final world position by adding rotated local position to MatrixPosition
-                position =
-                    (info?.Parent != null ? info.Parent.position : Vector3.zero) + rotatedPosition;
-
-                // Apply the same rotation to each node
-                rotation = matrixRotation;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _serializedObject.ApplyModifiedProperties();
+                    _script.Refresh();
+                }
             }
         }
-
-        protected static Vector2Int ConvertKeyToCoordinate(Vector2Int key, MatrixInfo info)
-        {
-            return CalculateNodeCoordinate(key, info.OriginKey);
-        }
-
-        protected static Vector2Int ConvertCoordinateToKey(Vector2Int coordinate, MatrixInfo info)
-        {
-            return CalculateNodeKey(coordinate, info.OriginKey);
-        }
-
-        protected static Vector2 ClampVector2(Vector2 value, float min, float max)
-        {
-            return new Vector2(Mathf.Clamp(value.x, min, max), Mathf.Clamp(value.y, min, max));
-        }
-
-        protected virtual void Awake() => Preload();
-
-        protected virtual void OnEnable() => Refresh();
-
-        protected virtual void OnDisable() { }
-
-        protected virtual void OnDestroy() { }
-
-        protected virtual void OnDrawGizmosSelected()
-        {
-            CustomGizmos.DrawWireRect(_info.Center, _info.Dimensions, _info.Rotation, Color.green);
-            Gizmos.DrawSphere(_info.Center, 0.1f);
-        }
-
-        void OnStateChanged(State state)
-        {
-            _currentState = state;
-        }
-
-        class StateMachine : SimpleStateMachine<State>
-        {
-            public StateMachine()
-                : base(State.INVALID) { }
-        }
+#endif
     }
 }

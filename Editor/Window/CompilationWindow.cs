@@ -1,13 +1,11 @@
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-
 #if UNITY_2019_3_OR_NEWER
 using UnityEditor.Compilation;
 #elif UNITY_2017_1_OR_NEWER
 using System.Reflection;
 #endif
-
-using System.Linq;
 
 public class CompilationWindow : EditorWindow
 {
@@ -21,7 +19,7 @@ public class CompilationWindow : EditorWindow
     private float nextAssemblyUpdateTime;
     private const float ASSEMBLY_UPDATE_INTERVAL = 1f; // Update assembly info every second
 
-    [MenuItem("Tools/Darklight/CompilationWindow")]
+    [MenuItem("Darklight/Tools/Compilation Window")]
     private static void ShowWindow()
     {
         var window = GetWindow<CompilationWindow>();
@@ -70,18 +68,23 @@ public class CompilationWindow : EditorWindow
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.LabelField("Compilation Controls", EditorStyles.boldLabel);
-                
+
                 if (GUILayout.Button("Force Recompile Scripts"))
                 {
                     ForceRecompile();
                 }
 
-                autoCompileEnabled = EditorGUILayout.Toggle("Auto-Compile Enabled", autoCompileEnabled);
+                autoCompileEnabled = EditorGUILayout.Toggle(
+                    "Auto-Compile Enabled",
+                    autoCompileEnabled
+                );
                 EditorPrefs.SetBool("kAutoRefresh", autoCompileEnabled);
 
                 if (lastCompileTime > 0)
                 {
-                    EditorGUILayout.LabelField($"Last Compile Time: {FormatCompileTime(lastCompileTime)}");
+                    EditorGUILayout.LabelField(
+                        $"Last Compile Time: {FormatCompileTime(lastCompileTime)}"
+                    );
                 }
             }
 
@@ -90,7 +93,11 @@ public class CompilationWindow : EditorWindow
             // Assembly Information
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                showAssemblyInfo = EditorGUILayout.Foldout(showAssemblyInfo, "Assembly Information", true);
+                showAssemblyInfo = EditorGUILayout.Foldout(
+                    showAssemblyInfo,
+                    "Assembly Information",
+                    true
+                );
                 if (showAssemblyInfo)
                 {
                     // Only update assembly cache when needed
@@ -99,9 +106,12 @@ public class CompilationWindow : EditorWindow
                         UpdateAssemblyCache();
                     }
 
-                    if (cachedAssemblies == null || cachedAssemblies.Length == 0) return;
-                    var sortedAssemblies = cachedAssemblies.OrderByDescending(a => a.allReferences.Length);
-                    
+                    if (cachedAssemblies == null || cachedAssemblies.Length == 0)
+                        return;
+                    var sortedAssemblies = cachedAssemblies.OrderByDescending(a =>
+                        a.allReferences.Length
+                    );
+
                     foreach (var assembly in sortedAssemblies)
                     {
                         using (new EditorGUILayout.HorizontalScope())
@@ -115,7 +125,9 @@ public class CompilationWindow : EditorWindow
                         }
                         using (new EditorGUILayout.HorizontalScope())
                         {
-                            EditorGUILayout.LabelField($"References: {assembly.allReferences.Length}");
+                            EditorGUILayout.LabelField(
+                                $"References: {assembly.allReferences.Length}"
+                            );
                         }
                         EditorGUI.indentLevel--;
                     }

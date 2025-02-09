@@ -1,16 +1,29 @@
 using System;
-using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.World;
 using NaughtyAttributes;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Darklight.UnityExt.Matrix
 {
     public partial class Matrix
     {
+        public enum Alignment
+        {
+            TopLeft,
+            TopCenter,
+            TopRight,
+            MiddleLeft,
+            MiddleCenter,
+            MiddleRight,
+            BottomLeft,
+            BottomCenter,
+            BottomRight
+        }
+
         [Serializable]
-        public class MatrixInfo
+        public class Info
         {
             #region < PRIVATE_CONST > ================================================================
             const int MIN_MAP_KEY = 1;
@@ -28,15 +41,14 @@ namespace Darklight.UnityExt.Matrix
             const float DEFAULT_NODE_BONDING = 0f;
             #endregion
 
-            ///
-            [SerializeField, ReadOnly]
-            Grid _grid;
-
-            [SerializeField, HideIf("HasGrid"), AllowNesting]
+            [SerializeField]
             Transform _parent;
 
             [SerializeField]
-            Vector2Int _bounds;
+            Grid _grid;
+
+            [SerializeField]
+            Vector2Int _bounds = Vector2Int.one * 5;
 
             [SerializeField]
             Alignment _alignment;
@@ -72,19 +84,25 @@ namespace Darklight.UnityExt.Matrix
                     }
                 }
             }
-            public bool HasGrid => _grid != null;
 
             public Transform Parent
             {
                 get => _parent;
                 set => _parent = value;
             }
-            public bool HasParent => _parent != null;
 
             public Vector3 OriginWorldPosition => _parent != null ? _parent.position : Vector3.zero;
-            public Alignment OriginAlignment => _alignment;
+            public Alignment OriginAlignment
+            {
+                get => _alignment;
+                set => _alignment = value;
+            }
             public int PartitionSize => _partitionSize;
-            public Vector2Int Bounds => _bounds;
+            public Vector2Int Bounds
+            {
+                get => _bounds;
+                set => _bounds = value;
+            }
             public int ColumnCount => _bounds.x;
             public int RowCount => _bounds.y;
             public int Capacity => _bounds.x * _bounds.y;
@@ -100,11 +118,11 @@ namespace Darklight.UnityExt.Matrix
                         : Vector2Int.zero;
                 }
             }
-            public Vector2 OriginAlignmentLocalDimensionOffset =>
-                CalculateLocalAlignmentOffset(OriginAlignment, Dimensions);
 
             public Vector3 Center => CalculateMatrixCenter(this);
-            public Quaternion Rotation => CalculateSwizzleRotationOffset(_swizzle);
+            public Quaternion Rotation => CalculateMatrixRotation(_swizzle);
+            public Quaternion UpDirection => Rotation * Quaternion.Euler(Vector3.up);
+            public Quaternion ForwardDirection => Rotation * Quaternion.Euler(Vector3.forward);
 
             public Vector2 NodeSize => _nodeSize;
             public Vector2 NodeHalfSize => _nodeSize / 2;
@@ -113,13 +131,15 @@ namespace Darklight.UnityExt.Matrix
 
             public GridLayout.CellSwizzle Swizzle => _swizzle;
 
+            public bool HasGrid => _grid != null;
+            public bool HasParent => _parent != null;
             #endregion
 
-            // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
-            public MatrixInfo(Transform parent)
+            public Info(Transform parent, Grid grid = null)
             {
-                _grid = null;
+                _grid = grid;
                 _parent = parent;
+
                 _bounds = Vector2Int.one;
 
                 _alignment = Matrix.Alignment.MiddleCenter;
@@ -130,24 +150,6 @@ namespace Darklight.UnityExt.Matrix
                 _nodeBonding = new Vector2(DEFAULT_NODE_BONDING, DEFAULT_NODE_BONDING);
 
                 Validate();
-            }
-
-            public static MatrixInfo GetMatrixInfo(Grid grid, BoundsInt bounds)
-            {
-                var info = new MatrixInfo(grid.transform)
-                {
-                    _grid = grid,
-                    _parent = grid.transform,
-                    _bounds = new Vector2Int(bounds.size.x, bounds.size.y),
-                    _nodeSize = grid.cellSize,
-                    _nodeSpacing = grid.cellGap,
-                    _nodeBonding = Vector2.zero,
-                    _alignment = Matrix.Alignment.BottomLeft,
-                    _swizzle = grid.cellSwizzle
-                };
-
-                info.Validate();
-                return info;
             }
 
             public void Validate()
@@ -168,77 +170,110 @@ namespace Darklight.UnityExt.Matrix
                 _bounds = new Vector2Int(clampedX, clampedY);
                 _partitionSize = Mathf.Max(_partitionSize, 3);
 
-                _nodeSize = ClampVector2(_nodeSize, MIN_NODE_DIMENSION, MAX_NODE_DIMENSION);
+                _nodeSize = Utility.ClampVector2(_nodeSize, MIN_NODE_DIMENSION, MAX_NODE_DIMENSION);
+                _nodeSpacing = Utility.ClampVector2(
+                    _nodeSpacing,
+                    MIN_NODE_SPACING,
+                    MAX_NODE_SPACING
+                );
+                _nodeBonding = Utility.ClampVector2(
+                    _nodeBonding,
+                    MIN_NODE_BONDING,
+                    MAX_NODE_BONDING
+                );
+            }
 
-                _nodeSpacing = ClampVector2(_nodeSpacing, MIN_NODE_SPACING, MAX_NODE_SPACING);
-                _nodeBonding = ClampVector2(_nodeBonding, MIN_NODE_BONDING, MAX_NODE_BONDING);
+            #region < PRIVATE_METHODS > [[ Calculations ]] ==================================================================================
+            /// <summary>
+            /// Calculates the center position of the matrix in world space using matrix data.
+            /// </summary>
+            /// <returns>The center position of the matrix in world coordinates.</returns>
+            static Vector3 CalculateMatrixCenter(Info info)
+            {
+                // Calculate alignment offset
+                Vector2 alignmentOffset = Utility.CalculateAlignmentOffset(
+                    info.OriginAlignment,
+                    info.Dimensions - info.NodeSize
+                );
+                alignmentOffset -= info.NodeHalfSize;
+
+                Vector2 centerPos2D = info.Dimensions / 2;
+                centerPos2D += alignmentOffset;
+
+                if (info.HasGrid)
+                {
+                    centerPos2D.x += info.NodeHalfSize.x;
+                    centerPos2D.y -= info.NodeHalfSize.y;
+                }
+
+                // Convert to 3D with proper swizzle
+                Vector3 centerPos3D = Utility.SwizzleVec2(centerPos2D, info.Swizzle);
+                return info.OriginWorldPosition + centerPos3D;
             }
 
             /// <summary>
-            /// Generates all `Vector2Int` keys within the bounds of the matrix, iterating from (0,0)
-            /// to the specified `TerminalKey`. This method uses a single `Vector2Int` instance,
-            /// updating its values to reduce memory allocations while yielding each position lazily.
+            /// Gets the dimensions of the matrix in world space.
             /// </summary>
-
-            /// <returns>
-            /// An `IEnumerable<Vector2Int>` sequence representing all grid keys within the bounds
-            /// of (0,0) to `TerminalKey`.
-            /// </returns>
-            public IEnumerable<Vector2Int> GetKeys()
+            /// <returns>The full dimensions of the matrix in local units.</returns>
+            static Vector2 CalculateMatrixDimensions(Info info)
             {
-                Vector2Int key = new Vector2Int(0, 0);
+                Vector2 dimensions2D = new Vector2(
+                    info.Bounds.x * info.NodeSize.x,
+                    info.Bounds.y * info.NodeSize.y
+                );
 
-                for (int x = 0; x <= TerminalKey.x; x++)
+                dimensions2D *= (info.NodeSpacing + Vector2.one);
+                return dimensions2D;
+            }
+
+            Quaternion CalculateMatrixRotation(GridLayout.CellSwizzle swizzle)
+            {
+                Vector3 up = Vector3.up;
+                Vector3 forward = Vector3.forward;
+
+                switch (swizzle)
                 {
-                    key.x = x;
-                    for (int y = 0; y <= TerminalKey.y; y++)
-                    {
-                        key.y = y;
-                        yield return key;
-                    }
+                    case GridLayout.CellSwizzle.XYZ:
+                        // Default Unity 2D orientation (vertical plane)
+                        up = Vector3.back;
+                        forward = Vector3.up;
+                        break;
+
+                    case GridLayout.CellSwizzle.XZY:
+                        // Default Unity 3D orientation (horizontal plane)
+                        // up = Vector3.up;
+                        // forward = Vector3.forward;
+                        break;
+
+                    case GridLayout.CellSwizzle.YXZ:
+                        // Vertical plane, rotated 90° counter-clockwise around Z
+                        up = Vector3.back;
+                        forward = Vector3.right;
+                        break;
+
+                    case GridLayout.CellSwizzle.YZX:
+                        // Vertical plane, facing right
+                        up = Vector3.right;
+                        forward = Vector3.forward;
+                        break;
+
+                    case GridLayout.CellSwizzle.ZXY:
+                        // Horizontal plane, rotated 90° counter-clockwise around Y
+                        up = Vector3.up;
+                        forward = Vector3.right;
+                        break;
+
+                    case GridLayout.CellSwizzle.ZYX:
+                        // Vertical plane, rotated 90° clockwise around X
+                        up = Vector3.back;
+                        forward = Vector3.right;
+                        break;
                 }
+
+                // Create rotation from the up and forward vectors
+                return Quaternion.LookRotation(forward, up);
             }
-
-            public bool IsKeyInBounds(Vector2Int key)
-            {
-                return key.x >= 0 && key.x < TerminalKey.x && key.y >= 0 && key.y < TerminalKey.y;
-            }
-
-            /*
-                    /// <summary>
-                    /// Calculates the normal vector from the current MatrixRotation.
-                    /// </summary>
-                    public Vector3 CalculateNormal()
-                    {
-                        // Convert the Euler rotation to a Quaternion
-                        Quaternion rotation = Quaternion.Euler(MapRotation);
-    
-                        // Use the rotation to transform the default "up" direction
-                        Vector3 normal = rotation * Vector3.up;
-    
-                        return normal;
-                    }
-            */
-
-
-
-            public Color GenerateColorFromPartitionKey(int partitionKey)
-            {
-                // MurmurHash3-inspired mixing for better distribution
-                uint h = (uint)partitionKey;
-                h ^= h >> 16;
-                h *= 0x85ebca6b;
-                h ^= h >> 13;
-                h *= 0xc2b2ae35;
-                h ^= h >> 16;
-
-                // Use different prime multipliers for each component
-                float hue = (h * 0xcc9e2d51) % 360f / 360f;
-                float saturation = 0.6f + (((h * 0x1b873593) % 40f) / 100f); // Range 0.6-1.0
-                float value = 0.8f + (((h * 0xe6546b64) % 20f) / 100f); // Range 0.8-1.0
-
-                return Color.HSVToRGB(hue, saturation, value);
-            }
+            #endregion
         }
     }
 }
