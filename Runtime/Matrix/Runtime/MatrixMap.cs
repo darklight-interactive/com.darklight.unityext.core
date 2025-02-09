@@ -45,7 +45,7 @@ namespace Darklight.UnityExt.Matrix
                     return;
 
                 // << CREATE NEW NODE >>
-                Node newNode = new Node(_matrix.GetInfo(), key);
+                Node newNode = new Node(_matrix, key);
                 _nodeLookup.Add(key, newNode);
 
                 // << ADD KEY TO PARTITION >>
@@ -87,7 +87,7 @@ namespace Darklight.UnityExt.Matrix
                     if (!IsKeyInBounds(key))
                     {
                         RemoveNode(key);
-                        Debug.Log($"Removed Node (OutOfBounds): {key}");
+                        //Debug.Log($"Removed Node (OutOfBounds): {key}");
                     }
                 }
 
@@ -148,10 +148,10 @@ namespace Darklight.UnityExt.Matrix
             public List<Node> GetAllNodes() => _cachedNodes;
 
             public List<Node> GetEnabledNodes() =>
-                _cachedNodes.Where(node => node.Enabled).ToList();
+                _cachedNodes.Where(node => node.IsEnabled).ToList();
 
             public List<Node> GetDisabledNodes() =>
-                _cachedNodes.Where(node => !node.Enabled).ToList();
+                _cachedNodes.Where(node => !node.IsEnabled).ToList();
 
             /// <summary>
             /// Gets all valid neighboring nodes for a given node key.
@@ -174,7 +174,7 @@ namespace Darklight.UnityExt.Matrix
                         Vector2Int neighborKey = nodeKey + new Vector2Int(x, y);
                         Node neighbor = GetNodeByKey(neighborKey);
 
-                        if (neighbor != null && neighbor.Enabled)
+                        if (neighbor.IsValid && neighbor.IsEnabled)
                         {
                             neighbors.Add(neighbor);
                         }
@@ -189,35 +189,42 @@ namespace Darklight.UnityExt.Matrix
             /// </summary>
             /// <param name="position">The world position to check against</param>
             /// <returns>The closest node, or null if no nodes are found</returns>
-            public Node GetClosestNodeToPosition(Vector3 position)
+            public bool GetClosestNodeToPosition(Vector3 position, out Node? closestNode)
             {
+                closestNode = null;
+
                 if (_cachedNodes == null || _cachedNodes.Count == 0)
-                    return null;
+                {
+                    closestNode = null;
+                    return false;
+                }
 
                 // Find the closest partition to our adjusted position
                 Partition closestPartition = GetClosestPartitionToPosition(position);
                 if (closestPartition == null)
-                    return null;
+                {
+                    closestNode = null;
+                    return false;
+                }
 
-                Node closestNode = null;
                 float closestDistance = float.MaxValue;
                 HashSet<Node> checkedNodes = new HashSet<Node>();
 
                 // Check nodes in the closest partition
                 if (closestPartition != null)
                 {
-                    foreach (var node in closestPartition.ChildNodes)
+                    foreach (Node nextNode in closestPartition.ChildNodes)
                     {
-                        if (node == null || checkedNodes.Contains(node))
+                        if (!nextNode.IsValid || checkedNodes.Contains(nextNode))
                             continue;
 
-                        checkedNodes.Add(node);
-                        float distance = Vector3.Distance(position, node.Position);
+                        checkedNodes.Add(nextNode);
+                        float distance = Vector3.Distance(position, nextNode.Center);
 
                         if (distance < closestDistance)
                         {
                             closestDistance = distance;
-                            closestNode = node;
+                            closestNode = nextNode;
                         }
                     }
                 }
@@ -225,14 +232,14 @@ namespace Darklight.UnityExt.Matrix
                 // If we found a node, check its neighbors
                 if (closestNode != null)
                 {
-                    var neighbors = GetNodeNeighbors(closestNode.Key);
-                    foreach (var neighbor in neighbors)
+                    List<Node> neighbors = GetNodeNeighbors(closestNode.Value.Key);
+                    foreach (Node neighbor in neighbors)
                     {
                         if (checkedNodes.Contains(neighbor))
                             continue;
 
                         checkedNodes.Add(neighbor);
-                        float distance = Vector3.Distance(position, neighbor.Position);
+                        float distance = Vector3.Distance(position, neighbor.Center);
 
                         if (distance < closestDistance)
                         {
@@ -242,9 +249,10 @@ namespace Darklight.UnityExt.Matrix
                     }
                 }
 
-                return closestNode;
+                return closestNode != null;
             }
             #endregion
+
 
             #region < PUBLIC_METHODS > [[ Check Nodes ]] =====================================================================================
             public bool IsKeyInBounds(Vector2Int key)

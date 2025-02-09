@@ -216,6 +216,94 @@ namespace Darklight.UnityExt.Editor
 
         #endregion
 
+        #region < PUBLIC_STATIC_METHODS > [[ Draw Toggle Fields ]] ================================================================
+
+        /// <summary>
+        /// Draws a toggle with a tooltip and label on the left side.
+        /// </summary>
+        /// <param name="label">The label text to display</param>
+        /// <param name="tooltip">The tooltip text to show on hover</param>
+        /// <param name="value">The current toggle value</param>
+        /// <returns>The new toggle value</returns>
+        public static bool DrawToggleLeft(string label, bool value, string tooltip = "")
+        {
+            return EditorGUILayout.ToggleLeft(
+                new GUIContent(label, tooltip),
+                value,
+                EditorStyles.wordWrappedLabel
+            );
+        }
+
+        public static bool DrawToggleLeft(string label, string tooltip, bool value, GUIStyle style)
+        {
+            return EditorGUILayout.ToggleLeft(new GUIContent(label, tooltip), value, style);
+        }
+
+        /// <summary>
+        /// Draws a toggle group with a header and multiple toggles.
+        /// </summary>
+        /// <param name="groupLabel">The header text for the toggle group</param>
+        /// <param name="toggles">Dictionary of toggle labels and their current values</param>
+
+        /// <param name="tooltips">Optional dictionary of tooltips for each toggle</param>
+        /// <returns>Dictionary of updated toggle values</returns>
+        public static Dictionary<string, bool> DrawToggleGroup(
+            Dictionary<string, (bool, string)> toggles
+        )
+        {
+            var results = new Dictionary<string, bool>();
+            foreach (var toggle in toggles)
+            {
+                string tooltip = toggle.Value.Item2;
+                bool value = toggle.Value.Item1;
+
+                results[toggle.Key] = DrawToggleLeft(toggle.Key, value, tooltip);
+            }
+            return results;
+        }
+
+        /// <summary>
+        /// Draws a toggle with an icon and tooltip.
+        /// </summary>
+        /// <param name="label">The label text to display</param>
+        /// <param name="tooltip">The tooltip text to show on hover</param>
+        /// <param name="icon">The icon to display next to the toggle</param>
+        /// <param name="value">The current toggle value</param>
+        /// <returns>The new toggle value</returns>
+        public static bool DrawIconToggle(string label, string tooltip, Texture icon, bool value)
+        {
+            GUIContent content = new GUIContent(label, icon, tooltip);
+            return EditorGUILayout.ToggleLeft(content, value, EditorStyles.wordWrappedLabel);
+        }
+
+        /// <summary>
+        /// Draws a toggle with custom styling options.
+        /// </summary>
+        /// <param name="label">The label text to display</param>
+        /// <param name="tooltip">The tooltip text to show on hover</param>
+        /// <param name="value">The current toggle value</param>
+        /// <param name="style">Optional custom GUIStyle for the toggle</param>
+        /// <param name="options">Optional layout options</param>
+        /// <returns>The new toggle value</returns>
+        public static bool DrawStyledToggle(
+            string label,
+            string tooltip,
+            bool value,
+            GUIStyle style = null,
+            params GUILayoutOption[] options
+        )
+        {
+            GUIStyle toggleStyle = style ?? EditorStyles.wordWrappedLabel;
+            return EditorGUILayout.ToggleLeft(
+                new GUIContent(label, tooltip),
+                value,
+                toggleStyle,
+                options
+            );
+        }
+
+        #endregion
+
         #region -- << GUI ELEMENTS >> ------------------------------------ >>
         public static void DrawHorizontalLine(Color color, int thickness = 1, int padding = 10)
         {
@@ -333,7 +421,6 @@ namespace Darklight.UnityExt.Editor
 
         public static void DrawPropertyGroup(
             string title,
-            ref bool showProperties,
             Action drawProperties,
             Color backgroundColor = default
         )
@@ -347,12 +434,53 @@ namespace Darklight.UnityExt.Editor
                 EditorGUI.indentLevel++;
                 drawProperties?.Invoke();
                 EditorGUI.indentLevel--;
+            }
+        }
+
+        public static bool DrawFoldoutPropertyGroup(
+            string title,
+            bool foldoutState,
+            Action drawProperties,
+            Color backgroundColor = default
+        )
+        {
+            var style =
+                backgroundColor == default
+                    ? EditorStyles.helpBox
+                    : GetColoredHelpBoxStyle(backgroundColor);
+            using (new EditorGUILayout.VerticalScope(style))
+            {
+                bool newState = EditorGUILayout.Foldout(foldoutState, title);
+                if (!newState)
+                    return false;
+
+                EditorGUI.indentLevel++;
+                drawProperties?.Invoke();
+                EditorGUI.indentLevel--;
+
+                return true;
             }
         }
 
         public static void DrawFoldoutPropertyGroup(
             string title,
-            ref bool foldoutToggle,
+            bool foldoutState,
+            Action drawProperties,
+            out bool newState,
+            Color backgroundColor = default
+        )
+        {
+            newState = DrawFoldoutPropertyGroup(
+                title,
+                foldoutState,
+                drawProperties,
+                backgroundColor
+            );
+        }
+
+        public static bool DrawTogglePropertyGroup(
+            string title,
+            bool toggleState,
             Action drawProperties,
             Color backgroundColor = default
         )
@@ -361,22 +489,43 @@ namespace Darklight.UnityExt.Editor
                 backgroundColor == default
                     ? EditorStyles.helpBox
                     : GetColoredHelpBoxStyle(backgroundColor);
+
+            if (!toggleState)
+                style = GetColoredHelpBoxStyle(new Color(0.7f, 0.7f, 0.7f, 0.5f));
+
             using (new EditorGUILayout.VerticalScope(style))
             {
-                foldoutToggle = EditorGUILayout.Foldout(foldoutToggle, title);
-                if (!foldoutToggle)
-                    return;
+                toggleState = EditorGUILayout.ToggleLeft(title, toggleState);
+
+                if (!toggleState)
+                    return false;
+
                 EditorGUI.indentLevel++;
                 drawProperties?.Invoke();
                 EditorGUI.indentLevel--;
+
+                return true;
             }
         }
 
+        public static void DrawTogglePropertyGroup(
+            string title,
+            bool toggleState,
+            Action drawProperties,
+            out bool newState,
+            Color backgroundColor = default
+        )
+        {
+            newState = DrawTogglePropertyGroup(title, toggleState, drawProperties, backgroundColor);
+        }
+
         /// <summary>
+
         /// Creates a two-column label with a prefix label and a value label.
         /// </summary>
         /// <param name="label">The label for the prefix.</param>
         /// <param name="value">The value to display.</param>
+
         public static void CreateTwoColumnLabel(string label, string value)
         {
             EditorGUILayout.BeginHorizontal();
@@ -458,6 +607,14 @@ namespace Darklight.UnityExt.Editor
             }
 
             return false;
+        }
+
+        public static void DrawButton(string label, Action onClick)
+        {
+            if (GUILayout.Button(label))
+            {
+                onClick?.Invoke();
+            }
         }
 #endif
     }

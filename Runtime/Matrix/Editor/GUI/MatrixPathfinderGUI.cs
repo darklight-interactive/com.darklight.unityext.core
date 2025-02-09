@@ -47,9 +47,9 @@ namespace Darklight.UnityExt.Matrix
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(
                         "Start Node:",
-                        pathStartNode != null ? pathStartNode.Coordinate.ToString() : "Not Set"
+                        pathStartNode.IsValid ? pathStartNode.Coordinate.ToString() : "Not Set"
                     );
-                    GUI.enabled = selectedNode != null;
+                    GUI.enabled = selectedNode.IsValid;
                     if (GUILayout.Button("Set Selected As Start", GUILayout.Width(150)))
                     {
                         onFindPath?.Invoke();
@@ -61,9 +61,9 @@ namespace Darklight.UnityExt.Matrix
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(
                         "End Node:",
-                        pathEndNode != null ? pathEndNode.Coordinate.ToString() : "Not Set"
+                        pathEndNode.IsValid ? pathEndNode.Coordinate.ToString() : "Not Set"
                     );
-                    GUI.enabled = selectedNode != null;
+                    GUI.enabled = selectedNode.IsValid;
                     if (GUILayout.Button("Set Selected As End", GUILayout.Width(150)))
                     {
                         onClearPath?.Invoke();
@@ -73,11 +73,12 @@ namespace Darklight.UnityExt.Matrix
 
                     // Find Path Button
                     EditorGUILayout.Space();
-                    GUI.enabled = pathStartNode != null && pathEndNode != null;
+                    GUI.enabled = pathStartNode.IsValid && pathEndNode.IsValid;
                     if (GUILayout.Button("Find Path"))
                     {
                         onFindPath?.Invoke();
                     }
+
                     GUI.enabled = true;
 
                     // Path Color
@@ -111,8 +112,8 @@ namespace Darklight.UnityExt.Matrix
                 Handles.color = pathColor;
                 for (int i = 0; i < currentPath.Count - 1; i++)
                 {
-                    var startPos = currentPath[i].Position;
-                    var endPos = currentPath[i + 1].Position;
+                    var startPos = currentPath[i].Center;
+                    var endPos = currentPath[i + 1].Center;
 
                     // Draw line
                     Handles.DrawLine(startPos, endPos, 2f);
@@ -131,7 +132,7 @@ namespace Darklight.UnityExt.Matrix
                 // Draw last node
                 Handles.SphereHandleCap(
                     0,
-                    currentPath[currentPath.Count - 1].Position,
+                    currentPath[currentPath.Count - 1].Center,
                     Quaternion.identity,
                     0.2f,
                     EventType.Repaint
@@ -139,15 +140,16 @@ namespace Darklight.UnityExt.Matrix
             }
 
             // Highlight start and end nodes
-            if (pathStartNode != null)
+            if (pathStartNode.IsValid)
             {
                 Handles.color = Color.green;
-                Handles.DrawWireCube(pathStartNode.Position, Vector3.one * 0.5f);
+                Handles.DrawWireCube(pathStartNode.Center, Vector3.one * 0.5f);
             }
-            if (pathEndNode != null)
+
+            if (pathEndNode.IsValid)
             {
                 Handles.color = Color.red;
-                Handles.DrawWireCube(pathEndNode.Position, Vector3.one * 0.5f);
+                Handles.DrawWireCube(pathEndNode.Center, Vector3.one * 0.5f);
             }
         }
     }

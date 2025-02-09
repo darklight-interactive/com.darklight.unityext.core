@@ -19,7 +19,7 @@ public class CompilationWindow : EditorWindow
     private float nextAssemblyUpdateTime;
     private const float ASSEMBLY_UPDATE_INTERVAL = 1f; // Update assembly info every second
 
-    [MenuItem("Darklight/Tools/Compilation Window")]
+    [MenuItem("Darklight/Window/Compilation")]
     private static void ShowWindow()
     {
         var window = GetWindow<CompilationWindow>();

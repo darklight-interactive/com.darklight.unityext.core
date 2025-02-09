@@ -44,10 +44,10 @@ namespace Darklight.UnityExt.Matrix
 
                 foreach (Node node in ChildNodes)
                 {
-                    min.x = Mathf.Min(min.x, node.Position.x);
-                    min.y = Mathf.Min(min.y, node.Position.y);
-                    max.x = Mathf.Max(max.x, node.Position.x);
-                    max.y = Mathf.Max(max.y, node.Position.y);
+                    min.x = Mathf.Min(min.x, node.Center.x);
+                    min.y = Mathf.Min(min.y, node.Center.y);
+                    max.x = Mathf.Max(max.x, node.Center.x);
+                    max.y = Mathf.Max(max.y, node.Center.y);
                 }
 
                 return (min + max) * 0.5f;

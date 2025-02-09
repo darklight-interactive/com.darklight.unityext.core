@@ -161,7 +161,7 @@ namespace Darklight.UnityExt.Editor
                     position,
                     Quaternion.LookRotation(normal),
                     size / 2,
-                    size,
+                    size / 2,
                     capFunction
                 )
             )

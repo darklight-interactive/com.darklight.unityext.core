@@ -1,7 +1,9 @@
 using System;
+using Codice.Client.Common.TreeGrouper;
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
 using NaughtyAttributes;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,61 +15,43 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public class Node : IVisitable<Node>
+        public struct Node : IVisitable<Node>
         {
-            bool _isValid = false;
-            bool _isEnabled = true;
+            Matrix _matrix;
+            Vector2Int _key;
+            bool _isValid;
+            bool _isEnabled;
 
-            Info _info;
-
-            [SerializeField, ShowOnly]
-            Vector2Int _key = Vector2Int.zero;
-
-            [SerializeField, ShowOnly]
-            Vector2Int _coordinate = Vector2Int.zero;
-
-            [Header("World Space Values")]
-            [SerializeField, ShowOnly]
-            Vector3 _position = Vector3.zero;
-
-            [SerializeField, ShowOnly]
-            Vector2 _dimensions = Vector2.one;
-
-            public Info MatrixInfo => _info;
-            public bool Enabled
+            public Vector2Int Key => _key;
+            public Vector2Int Coordinate => ConvertKeyToCoordinate(_matrix.GetInfo(), Key);
+            public Vector3Int Coordinate_Vec3 =>
+                Utility.SwizzleVec2Int(Coordinate, _matrix.GetInfo().Swizzle);
+            public Vector3 Center => CalculatePosition(_matrix.GetInfo(), Key);
+            public Vector3 NormalDir => _matrix._info.UpDirection;
+            public Vector2 Size => _matrix._info.NodeSize;
+            public float AvgSize => _matrix._info.NodeAvgSize;
+            public int PartitionKey => CalculatePartitionKey(_matrix.GetInfo(), Key);
+            public bool IsValid => _isValid;
+            public bool IsEnabled
             {
                 get => _isEnabled;
                 set => _isEnabled = value;
             }
-            public Vector2Int Key => _key;
-            public Vector2Int Coordinate => _coordinate;
-            public Vector3Int Coordinate_Vec3 => Utility.SwizzleVec2Int(Coordinate, _info.Swizzle);
-            public Vector3 Position => _position;
-            public Vector2 Dimensions => _dimensions;
-            public int PartitionKey => CalculatePartitionKey(_info, _key);
-
-            #region ---- < PUBLIC_PROPERTIES > ( Span ) ---------------------------------
-            public float DiagonalSpan =>
-                Mathf.Sqrt(Mathf.Pow(_dimensions.x, 2) + Mathf.Pow(_dimensions.y, 2));
-            public float AverageSpan => (_dimensions.x + _dimensions.y) * 0.5f;
-            public float MaxSpan => Mathf.Max(_dimensions.x, _dimensions.y);
-            public float MinSpan => Mathf.Min(_dimensions.x, _dimensions.y);
-            #endregion
+            public Color DebugColor => CustomGUIColors.white;
 
             // ======== [[ CONSTRUCTOR ]] ======================================================= >>>>
-            public Node(Info info, Vector2Int key)
+            public Node(Matrix matrix, Vector2Int key)
             {
-                if (info == null)
-                {
-                    Debug.LogError("MatrixInfo is null on Node: " + key);
-                    return;
-                }
-                _isValid = true;
-
-                _info = info;
+                _matrix = matrix;
                 _key = key;
+                _isValid = true;
+                _isEnabled = true;
 
-                Refresh();
+                if (_matrix == null || key.x == -1 || key.y == -1)
+                {
+                    _isValid = false;
+                    _isEnabled = false;
+                }
             }
 
             // (( INTERFACE )) : IVisitable -------- ))
@@ -76,9 +60,17 @@ namespace Darklight.UnityExt.Matrix
                 visitor.Visit(this);
             }
 
-            public void Refresh()
+            public void Reset()
             {
-                _dimensions = _info.NodeSize;
+                _matrix = null;
+                _key = new Vector2Int(-1, -1);
+                _isValid = false;
+                _isEnabled = false;
+            }
+
+            public bool IsEqual(Node other)
+            {
+                return _matrix == other._matrix && _key == other._key;
             }
 
             public static void ConvertKeyToCoordinate(
@@ -90,6 +82,12 @@ namespace Darklight.UnityExt.Matrix
                 coordinate = key - info.OriginKey;
             }
 
+            public static Vector2Int ConvertKeyToCoordinate(Info info, Vector2Int key)
+            {
+                Vector2Int coordinate = key - info.OriginKey;
+                return coordinate;
+            }
+
             public static void ConvertCoordinateToKey(
                 Info info,
                 Vector2Int coordinate,
@@ -99,15 +97,21 @@ namespace Darklight.UnityExt.Matrix
                 key = coordinate + info.OriginKey;
             }
 
-            public static void CalculatePosition(Info info, Vector2Int key, out Vector3 position)
+            public static Vector2Int ConvertCoordinateToKey(Info info, Vector2Int coordinate)
             {
+                Vector2Int key = coordinate + info.OriginKey;
+                return key;
+            }
+
+            public static Vector3 CalculatePosition(Info info, Vector2Int key)
+            {
+                Vector3 position = Vector3.zero;
                 if (info.Grid != null)
                 {
                     ConvertKeyToCoordinate(info, key, out Vector2Int coordinate);
                     position = info.Grid.CellToWorld(new Vector3Int(coordinate.x, coordinate.y, 0));
                     position.x += info.NodeHalfSize.x;
                     position.y -= info.NodeHalfSize.y;
-                    return;
                 }
                 else
                 {
@@ -144,12 +148,18 @@ namespace Darklight.UnityExt.Matrix
 
                     // Final world position by adding rotated local position to MatrixPosition
                     position =
-                        (info?.Parent != null ? info.Parent.position : Vector3.zero)
+                        (info.Parent != null ? info.Parent.position : Vector3.zero)
                         + rotatedPosition;
                 }
+                return position;
             }
 
-            public static int CalculatePartitionKey(Info info, Vector2Int key)
+            static Vector3 CalculateNormalDirection(Info info)
+            {
+                return info.UpDirection;
+            }
+
+            static int CalculatePartitionKey(Info info, Vector2Int key)
             {
                 int partitionX = Mathf.FloorToInt(key.x / (float)info.PartitionSize);
                 int partitionY = Mathf.FloorToInt(key.y / (float)info.PartitionSize);
@@ -163,7 +173,65 @@ namespace Darklight.UnityExt.Matrix
                 return hash;
             }
 
+            /// <summary>
+            /// Calculates the pivot point for a node based on its alignment and inset.
+            /// /// </summary>
+            /// <param name="node">The node to calculate the pivot for.</param>
+            /// <param name="alignment">The alignment of the node.</param>
+            /// <param name="inset">The inset of the node.</param>
+            /// <returns>The pivot point of the node.</returns>
+            public static Vector3 CalculatePivot(Node node, Alignment alignment, float inset = 0f)
+            {
+                // Clamp inset to valid range
+                inset = Mathf.Clamp(inset, 0, 0.5f);
+
+                // Calculate base offset
+                Vector2 offset = Utility.CalculateAlignmentOffset(alignment, node.Size);
+                offset += node.Size / 2;
+
+                // Apply inset based on alignment
+                Vector2 insetOffset = Vector2.zero;
+                switch (alignment)
+                {
+                    case Alignment.TopLeft:
+                        insetOffset = new Vector2(inset, inset);
+                        break;
+                    case Alignment.TopCenter:
+                        insetOffset = new Vector2(0, inset);
+                        break;
+                    case Alignment.TopRight:
+                        insetOffset = new Vector2(inset, inset);
+                        break;
+                    case Alignment.MiddleLeft:
+                        insetOffset = new Vector2(inset, 0);
+
+                        break;
+                    case Alignment.MiddleCenter:
+                        break;
+                    case Alignment.MiddleRight:
+                        insetOffset = new Vector2(inset, 0);
+                        break;
+                    case Alignment.BottomLeft:
+                        insetOffset = new Vector2(inset, inset);
+
+                        break;
+                    case Alignment.BottomCenter:
+                        insetOffset = new Vector2(0, inset);
+                        break;
+                    case Alignment.BottomRight:
+                        insetOffset = new Vector2(inset, inset);
+                        break;
+                }
+
+                offset += insetOffset * node.Size;
+
+                Vector3 pivot =
+                    node.Center - Utility.SwizzleVec2(offset, node._matrix._info.Swizzle);
+                return pivot;
+            }
+
             #region < PUBLIC_CLASS > [[ Visitor ]] ================================================================
+
 
             public class Visitor : IVisitor<Node>
             {
@@ -180,6 +248,88 @@ namespace Darklight.UnityExt.Matrix
                 }
             }
             #endregion
+
+#if UNITY_EDITOR
+            public static class GUI
+            {
+                public enum LabelContent
+                {
+                    KEY,
+                    COORDINATE,
+                    POSITION,
+                    DIMENSIONS,
+                    PARTITION_KEY
+                }
+
+                public static void OnInspectorGUI(Node node)
+                {
+                    EditorGUILayout.LabelField("Key", node.Key.ToString());
+                    EditorGUILayout.LabelField("Coordinate", node.Coordinate.ToString());
+                    EditorGUILayout.LabelField("Position", node.Center.ToString());
+                    EditorGUILayout.LabelField("Dimensions", node.Size.ToString());
+                }
+
+                public static void OnSceneGUI(Node node)
+                {
+                    DrawNodeLabel(node);
+
+                    if (Preferences.NodePrefs.DrawButtons)
+                        DrawNodeButton(
+                            node,
+                            () =>
+                            {
+                                Debug.Log($"Clicked Button {node.Key}");
+                            }
+                        );
+                }
+
+                static void DrawNodeLabel(Node node)
+                {
+                    string label = "";
+                    GUIStyle labelStyle = new GUIStyle(EditorStyles.label)
+                    {
+                        wordWrap = true,
+                        alignment = TextAnchor.MiddleCenter,
+                        fontSize = 8,
+                        normal = { textColor = Color.white }
+                    };
+
+                    switch (Preferences.NodePrefs.labelContent)
+                    {
+                        case LabelContent.KEY:
+                            label = node.Key.ToString();
+                            break;
+                        case LabelContent.COORDINATE:
+                            label = node.Coordinate.ToString();
+                            break;
+                        case LabelContent.POSITION:
+                            label = node.Center.ToString();
+                            break;
+                        case LabelContent.DIMENSIONS:
+                            label = node.Size.ToString();
+                            break;
+                        case LabelContent.PARTITION_KEY:
+                            label = node.PartitionKey.ToString();
+                            break;
+                    }
+
+                    Vector3 pivot = CalculatePivot(node, Alignment.TopCenter, 0.25f);
+                    Handles.Label(pivot, label, labelStyle);
+                }
+
+                static void DrawNodeButton(Node node, Action onClick)
+                {
+                    CustomGizmos.DrawButtonHandle(
+                        node.Center,
+                        node.AvgSize / 2,
+                        node.NormalDir,
+                        node.DebugColor,
+                        onClick,
+                        Handles.CubeHandleCap
+                    );
+                }
+            }
+#endif
         }
     }
 }

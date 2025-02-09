@@ -8,8 +8,6 @@ namespace Darklight.UnityExt.Matrix
 {
     public class MatrixEditorWindow : EditorWindow
     {
-        const string WINDOW_NAME = "Matrix Editor";
-
         readonly Color _textColor = Color.black;
         readonly Color _defaultColor = Color.white * new Color(1, 1, 1, 0.5f);
         readonly Color _selectedColor = Color.yellow * new Color(1, 1, 1, 0.5f);
@@ -17,20 +15,12 @@ namespace Darklight.UnityExt.Matrix
 
         SerializedObject _serializedMatrixObject;
         Matrix _matrix;
-        Matrix.Info _info;
-        Matrix.Map _map;
         Matrix.Node _selectedNode;
-        bool _selectedNodeIsExpanded = false;
-        Vector2 _scrollPosition;
-        bool _showMatrixInfo = false;
 
-        Vector2 _partitionScrollPosition;
-        bool _showPartitions = false;
-        bool _partitionFoldoutToggle = false;
-        Dictionary<int, bool> _partitionFoldouts = new Dictionary<int, bool>();
         private int _selectedPartition = -1;
         private Vector3 _selectedPartitionCenter;
         private bool _isPartitionSelected => _selectedPartition != -1;
+
         private MatrixPathfinder _pathfinder;
         private bool _showPathfinderControls = false;
         private bool _findPathWithActiveNodes = false;
@@ -39,15 +29,18 @@ namespace Darklight.UnityExt.Matrix
         private List<Matrix.Node> _currentPath;
         private Color _pathColor = Color.yellow;
 
-        [MenuItem("Darklight/Matrix/EditorWindow")]
-        public static void ShowWindow()
+        [MenuItem("Darklight/Window/Matrix Editor")]
+        private static void ShowWindow()
         {
-            GetWindow<MatrixEditorWindow>(WINDOW_NAME);
+            EditorWindow window = GetWindow<MatrixEditorWindow>();
+            window.titleContent = new GUIContent("Matrix Editor");
+            window.minSize = new Vector2(300, 200);
+            window.Show();
         }
 
         public static void ShowWindow(Matrix targetMatrix)
         {
-            var window = GetWindow<MatrixEditorWindow>(WINDOW_NAME);
+            var window = GetWindow<MatrixEditorWindow>();
             window._matrix = targetMatrix;
         }
 
@@ -100,7 +93,6 @@ namespace Darklight.UnityExt.Matrix
             /*
             // Draw Selected Node Info
             Matrix.GUI.DrawNodeInfoGUI(_selectedNode, ref _selectedNodeIsExpanded);
-
 
             // Draw Partition Toggle and List
             MatrixPartitionGUI.DrawPartitionToggle(ref _showPartitions);
@@ -177,12 +169,11 @@ namespace Darklight.UnityExt.Matrix
         {
             _selectedNode = node;
             Repaint();
-            Debug.Log($"{WINDOW_NAME}: SetSelectedNode: " + node.Key);
         }
 
         private void FindPath()
         {
-            if (_pathfinder == null || _pathStartNode == null || _pathEndNode == null)
+            if (_pathfinder == null || !_pathStartNode.IsValid || !_pathEndNode.IsValid)
                 return;
 
             List<Matrix.Node> nodes = _findPathWithActiveNodes
@@ -201,8 +192,8 @@ namespace Darklight.UnityExt.Matrix
         private void ClearPath()
         {
             _currentPath = null;
-            _pathStartNode = null;
-            _pathEndNode = null;
+            _pathStartNode.Reset();
+            _pathEndNode.Reset();
             SceneView.RepaintAll();
         }
 
@@ -210,7 +201,7 @@ namespace Darklight.UnityExt.Matrix
         {
             _selectedPartition = partitionKey;
             _selectedPartitionCenter = center;
-            _selectedNode = null;
+            _selectedNode.Reset();
 
             if (SceneView.lastActiveSceneView != null)
             {
@@ -225,8 +216,9 @@ namespace Darklight.UnityExt.Matrix
         private void ClearPartitionSelection()
         {
             _selectedPartition = -1;
-            _selectedNode = null;
+            _selectedNode.Reset();
         }
     }
 }
+
 #endif

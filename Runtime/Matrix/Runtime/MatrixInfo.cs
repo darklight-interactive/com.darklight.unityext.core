@@ -23,11 +23,9 @@ namespace Darklight.UnityExt.Matrix
         }
 
         [Serializable]
-        public class Info
+        public struct Info
         {
             #region < PRIVATE_CONST > ================================================================
-            const int MIN_MAP_KEY = 1;
-            const int MAX_MAP_KEY = 25;
             const float MIN_NODE_DIMENSION = 0.125f;
             const float MAX_NODE_DIMENSION = 10f;
             const float MIN_NODE_SPACING = -0.5f;
@@ -35,20 +33,18 @@ namespace Darklight.UnityExt.Matrix
             const float MIN_NODE_BONDING = -1f;
             const float MAX_NODE_BONDING = 1f;
 
-            const int DEFAULT_MAP_KEY = 3;
-            const float DEFAULT_NODE_DIMENSION = 1f;
+            const int DEFAULT_PARTITION_SIZE = 5;
+            const float DEFAULT_NODE_SIZE = 1f;
             const float DEFAULT_NODE_SPACING = 0f;
             const float DEFAULT_NODE_BONDING = 0f;
             #endregion
 
-            [SerializeField]
+            Matrix _matrix;
             Transform _parent;
-
-            [SerializeField]
             Grid _grid;
 
             [SerializeField]
-            Vector2Int _bounds = Vector2Int.one * 5;
+            Vector2Int _bounds;
 
             [SerializeField]
             Alignment _alignment;
@@ -57,9 +53,8 @@ namespace Darklight.UnityExt.Matrix
             int _partitionSize;
 
             [HorizontalLine]
-            [Space(10), Header("Node Values")]
             [SerializeField, DisableIf("HasGrid"), AllowNesting]
-            private GridLayout.CellSwizzle _swizzle = GridLayout.CellSwizzle.XZY;
+            private GridLayout.CellSwizzle _swizzle;
 
             [SerializeField, DisableIf("HasGrid"), AllowNesting]
             private Vector2 _nodeSize;
@@ -67,7 +62,7 @@ namespace Darklight.UnityExt.Matrix
             [SerializeField, DisableIf("HasGrid"), AllowNesting]
             private Vector2 _nodeSpacing;
 
-            [SerializeField]
+            [SerializeField, HideIf("HasGrid")]
             private Vector2 _nodeBonding;
 
             #region < PUBLIC_PROPERTIES > ================================================================
@@ -121,31 +116,37 @@ namespace Darklight.UnityExt.Matrix
 
             public Vector3 Center => CalculateMatrixCenter(this);
             public Quaternion Rotation => CalculateMatrixRotation(_swizzle);
-            public Quaternion UpDirection => Rotation * Quaternion.Euler(Vector3.up);
-            public Quaternion ForwardDirection => Rotation * Quaternion.Euler(Vector3.forward);
+            public Vector3 RightDirection => Rotation * Vector3.right;
+            public Vector3 UpDirection => Rotation * Vector3.up;
+            public Vector3 ForwardDirection => Rotation * Vector3.forward;
 
             public Vector2 NodeSize => _nodeSize;
             public Vector2 NodeHalfSize => _nodeSize / 2;
+            public float NodeAvgSize => (_nodeSize.x + _nodeSize.y) / 2;
+
             public Vector2 NodeSpacing => _nodeSpacing;
             public Vector2 NodeBonding => _nodeBonding;
 
             public GridLayout.CellSwizzle Swizzle => _swizzle;
 
-            public bool HasGrid => _grid != null;
             public bool HasParent => _parent != null;
+            public bool HasGrid => _grid != null;
+            public bool IsValid => _matrix != null;
             #endregion
 
-            public Info(Transform parent, Grid grid = null)
+            public Info(Matrix matrix)
             {
-                _grid = grid;
-                _parent = parent;
+                _matrix = matrix;
+                _parent = matrix.transform;
+                _grid = matrix.GetGrid();
 
-                _bounds = Vector2Int.one;
+                _bounds = Vector2Int.one * 5;
 
                 _alignment = Matrix.Alignment.MiddleCenter;
-                _partitionSize = DEFAULT_MAP_KEY;
+                _partitionSize = DEFAULT_PARTITION_SIZE;
+                _swizzle = GridLayout.CellSwizzle.XYZ;
 
-                _nodeSize = new Vector2(DEFAULT_NODE_DIMENSION, DEFAULT_NODE_DIMENSION);
+                _nodeSize = new Vector2(DEFAULT_NODE_SIZE, DEFAULT_NODE_SIZE);
                 _nodeSpacing = new Vector2(DEFAULT_NODE_SPACING, DEFAULT_NODE_SPACING);
                 _nodeBonding = new Vector2(DEFAULT_NODE_BONDING, DEFAULT_NODE_BONDING);
 
@@ -158,10 +159,9 @@ namespace Darklight.UnityExt.Matrix
                 if (_grid != null)
                 {
                     _parent = _grid.transform;
-
+                    _swizzle = _grid.cellSwizzle;
                     _nodeSize = _grid.cellSize;
                     _nodeSpacing = _grid.cellGap;
-                    _swizzle = _grid.cellSwizzle;
                 }
 
                 // << CLAMP VALUES >>

@@ -45,13 +45,16 @@ namespace Darklight.UnityExt.Matrix
         #endregion
 
         [SerializeField]
-        StateMachine _stateMachine = new StateMachine();
+        Grid _grid;
 
         [SerializeField]
-        Info _info;
+        protected StateMachine _stateMachine = new StateMachine();
 
         [SerializeField]
-        Map _map;
+        protected Info _info;
+
+        [SerializeField]
+        protected Map _map;
 
         public delegate bool VisitNodeEvent(Node node);
         public delegate bool VisitPartitionEvent(Partition partition);
@@ -60,13 +63,23 @@ namespace Darklight.UnityExt.Matrix
 
         public Map GetMap() => _map;
 
+        public Grid GetGrid()
+        {
+            if (_grid == null)
+                _grid = GetComponent<Grid>();
+            return _grid;
+        }
+
         #region < PROTECTED_METHODS > [[ Initializer Methods ]] ==================================================================================
 
-        protected virtual void Initialize(Info info = null)
+        protected virtual void Initialize(Info info = default)
         {
+            if (_grid == null)
+                _grid = GetComponent<Grid>();
+
             _info = info;
-            if (_info == null)
-                _info = new Info(this.transform);
+            if (!_info.IsValid)
+                _info = new Info(this);
             _info.Validate();
 
             _map = new Map(this);
@@ -76,13 +89,6 @@ namespace Darklight.UnityExt.Matrix
         protected virtual void Refresh()
         {
             _map.Refresh();
-            SendVisitorToAllNodes(
-                new Node.Visitor(node =>
-                {
-                    node.Refresh();
-                    return true;
-                })
-            );
         }
 
         #endregion
@@ -94,7 +100,7 @@ namespace Darklight.UnityExt.Matrix
         {
             if (visitor == null)
                 return;
-            _map.GetNodeByKey(key)?.AcceptVisitor(visitor);
+            _map.GetNodeByKey(key).AcceptVisitor(visitor);
         }
 
         protected void SendVisitorToNodes(List<Vector2Int> keys, IVisitor<Node> visitor)
@@ -102,7 +108,7 @@ namespace Darklight.UnityExt.Matrix
             if (visitor == null)
                 return;
             foreach (Vector2Int key in keys)
-                _map.GetNodeByKey(key)?.AcceptVisitor(visitor);
+                _map.GetNodeByKey(key).AcceptVisitor(visitor);
         }
 
         protected void SendVisitorToAllNodes(IVisitor<Node> visitor)
@@ -127,23 +133,25 @@ namespace Darklight.UnityExt.Matrix
         {
             SerializedObject _serializedObject;
             Matrix _script;
+            SerializedProperty _infoProperty;
 
-            // Fields to store the last-known transform state
+            // Fields to store the last-known transform and info state
             private Vector3 _lastPosition;
             private Quaternion _lastRotation;
-
-            private bool _showMatrixInfo = false;
+            private SerializedProperty _lastGridValues;
 
             private void OnEnable()
             {
                 _serializedObject = new SerializedObject(target);
                 _script = (Matrix)target;
+                _infoProperty = _serializedObject.FindProperty("_info");
 
-                // Initialize transform state and set up change listeners
+                // Initialize transform state
                 if (_script != null)
                 {
                     _lastPosition = _script.transform.position;
                     _lastRotation = _script.transform.rotation;
+                    _lastGridValues = _infoProperty.Copy();
                 }
 
                 EditorApplication.update += CheckTransformChanges;
@@ -158,28 +166,35 @@ namespace Darklight.UnityExt.Matrix
                 Undo.undoRedoPerformed -= OnUndoRedo;
             }
 
-            #region < PRIVATE_METHODS > [[ Internal Handlers ]] ================================================================
             private void CheckTransformChanges()
             {
                 if (_script == null)
                     return;
 
-                // Check for changes in the position, rotation, or scale
+                bool hasChanged = false;
+
+                // Check for changes in transform
                 if (
                     _script.transform.position != _lastPosition
                     || _script.transform.rotation != _lastRotation
                 )
                 {
-                    // Update the last-known state
                     _lastPosition = _script.transform.position;
                     _lastRotation = _script.transform.rotation;
+                    hasChanged = true;
+                }
 
-                    // Respond to the change
-                    //Debug.Log("Transform has changed!");
+                // Check for changes in grid values
+                if (!SerializedProperty.EqualContents(_infoProperty, _lastGridValues))
+                {
+                    _lastGridValues = _infoProperty.Copy();
+                    hasChanged = true;
+                }
+
+                if (hasChanged)
+                {
                     _script.Refresh();
-
-                    // Refresh the editor if needed
-                    Repaint();
+                    SceneView.RepaintAll();
                 }
             }
 
@@ -187,19 +202,13 @@ namespace Darklight.UnityExt.Matrix
             {
                 if (_script != null)
                 {
-                    // Handle undo/redo for the transform changes
-                    //Debug.Log("Transform changed due to undo/redo!");
-                    _script.Refresh();
-
-                    // Update last-known transform state in case it has changed
                     _lastPosition = _script.transform.position;
                     _lastRotation = _script.transform.rotation;
-
-                    // Refresh the editor if needed
-                    Repaint();
+                    _lastGridValues = _infoProperty.Copy();
+                    _script.Refresh();
+                    SceneView.RepaintAll();
                 }
             }
-            #endregion
 
             protected virtual void DrawButtons()
             {
@@ -208,6 +217,11 @@ namespace Darklight.UnityExt.Matrix
                 {
                     // Open the MatrixEditorWindow and pass the current Matrix instance
                     MatrixEditorWindow.ShowWindow(_script);
+                }
+
+                if (GUILayout.Button("Refresh"))
+                {
+                    _script.Refresh();
                 }
             }
 
