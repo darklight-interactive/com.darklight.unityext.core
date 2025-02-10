@@ -70,6 +70,11 @@ namespace Darklight.UnityExt.Matrix
                 return _matrix == other._matrix && _key == other._key;
             }
 
+            public Node GetNeighbor(Vector2Int direction)
+            {
+                return _matrix._map.GetNodeByKey(Key + direction);
+            }
+
             public static void ConvertKeyToCoordinate(
                 Info info,
                 Vector2Int key,
@@ -100,9 +105,12 @@ namespace Darklight.UnityExt.Matrix
                 return key;
             }
 
-            public static Vector3 CalculatePosition(Info info, Vector2Int key)
+            static Vector3 CalculatePosition(Info info, Vector2Int key)
             {
                 Vector3 position = Vector3.zero;
+                if (!info.IsValid)
+                    return position;
+
                 if (info.Grid != null)
                 {
                     ConvertKeyToCoordinate(info, key, out Vector2Int coordinate);
@@ -149,11 +157,6 @@ namespace Darklight.UnityExt.Matrix
                         + rotatedPosition;
                 }
                 return position;
-            }
-
-            static Vector3 CalculateNormalDirection(Info info)
-            {
-                return info.UpDirection;
             }
 
             static int CalculatePartitionKey(Info info, Vector2Int key)

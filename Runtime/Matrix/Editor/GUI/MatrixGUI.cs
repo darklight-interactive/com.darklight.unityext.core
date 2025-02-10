@@ -38,12 +38,15 @@ namespace Darklight.UnityExt.Matrix
 
             public static void DrawGUI(Matrix matrix, ref Node selectedNode)
             {
+                if (matrix == null)
+                {
+                    EditorGUILayout.HelpBox("No matrix reference provided", MessageType.Warning);
+                    return;
+                }
+
                 CustomInspectorGUI.DrawButton("Reset to Defaults", ResetToDefaults);
-
                 CustomInspectorGUI.DrawHorizontalLine(Color.grey, 5);
-
                 OnGUI_DrawSelectedNode(ref selectedNode);
-
                 CustomInspectorGUI.DrawHorizontalLine(Color.grey, 5);
                 CustomInspectorGUI.DrawHeader("Matrix Properties");
 
@@ -54,6 +57,15 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowMatrixProperties,
                         () =>
                         {
+                            if (!matrix._info.IsValid)
+                            {
+                                EditorGUILayout.HelpBox(
+                                    "Matrix info is not initialized",
+                                    MessageType.Warning
+                                );
+                                return;
+                            }
+
                             matrix._info.Bounds = EditorGUILayout.Vector2IntField(
                                 "Bounds",
                                 matrix._info.Bounds
@@ -73,7 +85,6 @@ namespace Darklight.UnityExt.Matrix
                                 "Origin Key",
                                 matrix._info.OriginKey.ToString()
                             );
-
                             EditorGUILayout.LabelField(
                                 "Terminal Key",
                                 matrix._info.TerminalKey.ToString()
@@ -92,6 +103,15 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowNodeProperties,
                         () =>
                         {
+                            if (!matrix._info.IsValid || !matrix._map.IsValid)
+                            {
+                                EditorGUILayout.HelpBox(
+                                    "Matrix info or map is not initialized",
+                                    MessageType.Warning
+                                );
+                                return;
+                            }
+
                             EditorGUILayout.LabelField(
                                 "Node Size",
                                 matrix._info.NodeSize.ToString()
@@ -108,12 +128,10 @@ namespace Darklight.UnityExt.Matrix
                                 "Total Nodes",
                                 matrix._map.NodeCount.ToString()
                             );
-
                             EditorGUILayout.LabelField(
                                 "Enabled Nodes",
                                 matrix._map.GetEnabledNodes().Count.ToString()
                             );
-
                             EditorGUILayout.LabelField(
                                 "Disabled Nodes",
                                 matrix._map.GetDisabledNodes().Count.ToString()
@@ -128,6 +146,15 @@ namespace Darklight.UnityExt.Matrix
                         Preferences.GroupPrefs.ShowPartitionProperties,
                         () =>
                         {
+                            if (!matrix._info.IsValid || !matrix._map.IsValid)
+                            {
+                                EditorGUILayout.HelpBox(
+                                    "Matrix info or map is not initialized",
+                                    MessageType.Warning
+                                );
+                                return;
+                            }
+
                             matrix._info.PartitionSize = EditorGUILayout.IntField(
                                 "Partition Size",
                                 matrix._info.PartitionSize
@@ -136,7 +163,6 @@ namespace Darklight.UnityExt.Matrix
                                 "Total Partitions",
                                 matrix._map.PartitionCount.ToString()
                             );
-
                             EditorGUILayout.LabelField(
                                 "Origin Key",
                                 matrix._info.OriginKey.ToString()
@@ -145,7 +171,6 @@ namespace Darklight.UnityExt.Matrix
                                 "Terminal Key",
                                 matrix._info.TerminalKey.ToString()
                             );
-
                             EditorGUILayout.LabelField(
                                 "Alignment",
                                 matrix._info.OriginAlignment.ToString()

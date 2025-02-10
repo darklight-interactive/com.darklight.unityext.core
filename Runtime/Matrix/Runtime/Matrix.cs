@@ -10,7 +10,7 @@ using UnityEditor;
 namespace Darklight.UnityExt.Matrix
 {
     [ExecuteAlways]
-    public partial class Matrix : MonoBehaviour
+    public partial class Matrix : MonoBehaviour, IUnityEditorListener
     {
         #region < STATIC_FIELDS > ======================================================================
         protected static readonly Dictionary<Alignment, Vector2> AlignmentOffsets = new Dictionary<
@@ -65,6 +65,11 @@ namespace Darklight.UnityExt.Matrix
             if (_grid == null)
                 _grid = GetComponent<Grid>();
             return _grid;
+        }
+
+        public void OnEditorReloaded()
+        {
+            Initialize(_info);
         }
 
         #region < PROTECTED_METHODS > [[ Initializer Methods ]] ==================================================================================

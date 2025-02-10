@@ -12,7 +12,7 @@ namespace Darklight.UnityExt.Matrix
     public partial class Matrix
     {
         [System.Serializable]
-        public struct Map
+        public class Map
         {
             Matrix _matrix;
             Dictionary<Vector2Int, Node> _nodeLookup;
@@ -148,6 +148,9 @@ namespace Darklight.UnityExt.Matrix
 
             public Node GetNodeByKey(Vector2Int key)
             {
+                if (_nodeLookup == null)
+                    return null;
+
                 _nodeLookup.TryGetValue(key, out var node);
                 return node;
             }
@@ -200,7 +203,7 @@ namespace Darklight.UnityExt.Matrix
                         Vector2Int neighborKey = nodeKey + new Vector2Int(x, y);
                         Node neighbor = GetNodeByKey(neighborKey);
 
-                        if (neighbor.IsValid && neighbor.IsEnabled)
+                        if (neighbor != null && neighbor.IsValid && neighbor.IsEnabled)
                         {
                             neighbors.Add(neighbor);
                         }
@@ -277,6 +280,43 @@ namespace Darklight.UnityExt.Matrix
 
                 return closestNode != null;
             }
+
+            /// <summary>
+            /// Finds the closest node to a given world position from a collection of nodes.
+            /// </summary>
+            /// <param name="position">The world position to check against</param>
+            /// <param name="nodes">Collection of nodes to search through</param>
+            /// <param name="closestNode">Output parameter for the closest node found</param>
+            /// <returns>True if a node was found, false otherwise</returns>
+            public bool GetClosestNodeFromCollection(
+                Vector3 position,
+                IEnumerable<Node> nodes,
+                out Node closestNode
+            )
+            {
+                closestNode = null;
+
+                if (nodes == null)
+                    return false;
+
+                float closestDistance = float.MaxValue;
+
+                foreach (Node node in nodes)
+                {
+                    if (!node.IsValid)
+                        continue;
+
+                    float distance = Vector3.Distance(position, node.Center);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestNode = node;
+                    }
+                }
+
+                return closestNode != null;
+            }
+
             #endregion
 
 
