@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Animation
+namespace Darklight.UnityExt.Core2D.Animation
 {
     /// <summary>
     /// ScriptableObject that holds a collection of sprites for frame animation
@@ -16,6 +16,7 @@ namespace Darklight.UnityExt.Animation
         [Range(1, 24)]
         public int frameRate = 4;
         public bool loop = true;
+        public Spatial2D.Direction startDirection = Spatial2D.Direction.NONE;
 
         [Tooltip("Collection of sprites to animate")]
         public Sprite[] frames = new Sprite[0];
@@ -37,6 +38,57 @@ namespace Darklight.UnityExt.Animation
                 return frames[index];
             }
             return null;
+        }
+
+        public void CalculateFlipToDirection(
+            Spatial2D.Direction targetDirection,
+            out bool flipX,
+            out bool flipY
+        )
+        {
+            // Default to no flipping
+            flipX = false;
+            flipY = false;
+
+            // If no start direction is set, assume EAST as default
+            if (startDirection == Spatial2D.Direction.NONE)
+                startDirection = Spatial2D.Direction.EAST;
+
+            // Determine if we need to flip based on start direction
+            switch (startDirection)
+            {
+                case Spatial2D.Direction.EAST:
+                    // Flip for any direction facing left
+                    flipX =
+                        targetDirection == Spatial2D.Direction.WEST
+                        || targetDirection == Spatial2D.Direction.NORTHWEST
+                        || targetDirection == Spatial2D.Direction.SOUTHWEST;
+                    break;
+
+                case Spatial2D.Direction.WEST:
+                    // Flip for any direction facing right
+                    flipX =
+                        targetDirection == Spatial2D.Direction.EAST
+                        || targetDirection == Spatial2D.Direction.NORTHEAST
+                        || targetDirection == Spatial2D.Direction.SOUTHEAST;
+                    break;
+
+                case Spatial2D.Direction.NORTH:
+                    // Flip for any direction facing left
+                    flipX =
+                        targetDirection == Spatial2D.Direction.WEST
+                        || targetDirection == Spatial2D.Direction.NORTHWEST
+                        || targetDirection == Spatial2D.Direction.SOUTHWEST;
+                    break;
+
+                case Spatial2D.Direction.SOUTH:
+                    // Flip for any direction facing left
+                    flipX =
+                        targetDirection == Spatial2D.Direction.WEST
+                        || targetDirection == Spatial2D.Direction.NORTHWEST
+                        || targetDirection == Spatial2D.Direction.SOUTHWEST;
+                    break;
+            }
         }
 
 #if UNITY_EDITOR

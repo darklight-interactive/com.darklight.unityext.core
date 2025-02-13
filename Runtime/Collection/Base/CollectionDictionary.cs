@@ -20,7 +20,10 @@ namespace Darklight.UnityExt.Collection
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly ConcurrentDictionary<int, KeyValueCollectionItem<TKey, TValue>> _concurrentDict;
+        private readonly ConcurrentDictionary<
+            int,
+            KeyValueCollectionItem<TKey, TValue>
+        > _concurrentDict;
         private readonly ReaderWriterLockSlim _lock;
 
         [SerializeField]
@@ -29,8 +32,7 @@ namespace Darklight.UnityExt.Collection
 
         public CollectionDictionary()
         {
-            _concurrentDict =
-                    new ConcurrentDictionary<int, KeyValueCollectionItem<TKey, TValue>>();
+            _concurrentDict = new ConcurrentDictionary<int, KeyValueCollectionItem<TKey, TValue>>();
             _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             _isReadOnly = false;
 
@@ -54,7 +56,8 @@ namespace Darklight.UnityExt.Collection
         public override object SyncRoot => _lock;
         public IEnumerable<TValue> Values => _dictionaryItems.Select(x => x.Value);
 
-        ICollection<TKey> IDictionary<TKey, TValue>.Keys => _dictionaryItems.Select(x => x.Key).ToList();
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys =>
+            _dictionaryItems.Select(x => x.Key).ToList();
         ICollection<TValue> IDictionary<TKey, TValue>.Values =>
             _dictionaryItems.Select(x => x.Value).ToList();
 
@@ -77,7 +80,9 @@ namespace Darklight.UnityExt.Collection
                 _lock.EnterWriteLock();
                 try
                 {
-                    var id = _dictionaryItems.FirstOrDefault(x => x.Key.Equals(key))?.Id ?? _dictionaryItems.Count;
+                    var id =
+                        _dictionaryItems.FirstOrDefault(x => x.Key.Equals(key))?.Id
+                        ?? _dictionaryItems.Count;
                     var item = new KeyValueCollectionItem<TKey, TValue>(id, key, value);
 
                     CollectionChanging(
@@ -132,7 +137,6 @@ namespace Darklight.UnityExt.Collection
             }
         }
 
-
         public new void Clear()
         {
             _lock.EnterWriteLock();
@@ -154,7 +158,10 @@ namespace Darklight.UnityExt.Collection
             _lock.EnterReadLock();
             try
             {
-                return _dictionaryItems.Any(x => x.Key.Equals(item.Key) && EqualityComparer<TValue>.Default.Equals(x.Value, item.Value));
+                return _dictionaryItems.Any(x =>
+                    x.Key.Equals(item.Key)
+                    && EqualityComparer<TValue>.Default.Equals(x.Value, item.Value)
+                );
             }
             finally
             {

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using static Darklight.UnityExt.Core2D.Spatial2D;
 
@@ -20,14 +21,104 @@ namespace Darklight.UnityExt.Core2D
     /// </summary>
     public static class Spatial2D
     {
-        public enum AnchorPoint
+        public enum Direction
         {
-            TOP_LEFT, TOP_CENTER, TOP_RIGHT,
-            CENTER_LEFT, CENTER, CENTER_RIGHT,
-            BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+            NONE,
+
+            [InspectorName("North (Positive Y)")]
+            NORTH,
+
+            [InspectorName("East (Positive X)")]
+            EAST,
+
+            [InspectorName("South (Negative Y)")]
+            SOUTH,
+
+            [InspectorName("West (Negative X)")]
+            WEST,
+
+            [InspectorName("Up-Right")]
+            NORTHEAST,
+
+            [InspectorName("Down-Right")]
+            SOUTHEAST,
+
+            [InspectorName("Down-Left")]
+            SOUTHWEST,
+
+            [InspectorName("Up-Left")]
+            NORTHWEST
         }
 
-        public static readonly Dictionary<AnchorPoint, Vector2> anchorPointOffsets = new Dictionary<AnchorPoint, Vector2>
+        static readonly Dictionary<Direction, Vector2> directionVectors = new Dictionary<
+            Direction,
+            Vector2
+        >
+        {
+            { Direction.NORTH, Vector2.up },
+            { Direction.EAST, Vector2.right },
+            { Direction.SOUTH, Vector2.down },
+            { Direction.WEST, Vector2.left },
+            { Direction.NORTHEAST, Vector2.up + Vector2.right },
+            { Direction.SOUTHEAST, Vector2.down + Vector2.right },
+            { Direction.SOUTHWEST, Vector2.down + Vector2.left },
+            { Direction.NORTHWEST, Vector2.up + Vector2.left }
+        };
+
+        public static void GetDirectionVector(Direction direction, out Vector2 vector)
+        {
+            vector = directionVectors[direction];
+        }
+
+        public static void ConvertVectorToDirection(
+            Vector2 input,
+            out Spatial2D.Direction direction
+        )
+        {
+            if (input.sqrMagnitude < float.Epsilon)
+            {
+                direction = Spatial2D.Direction.NONE;
+                return;
+            }
+
+            Vector2 directionVector = input.normalized;
+            float angle = Vector2.SignedAngle(Vector2.up, directionVector);
+
+            // Normalize angle to 0-360 range
+            if (angle < 0)
+                angle += 360f;
+
+            direction = angle switch
+            {
+                >= 337.5f or < 22.5f => Spatial2D.Direction.NORTH,
+                >= 22.5f and < 67.5f => Spatial2D.Direction.NORTHEAST,
+                >= 67.5f and < 112.5f => Spatial2D.Direction.EAST,
+                >= 112.5f and < 157.5f => Spatial2D.Direction.SOUTHEAST,
+                >= 157.5f and < 202.5f => Spatial2D.Direction.SOUTH,
+                >= 202.5f and < 247.5f => Spatial2D.Direction.SOUTHWEST,
+                >= 247.5f and < 292.5f => Spatial2D.Direction.WEST,
+                >= 292.5f and < 337.5f => Spatial2D.Direction.NORTHWEST,
+                _ => Spatial2D.Direction.NONE
+            };
+        }
+
+        public enum AnchorPoint
+        {
+            TOP_LEFT,
+            TOP_CENTER,
+            TOP_RIGHT,
+            CENTER_LEFT,
+            CENTER,
+            CENTER_RIGHT,
+            BOTTOM_LEFT,
+            BOTTOM_CENTER,
+            BOTTOM_RIGHT
+        }
+
+        public static readonly Dictionary<AnchorPoint, Vector2> anchorPointOffsets = new Dictionary<
+            AnchorPoint,
+            Vector2
+        >
         {
             { AnchorPoint.TOP_LEFT, new Vector2(-0.5f, 0.5f) },
             { AnchorPoint.TOP_CENTER, new Vector2(0, 0.5f) },
@@ -62,7 +153,11 @@ namespace Darklight.UnityExt.Core2D
         /// </param>
         /// <param name="anchorTag"></param>
         /// <returns></returns>
-        static Vector3 CalculateAnchorPointPosition(Vector3 center, Vector2 dimensions, AnchorPoint anchorTag)
+        static Vector3 CalculateAnchorPointPosition(
+            Vector3 center,
+            Vector2 dimensions,
+            AnchorPoint anchorTag
+        )
         {
             return center + CalculateAnchorPointOffset(dimensions, anchorTag);
         }
@@ -77,11 +172,14 @@ namespace Darklight.UnityExt.Core2D
             return CalculateAnchorPointOffset(dimensions, anchorTag);
         }
 
-        public static Vector3 GetAnchorPointPosition(Vector3 center, Vector2 dimensions, AnchorPoint anchorTag)
+        public static Vector3 GetAnchorPointPosition(
+            Vector3 center,
+            Vector2 dimensions,
+            AnchorPoint anchorTag
+        )
         {
             return CalculateAnchorPointPosition(center, dimensions, anchorTag);
         }
-
 
         // ---- (( SETTERS )) ---- >>
         public static void SetTransformToDefaultValues(Transform transform)
@@ -91,14 +189,24 @@ namespace Darklight.UnityExt.Core2D
             transform.rotation = Quaternion.identity;
         }
 
-        public static void SetTransformValues(Transform transform, Vector3 position, Vector2 dimensions, Vector3 normal)
+        public static void SetTransformValues(
+            Transform transform,
+            Vector3 position,
+            Vector2 dimensions,
+            Vector3 normal
+        )
         {
             transform.position = position;
             SetTransformScale_ToDimensions(transform, dimensions);
             SetTransformRotation_ToNormal(transform, normal);
         }
 
-        public static void SetTransformPos_ToAnchor(Transform transform, Vector3 position, Vector2 dimensions, AnchorPoint anchorTag)
+        public static void SetTransformPos_ToAnchor(
+            Transform transform,
+            Vector3 position,
+            Vector2 dimensions,
+            AnchorPoint anchorTag
+        )
         {
             Vector3 positionOffset = CalculateAnchorPointOffset(dimensions, anchorTag);
             transform.position = position - positionOffset;

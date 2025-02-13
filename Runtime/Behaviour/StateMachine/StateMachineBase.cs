@@ -16,9 +16,9 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
- * 
+ *
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
@@ -31,39 +31,44 @@ using UnityEngine;
 
 namespace Darklight.UnityExt.Behaviour
 {
-	/// <summary>
-	/// An abstract base for state machines to build upon
-	/// </summary>
-	/// <typeparam name="TEnum"></typeparam>
-	[Serializable]
-	public abstract class StateMachineBase<TEnum>
-		where TEnum : Enum
-	{
-		protected readonly TEnum initialStateEnum;
-		[ShowOnly] public TEnum currentStateEnum;
+    /// <summary>
+    /// An abstract base for state machines to build upon
+    /// </summary>
+    /// <typeparam name="TEnum"></typeparam>
+    [Serializable]
+    public abstract class StateMachineBase<TEnum>
+        where TEnum : Enum
+    {
+        protected readonly TEnum initialStateEnum;
 
-		public delegate void StateChangeEvent(TEnum state);
-		public event StateChangeEvent OnStateChanged;
+        [ShowOnly]
+        protected TEnum currentStateEnum;
 
-		public StateMachineBase()
-		{
-			initialStateEnum = GetAllStateEnums()[0];
-		}
+        public TEnum CurrentState => currentStateEnum;
 
-		public StateMachineBase(TEnum initialState)
-		{
-			this.initialStateEnum = initialState;
-		}
+        public delegate void StateChangeEvent(TEnum state);
+        public event StateChangeEvent OnStateChanged;
 
-		protected TEnum[] GetAllStateEnums() => (TEnum[])Enum.GetValues(typeof(TEnum));
-		protected void RaiseStateChangedEvent(TEnum state) => OnStateChanged?.Invoke(state);
-		
-		public virtual bool GoToState(TEnum newState, bool force = false)
-		{
-			if (!force && EqualityComparer<TEnum>.Default.Equals(currentStateEnum, newState))
-				return false;
-			currentStateEnum = newState;
-			return true;
-		}
-	}
+        public StateMachineBase()
+        {
+            initialStateEnum = GetAllStateEnums()[0];
+        }
+
+        public StateMachineBase(TEnum initialState)
+        {
+            this.initialStateEnum = initialState;
+        }
+
+        protected TEnum[] GetAllStateEnums() => (TEnum[])Enum.GetValues(typeof(TEnum));
+
+        protected void RaiseStateChangedEvent(TEnum state) => OnStateChanged?.Invoke(state);
+
+        public virtual bool GoToState(TEnum newState, bool force = false)
+        {
+            if (!force && EqualityComparer<TEnum>.Default.Equals(currentStateEnum, newState))
+                return false;
+            currentStateEnum = newState;
+            return true;
+        }
+    }
 }

@@ -89,6 +89,8 @@ namespace Darklight.UnityExt.Input
         public static event OnInput_Trigger OnMousePrimaryClick;
         public static event OnInput_Trigger OnMouseSecondaryClick;
 
+        public InputActionMap ActiveActionMap => _activeActionMap;
+
         void OnEnable()
         {
             // Enable the input action asset

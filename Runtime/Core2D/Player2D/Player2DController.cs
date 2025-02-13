@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Darklight.UnityExt.Behaviour;
+using Darklight.UnityExt.Core2D.Animation;
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Input;
 using UnityEditorInternal;
@@ -19,7 +20,7 @@ namespace Darklight.UnityExt.Core2D.Player
 
         [Header("State Machine")]
         [SerializeField]
-        StateMachine _stateMachine;
+        StateMachine stateMachine;
 
         [Header("Settings")]
         [SerializeField]
@@ -29,7 +30,7 @@ namespace Darklight.UnityExt.Core2D.Player
         Vector2 _size = new Vector2(1, 1);
 
         #region < PRIVATE_METHODS > [[ PRELOAD ]] ================================================================
-        void Preload()
+        protected virtual void Preload()
         {
             // RIGIDBODY -------- >>
             _rb = GetComponent<Rigidbody2D>();
@@ -43,13 +44,13 @@ namespace Darklight.UnityExt.Core2D.Player
             _moveSpeed = _moveSpeedValue;
 
             // STATE MACHINE -------- >>
-            _stateMachine = new StateMachine(this);
+            stateMachine = new StateMachine(this);
         }
         #endregion
 
 
         #region < PRIVATE_METHODS > [[ CONTROL MOVEMENT ]] ================================================================
-        void SetPosition(Vector2 position)
+        protected void SetPosition(Vector2 position)
         {
             transform.position = position;
         }
@@ -70,7 +71,7 @@ namespace Darklight.UnityExt.Core2D.Player
         // Update is called once per frame
         void Update()
         {
-            _stateMachine.Step();
+            stateMachine.Step();
             _rb.linearVelocity = MoveInput * _moveSpeed;
         }
         #endregion

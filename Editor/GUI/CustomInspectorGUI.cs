@@ -35,6 +35,26 @@ namespace Darklight.UnityExt.Editor
 
         #region < PUBLIC_STATIC_METHODS > [[ Draw Serialized Fields ]] ================================================================
 
+        public static void DrawDefaultInspectorWithoutScript(UnityEngine.Object target)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.GetIterator();
+            bool enterChildren = true;
+
+            while (property.NextVisible(enterChildren))
+            {
+                enterChildren = false;
+
+                // Skip the script reference property
+                if (property.propertyPath == "m_Script")
+                    continue;
+
+                EditorGUILayout.PropertyField(property, true);
+            }
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
         /// <summary>
         /// Draws a show-only array or list as a foldout in the Inspector with each element displayed as a label.
         /// </summary>

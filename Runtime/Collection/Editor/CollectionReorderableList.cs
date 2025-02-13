@@ -72,7 +72,6 @@ namespace Darklight.UnityExt.Collection.Editor
             };
 
             onAddDropdownCallback += OnDropdownCallback;
-            
 
             elementHeightCallback = GetElementHeight;
         }
@@ -83,49 +82,70 @@ namespace Darklight.UnityExt.Collection.Editor
 
             if (_collectionIsDictionary)
             {
-                menu.AddItem(new GUIContent("Add Dictionary Entry"), false, () => 
-                {
-                    var index = _itemsProperty.arraySize;
-                    _itemsProperty.InsertArrayElementAtIndex(index);
-                    var element = _itemsProperty.GetArrayElementAtIndex(index);
-                    
-                    // Set default values
-                    var idProp = element.FindPropertyRelative(ID_PROP);
-                    if (idProp != null) idProp.intValue = GetNextId();
-                    
-                    _itemsProperty.serializedObject.ApplyModifiedProperties();
-                });
+                menu.AddItem(
+                    new GUIContent("Add Dictionary Entry"),
+                    false,
+                    () =>
+                    {
+                        var index = _itemsProperty.arraySize;
+                        _itemsProperty.InsertArrayElementAtIndex(index);
+                        var element = _itemsProperty.GetArrayElementAtIndex(index);
+
+                        // Set default values
+                        var idProp = element.FindPropertyRelative(ID_PROP);
+                        if (idProp != null)
+                            idProp.intValue = GetNextId();
+
+                        _itemsProperty.serializedObject.ApplyModifiedProperties();
+                    }
+                );
             }
             else
             {
-                menu.AddItem(new GUIContent("Add Empty Item"), false, () => 
-                {
-                    var index = _itemsProperty.arraySize;
-                    _itemsProperty.InsertArrayElementAtIndex(index);
-                    var element = _itemsProperty.GetArrayElementAtIndex(index);
-                    
-                    
-                    
-                    _itemsProperty.serializedObject.ApplyModifiedProperties();
-                });
+                menu.AddItem(
+                    new GUIContent("Add Empty Item"),
+                    false,
+                    () =>
+                    {
+                        var index = _itemsProperty.arraySize;
+                        _itemsProperty.InsertArrayElementAtIndex(index);
+                        var element = _itemsProperty.GetArrayElementAtIndex(index);
+
+                        _itemsProperty.serializedObject.ApplyModifiedProperties();
+                    }
+                );
             }
 
             menu.AddSeparator("");
-            
-            menu.AddItem(new GUIContent("Sort by ID"), false, () => 
-            {
-                SortByID();
-            });
 
-            menu.AddItem(new GUIContent("Clear All"), false, () => 
-            {
-                if (EditorUtility.DisplayDialog("Clear All Items", 
-                    "Are you sure you want to remove all items?", "Yes", "No"))
+            menu.AddItem(
+                new GUIContent("Sort by ID"),
+                false,
+                () =>
                 {
-                    _itemsProperty.ClearArray();
-                    _itemsProperty.serializedObject.ApplyModifiedProperties();
+                    SortByID();
                 }
-            });
+            );
+
+            menu.AddItem(
+                new GUIContent("Clear All"),
+                false,
+                () =>
+                {
+                    if (
+                        EditorUtility.DisplayDialog(
+                            "Clear All Items",
+                            "Are you sure you want to remove all items?",
+                            "Yes",
+                            "No"
+                        )
+                    )
+                    {
+                        _itemsProperty.ClearArray();
+                        _itemsProperty.serializedObject.ApplyModifiedProperties();
+                    }
+                }
+            );
 
             menu.DropDown(buttonRect);
         }
@@ -155,10 +175,10 @@ namespace Darklight.UnityExt.Collection.Editor
                 {
                     var element1 = _itemsProperty.GetArrayElementAtIndex(i);
                     var element2 = _itemsProperty.GetArrayElementAtIndex(i + 1);
-                    
+
                     var id1 = element1.FindPropertyRelative(ID_PROP);
                     var id2 = element2.FindPropertyRelative(ID_PROP);
-                    
+
                     if (id1 != null && id2 != null && id1.intValue > id2.intValue)
                     {
                         _itemsProperty.MoveArrayElement(i + 1, i);
@@ -683,17 +703,23 @@ namespace Darklight.UnityExt.Collection.Editor
 
         void DrawKey(Rect rect, SerializedProperty property)
         {
-            var keyProp = property.FindPropertyRelative(KEY_PROP);
-            if (keyProp != null)
-            {
-                EditorGUI.PropertyField(rect, keyProp, GUIContent.none);
-            }
+            SerializedProperty keyProp = property.FindPropertyRelative(KEY_PROP);
+            DrawAnyPropertyType(rect, property, keyProp);
         }
 
         void DrawValue(Rect rect, SerializedProperty property)
         {
-            var typedValueProp = property.FindPropertyRelative(VALUE_PROP);
-            if (typedValueProp == null)
+            SerializedProperty typedValueProp = property.FindPropertyRelative(VALUE_PROP);
+            DrawAnyPropertyType(rect, property, typedValueProp);
+        }
+
+        void DrawAnyPropertyType(
+            Rect rect,
+            SerializedProperty property,
+            SerializedProperty typedValueProp
+        )
+        {
+            if (property == null || typedValueProp == null)
                 return;
 
             // Handle object reference values (ScriptableObjects, MonoBehaviours, etc)

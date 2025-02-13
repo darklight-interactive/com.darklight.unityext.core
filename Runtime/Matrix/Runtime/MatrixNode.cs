@@ -23,12 +23,10 @@ namespace Darklight.UnityExt.Matrix
             public Vector2Int Key => _key;
             public Vector2Int Coordinate =>
                 IsValid ? ConvertKeyToCoordinate(_matrix._info, Key) : Vector2Int.zero;
-            public Vector3Int Coordinate_Vec3 =>
-                IsValid
-                    ? Utility.SwizzleVec2Int(Coordinate, _matrix._info.Swizzle)
-                    : Vector3Int.zero;
+            public Vector3Int Coordinate_Vec3 => new Vector3Int(Coordinate.x, Coordinate.y, 0);
             public Vector3 Center => IsValid ? CalculatePosition(_matrix._info, Key) : Vector3.zero;
             public Vector3 NormalDir => IsValid ? _matrix._info.UpDirection : Vector3.up;
+
             public Vector2 Size => IsValid ? _matrix._info.NodeSize : Vector2.zero;
             public float AvgSize => IsValid ? _matrix._info.NodeAvgSize : 0f;
             public int PartitionKey => IsValid ? CalculatePartitionKey(_matrix._info, Key) : -1;

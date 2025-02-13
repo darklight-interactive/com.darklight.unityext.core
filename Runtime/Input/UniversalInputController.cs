@@ -8,14 +8,31 @@ namespace Darklight.UnityExt.Input
 {
     public abstract class UniversalInputController : MonoBehaviour
     {
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         Vector2 _moveInput;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _moveInputStarted;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _moveInputCanceled;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _primaryInteractStarted;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _primaryInteractCanceled;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _secondaryInteractStarted;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _secondaryInteractCanceled;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _menuButtonStarted;
+
+        [SerializeField, ReadOnly, Foldout("Universal Input Controller")]
         bool _menuButtonCanceled;
 
         public Vector2 MoveInput => _moveInput;
