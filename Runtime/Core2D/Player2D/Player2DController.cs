@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
 using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Core2D.Animation;
 using Darklight.UnityExt.Editor;
 using Darklight.UnityExt.Input;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace Darklight.UnityExt.Core2D.Player

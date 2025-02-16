@@ -1,7 +1,10 @@
 using System;
+using UnityEngine;
+#if UNITY_EDITOR
 using NaughtyAttributes.Editor;
 using UnityEditor;
-using UnityEngine;
+#endif
+
 
 namespace Darklight.UnityExt.Collection.Editor
 {

@@ -1,11 +1,8 @@
+#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-#if UNITY_2019_3_OR_NEWER
 using UnityEditor.Compilation;
-#elif UNITY_2017_1_OR_NEWER
-using System.Reflection;
-#endif
 
 public class CompilationWindow : EditorWindow
 {
@@ -189,3 +186,4 @@ public class CompilationWindow : EditorWindow
         return $"{milliseconds}ms";
     }
 }
+#endif

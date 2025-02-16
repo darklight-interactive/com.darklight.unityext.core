@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -62,8 +63,8 @@ public class GridArrangerWindow : EditorWindow
         window.LoadOrCreateSettings();
     }
 
-    #region < PRIVATE_METHODS > [[ Internal Calculations ]] ================================================================ 
-    
+    #region < PRIVATE_METHODS > [[ Internal Calculations ]] ================================================================
+
     /// <summary>
     /// Arranges the selected objects in a grid pattern based on the specified settings
     /// </summary>
@@ -370,7 +371,7 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Draw UI ]] ================================================================== 
+    #region < PRIVATE_METHODS > [[ Draw UI ]] ==================================================================
     private void DrawActionButtons()
     {
         previewEnabled = EditorGUILayout.ToggleLeft(
@@ -956,7 +957,7 @@ public class GridArrangerWindow : EditorWindow
 
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Grid Calculations ]] ================================================================ 
+    #region < PRIVATE_METHODS > [[ Grid Calculations ]] ================================================================
     /// <summary>
     /// Gets the indices for grid positions, including empty spaces for uniform grid
     /// </summary>
@@ -1029,7 +1030,7 @@ public class GridArrangerWindow : EditorWindow
     // Call ResetRandomizeCenter() when position type or distribution plane changes
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Setup UI ]] ====================================================================== 
+    #region < PRIVATE_METHODS > [[ Setup UI ]] ======================================================================
     private void InitializeStyles()
     {
         headerStyle = new GUIStyle(EditorStyles.boldLabel)
@@ -1062,7 +1063,7 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Unity Editor Events ]] ====================================================================== 
+    #region < PRIVATE_METHODS > [[ Unity Editor Events ]] ======================================================================
     private void OnDisable()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
@@ -1235,7 +1236,7 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Update Request ]] ====================================================================== 
+    #region < PRIVATE_METHODS > [[ Update Request ]] ======================================================================
     private void RequestUpdate()
     {
         if (!updatePending)
@@ -1249,7 +1250,6 @@ public class GridArrangerWindow : EditorWindow
             //Debug.Log("[GridArranger] Update already pending");
         }
     }
-
 
     /// <summary>
     /// Updates spacing and grid size based on selected objects
@@ -1361,7 +1361,7 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 
-    #region < PRIVATE_METHODS > [[ Reset ]] ====================================================================== 
+    #region < PRIVATE_METHODS > [[ Reset ]] ======================================================================
     // Add this to reset the cached center when needed
     private void ResetRandomizeCenter()
     {
@@ -1375,7 +1375,7 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 
-    #region < NESTED_TYPE > [[ Settings ]] ====================================================================== 
+    #region < NESTED_TYPE > [[ Settings ]] ======================================================================
     [CreateAssetMenu(fileName = "GridArrangerSettings", menuName = "Grid Arranger/Settings")]
     public class GridArrangerSettings : ScriptableObject
     {
@@ -1429,3 +1429,4 @@ public class GridArrangerWindow : EditorWindow
     }
     #endregion
 }
+#endif

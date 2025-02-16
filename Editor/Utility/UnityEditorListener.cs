@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-#if UNITY_EDITOR
 using UnityEditor;
-#endif
+using UnityEngine;
 
 namespace Darklight.UnityExt.Editor
 {
@@ -22,6 +20,7 @@ namespace Darklight.UnityExt.Editor
         /// </summary>
         void OnEditorReloaded() { }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Called when the scene view is updated.
         /// </summary>
@@ -31,10 +30,10 @@ namespace Darklight.UnityExt.Editor
         /// Called when the scene view is changed.
         /// </summary>
         void OnSceneViewChanged(SceneView sceneView) { }
+#endif
     }
 
 #if UNITY_EDITOR
-
     /// <summary>
     /// A class that listens for editor reloads and notifies all MonoBehaviour instances that implement IUnityEditorListener.
     /// </summary>

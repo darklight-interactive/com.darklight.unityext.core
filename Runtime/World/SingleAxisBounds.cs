@@ -129,18 +129,18 @@ namespace Darklight.UnityExt.World
             Vector3 maxPoint = origin + direction * Max;
 
             // Draw the min and max points
-            CustomGizmos.DrawLine(minPoint, maxPoint, color);
+            //CustomGizmos.DrawLine(minPoint, maxPoint, color);
 
             if (_showPlaneGizmo)
             {
                 // Draw the plane parallel to the current axis
                 Color planeColor = new Color(color.r, color.g, color.b, 0.2f);
-                CustomGizmos.DrawSolidRect(
+                /* CustomGizmos.DrawSolidRect(
                     origin,
                     new Vector2(length, length),
                     direction,
                     planeColor
-                );
+                ); */
             }
         }
     }

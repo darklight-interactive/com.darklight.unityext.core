@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -51,7 +52,9 @@ namespace Darklight.UnityExt.Editor
 
         private void InitializeTagManager()
         {
-            var tagManagerAsset = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset").FirstOrDefault();
+            var tagManagerAsset = AssetDatabase
+                .LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")
+                .FirstOrDefault();
             if (tagManagerAsset != null)
             {
                 _tagManager = new SerializedObject(tagManagerAsset);
@@ -95,9 +98,16 @@ namespace Darklight.UnityExt.Editor
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                _newTagName = EditorGUILayout.TextField("New Tag", _newTagName?.Trim() ?? string.Empty);
+                _newTagName = EditorGUILayout.TextField(
+                    "New Tag",
+                    _newTagName?.Trim() ?? string.Empty
+                );
 
-                using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(_newTagName) || TagExists(_newTagName)))
+                using (
+                    new EditorGUI.DisabledScope(
+                        string.IsNullOrEmpty(_newTagName) || TagExists(_newTagName)
+                    )
+                )
                 {
                     if (GUILayout.Button("Add Tag", GUILayout.Width(BUTTON_WIDTH)))
                     {
@@ -109,7 +119,7 @@ namespace Darklight.UnityExt.Editor
             }
 
             EditorGUILayout.HelpBox(
-                "Tags with the same first word will be grouped together. Example: 'Enemy Boss' will be grouped under 'Enemy'.", 
+                "Tags with the same first word will be grouped together. Example: 'Enemy Boss' will be grouped under 'Enemy'.",
                 MessageType.Info
             );
 
@@ -121,7 +131,11 @@ namespace Darklight.UnityExt.Editor
 
         private void DrawBuiltInTags()
         {
-            _builtInTagsFoldout = EditorGUILayout.Foldout(_builtInTagsFoldout, "Built-in Tags", true);
+            _builtInTagsFoldout = EditorGUILayout.Foldout(
+                _builtInTagsFoldout,
+                "Built-in Tags",
+                true
+            );
             if (_builtInTagsFoldout)
             {
                 using (new EditorGUI.DisabledScope(true))
@@ -151,13 +165,14 @@ namespace Darklight.UnityExt.Editor
 
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
-                    string headerText = group.Key == DEFAULT_GROUP 
-                        ? DEFAULT_GROUP 
-                        : $"{group.Key} ({group.Value.Tags.Count})";
+                    string headerText =
+                        group.Key == DEFAULT_GROUP
+                            ? DEFAULT_GROUP
+                            : $"{group.Key} ({group.Value.Tags.Count})";
 
                     _tagGroupFoldouts[group.Key] = EditorGUILayout.Foldout(
-                        _tagGroupFoldouts[group.Key], 
-                        headerText, 
+                        _tagGroupFoldouts[group.Key],
+                        headerText,
                         true
                     );
 
@@ -226,3 +241,4 @@ namespace Darklight.UnityExt.Editor
         public List<(string tag, int index)> Tags { get; } = new List<(string tag, int index)>();
     }
 }
+#endif

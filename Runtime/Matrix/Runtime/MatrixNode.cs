@@ -1,9 +1,6 @@
 using System;
-using Codice.Client.Common.TreeGrouper;
 using Darklight.UnityExt.Behaviour;
 using Darklight.UnityExt.Editor;
-using NaughtyAttributes;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;

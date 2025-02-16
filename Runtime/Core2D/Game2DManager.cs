@@ -5,6 +5,7 @@ using Darklight.UnityExt.Utility;
 using Darklight.UnityExt.World;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(UniversalInputManager))]
 public class Game2DManager : MonoBehaviourSingleton<Game2DManager>
@@ -31,5 +32,19 @@ public class Game2DManager : MonoBehaviourSingleton<Game2DManager>
     {
         if (_bounds != null)
             _bounds.DrawGizmos();
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditorInternal;
-using UnityEngine;
 
 namespace Darklight.UnityExt.Collection.Editor
 {
@@ -770,3 +771,4 @@ namespace Darklight.UnityExt.Collection.Editor
         #endregion
     }
 }
+#endif

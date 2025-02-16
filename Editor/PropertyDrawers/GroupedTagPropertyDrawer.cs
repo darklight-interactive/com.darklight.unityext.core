@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -47,23 +48,26 @@ namespace Darklight.UnityExt.Editor
         {
             InitializeTagGroups();
 
-            string displayName = string.IsNullOrEmpty(property.stringValue) 
-                ? NONE_OPTION 
+            string displayName = string.IsNullOrEmpty(property.stringValue)
+                ? NONE_OPTION
                 : property.stringValue;
-            
+
             var content = EditorGUI.DropdownButton(
-                position, 
-                new GUIContent(label.text + ": " + displayName), 
+                position,
+                new GUIContent(label.text + ": " + displayName),
                 FocusType.Keyboard
             );
 
             if (content)
             {
                 var menu = new GenericMenu();
-                
+
                 // Add None option
-                menu.AddItem(new GUIContent(NONE_OPTION), string.IsNullOrEmpty(property.stringValue), 
-                    () => SetPropertyValue(property, string.Empty));
+                menu.AddItem(
+                    new GUIContent(NONE_OPTION),
+                    string.IsNullOrEmpty(property.stringValue),
+                    () => SetPropertyValue(property, string.Empty)
+                );
                 menu.AddSeparator("");
 
                 // Add Built-in tags group
@@ -84,10 +88,11 @@ namespace Darklight.UnityExt.Editor
                 {
                     foreach (var tag in group.Value.OrderBy(t => t))
                     {
-                        string menuPath = group.Key == "Ungrouped" 
-                            ? tag 
-                            : $"{group.Key}/{tag.Substring(group.Key.Length).TrimStart()}";
-                            
+                        string menuPath =
+                            group.Key == "Ungrouped"
+                                ? tag
+                                : $"{group.Key}/{tag.Substring(group.Key.Length).TrimStart()}";
+
                         menu.AddItem(
                             new GUIContent(menuPath),
                             property.stringValue == tag,
@@ -109,15 +114,18 @@ namespace Darklight.UnityExt.Editor
 
                 // Group tags using TagGroupUtility
                 var serializedTagManager = new SerializedObject(
-                    AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset").FirstOrDefault());
+                    AssetDatabase
+                        .LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")
+                        .FirstOrDefault()
+                );
                 var tagsProp = serializedTagManager.FindProperty("tags");
 
                 var groupedTags = TagGroupUtility.GroupTags(tagsProp, builtInTags, "Ungrouped");
 
                 foreach (var group in groupedTags)
                 {
-                    _tagGroups[group.Key] = group.Value.Tags
-                        .Select(t => t.tag)
+                    _tagGroups[group.Key] = group
+                        .Value.Tags.Select(t => t.tag)
                         .OrderBy(t => t)
                         .ToList();
                 }
@@ -130,16 +138,31 @@ namespace Darklight.UnityExt.Editor
             property.serializedObject.ApplyModifiedProperties();
         }
 
-        private void DrawDefaultPropertyAndHelpBox(Rect position, SerializedProperty property, string message, MessageType messageType)
+        private void DrawDefaultPropertyAndHelpBox(
+            Rect position,
+            SerializedProperty property,
+            string message,
+            MessageType messageType
+        )
         {
-            var propertyRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+            var propertyRect = new Rect(
+                position.x,
+                position.y,
+                position.width,
+                EditorGUIUtility.singleLineHeight
+            );
             EditorGUI.PropertyField(propertyRect, property, true);
 
-            var helpBoxRect = new Rect(position.x, position.y + EditorGUIUtility.singleLineHeight + 2f, 
-                position.width, GetHelpBoxHeight());
+            var helpBoxRect = new Rect(
+                position.x,
+                position.y + EditorGUIUtility.singleLineHeight + 2f,
+                position.width,
+                GetHelpBoxHeight()
+            );
             EditorGUI.HelpBox(helpBoxRect, message, messageType);
         }
 
         private float GetHelpBoxHeight() => EditorGUIUtility.singleLineHeight * 2f;
     }
-} 
+}
+#endif

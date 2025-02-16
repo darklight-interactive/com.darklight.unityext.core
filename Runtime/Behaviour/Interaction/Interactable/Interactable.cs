@@ -118,6 +118,7 @@ namespace Darklight.UnityExt.Behaviour
         protected virtual void OnDrawGizmos()
         {
             Vector2 labelPos = (Vector2)transform.position + (Vector2.up * 0.25f);
+#if UNITY_EDITOR
             CustomGizmos.DrawLabel(
                 CurrentState.ToString(),
                 labelPos,
@@ -129,6 +130,7 @@ namespace Darklight.UnityExt.Behaviour
                     normal = new GUIStyleState() { textColor = Color.white }
                 }
             );
+#endif
         }
         #endregion
 

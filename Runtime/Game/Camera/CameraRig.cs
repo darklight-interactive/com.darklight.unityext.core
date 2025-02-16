@@ -1,46 +1,57 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using Darklight.UnityExt.Editor;
-
 using UnityEngine;
-
 using Camera = UnityEngine.Camera;
-
 #if UNITY_EDITOR
 using UnityEditor;
 
 #endif
 
-
 namespace Darklight.UnityExt.Game
 {
-
     /// <summary>
-    /// This Camera Rig is the main Monobehaviour reference for the full Camera System. 
-    /// It should be set as the parent object for all cameras in the scene.
+    /// This Camera Rig is the main Monobehaviour reference for the full Camera System.
+    /// /// It should be set as the parent object for all cameras in the scene.
     /// </summary>
     [ExecuteAlways]
     public class CameraRig : MonoBehaviour
     {
-        [SerializeField, ShowOnly] Vector3 _rigOrigin;
-        [SerializeField, ShowOnly] Vector3 _targetPosition;
-        [SerializeField, ShowOnly] Quaternion _targetRotation;
-        [SerializeField, ShowOnly] float _targetFOV;
+        [SerializeField, ShowOnly]
+        Vector3 _rigOrigin;
 
+        [SerializeField, ShowOnly]
+        Vector3 _targetPosition;
+
+        [SerializeField, ShowOnly]
+        Quaternion _targetRotation;
+
+        [SerializeField, ShowOnly]
+        float _targetFOV;
 
         [Header("Cameras")]
-        [SerializeField] Camera _mainCamera;
-        [SerializeField, ShowOnly] List<Camera> _overlayCameras = new List<Camera>();
+        [SerializeField]
+        Camera _mainCamera;
+
+        [SerializeField, ShowOnly]
+        List<Camera> _overlayCameras = new List<Camera>();
 
         [Header("Settings")]
-        [SerializeField] Transform _followTarget;
-        [SerializeField] CameraRigSettings _settings;
+        [SerializeField]
+        Transform _followTarget;
 
+        [SerializeField]
+        CameraRigSettings _settings;
 
         [Header("Debug")]
-        [SerializeField] bool _showGizmos;
-        [SerializeField] bool _lerpInEditor;
+        [SerializeField]
+        bool _showGizmos;
+
+        [SerializeField]
+        bool _lerpInEditor;
+
+        [SerializeField]
+        CameraBounds _bounds;
 
         // << PROPERTIES >> -------------------------------------------------
 
@@ -48,6 +59,7 @@ namespace Darklight.UnityExt.Game
         {
             get
             {
+                _rigOrigin = _bounds.Center;
                 if (_followTarget != null)
                     _rigOrigin = _followTarget.position;
                 return _rigOrigin;
@@ -65,7 +77,8 @@ namespace Darklight.UnityExt.Game
             get
             {
                 // Calculate the half width of the camera frustum at the target depth
-                float halfWidth = Mathf.Tan(0.5f * Mathf.Deg2Rad * _targetFOV) * CameraZOffset * CameraAspect;
+                float halfWidth =
+                    Mathf.Tan(0.5f * Mathf.Deg2Rad * _targetFOV) * CameraZOffset * CameraAspect;
                 return Mathf.Abs(halfWidth); // Return the absolute value
             }
         }
@@ -78,7 +91,6 @@ namespace Darklight.UnityExt.Game
                 return Mathf.Abs(HalfHeight); // Return the absolute value
             }
         }
-
 
         #region ( EDITOR UPDATE ) <PRIVATE_METHODS> ================================================
         private void OnEnable()
@@ -133,7 +145,7 @@ namespace Darklight.UnityExt.Game
         }
         #endregion
 
-        #region < NONPUBLIC_METHODS > [[ CALCULATIONS ]] ================================================================ 
+        #region < NONPUBLIC_METHODS > [[ CALCULATIONS ]] ================================================================
         /// <summary>
         /// Calculate the target position of the camera based on the preset values.
         /// </summary>
@@ -147,23 +159,24 @@ namespace Darklight.UnityExt.Game
             );
 
             Vector3 adjustedPosition = Origin + offset;
+            if (_bounds != null)
+                adjustedPosition = EnforceBounds(adjustedPosition);
 
             if (Mathf.Abs(_settings.OrbitAngle) > 0)
             {
                 // Calculate the orbit position based on the radius and current offset (angle in degrees)
                 float orbitRadians = (_settings.OrbitAngle + 90) * Mathf.Deg2Rad; // Convert degrees to radians
 
-                // Set the radius to match the z offset 
+                // Set the radius to match the z offset
                 float orbitRadius = _settings.PositionOffsetZ;
 
-                // Calculate orbit based off of enforced bounds 
+                // Calculate orbit based off of enforced bounds
                 Vector3 orbitPosition = new Vector3(
                     adjustedPosition.x + Mathf.Cos(orbitRadians) * orbitRadius,
                     adjustedPosition.y, // Keep the camera at the desired height
                     Origin.z + Mathf.Sin(orbitRadians) * orbitRadius
                 );
                 adjustedPosition = orbitPosition;
-
             }
 
             return adjustedPosition;
@@ -177,7 +190,11 @@ namespace Darklight.UnityExt.Game
             {
                 Vector3 camPosition = _targetPosition;
                 targetRotation = Quaternion.LookRotation(Origin - camPosition);
-                targetRotation = Quaternion.Euler(_settings.RotOffsetX + targetRotation.eulerAngles.x, targetRotation.eulerAngles.y, targetRotation.eulerAngles.z);
+                targetRotation = Quaternion.Euler(
+                    _settings.RotOffsetX + targetRotation.eulerAngles.x,
+                    targetRotation.eulerAngles.y,
+                    targetRotation.eulerAngles.z
+                );
             }
             else
             {
@@ -194,6 +211,78 @@ namespace Darklight.UnityExt.Game
         protected virtual float CalculateTargetFOV()
         {
             return _settings.FOV;
+        }
+
+        Vector3 EnforceBounds(Vector3 position)
+        {
+            float minXBound = _bounds.Left;
+            float maxXBound = _bounds.Right;
+            float minYBound = _bounds.Bottom;
+            float maxYBound = _bounds.Top;
+
+            // << CALCULATE POSITION >> ------------------------------
+            Vector3 adjustedPosition = position;
+
+            // ( Check the adjusted position against the X bounds )
+            if (adjustedPosition.x < minXBound)
+                adjustedPosition.x = minXBound + HalfWidth; // Add half width to align left edge
+            else if (adjustedPosition.x > maxXBound)
+                adjustedPosition.x = maxXBound - HalfWidth; // Subtract half width to align right edge
+
+            // ( Check the adjusted position against the Y bounds )
+            if (adjustedPosition.y < minYBound)
+                adjustedPosition.y = minYBound + HalfHeight;
+            else if (adjustedPosition.y > maxYBound)
+                adjustedPosition.y = maxYBound - HalfHeight;
+
+            // << CALCULATE FRUSTRUM OFFSET >> ------------------------------
+            Vector3 frustrumOffset = Vector3.zero;
+            Vector3[] frustumCorners = CalculateFrustumCorners(
+                adjustedPosition,
+                _mainCamera.transform.rotation
+            );
+            for (int i = 0; i < frustumCorners.Length; i++)
+            {
+                Vector3 corner = frustumCorners[i];
+
+                // ( X Axis Bounds ) ------------------------------------------------------
+                // If the corner is outside the bounds, adjust the offset
+                // If the offset is larger than the difference between the corner and the bound,
+                //   keep the larger offset value
+                if (corner.x < minXBound)
+                    frustrumOffset.x = Mathf.Max(frustrumOffset.x, minXBound - corner.x);
+                else if (corner.x > maxXBound)
+                    frustrumOffset.x = Mathf.Min(frustrumOffset.x, maxXBound - corner.x);
+
+                // ( Y Axis Bounds ) ------------------------------------------------------
+                if (corner.y < minYBound)
+                    frustrumOffset.y = Mathf.Max(frustrumOffset.y, minYBound - corner.y);
+                else if (corner.y > maxYBound)
+                    frustrumOffset.y = Mathf.Min(frustrumOffset.y, maxYBound - corner.y);
+            }
+            return adjustedPosition + frustrumOffset;
+        }
+
+        /// <summary>
+        /// Calculate the frustum corners of the camera based on the given parameters.
+        /// </summary>
+        Vector3[] CalculateFrustumCorners(Vector3 position, Quaternion rotation)
+        {
+            Vector3[] frustumCorners = new Vector3[4];
+
+            // Define the corners in local space (relative to the camera's orientation)
+            Vector3 topLeft = new Vector3(-HalfWidth, HalfHeight, CameraZOffset);
+            Vector3 topRight = new Vector3(HalfWidth, HalfHeight, CameraZOffset);
+            Vector3 bottomLeft = new Vector3(-HalfWidth, -HalfHeight, CameraZOffset);
+            Vector3 bottomRight = new Vector3(HalfWidth, -HalfHeight, CameraZOffset);
+
+            // Transform the corners to world space
+            frustumCorners[0] = position + rotation * topLeft;
+            frustumCorners[1] = position + rotation * topRight;
+            frustumCorners[2] = position + rotation * bottomLeft;
+            frustumCorners[3] = position + rotation * bottomRight;
+
+            return frustumCorners;
         }
 
         #endregion
@@ -216,19 +305,32 @@ namespace Darklight.UnityExt.Game
             _targetRotation = CalculateTargetRotation();
             _targetFOV = CalculateTargetFOV();
 
-            cam.orthographic = _settings.Projection == CameraRigSettings.ProjectionType.ORTHOGRAPHIC;
+            cam.orthographic =
+                _settings.Projection == CameraRigSettings.ProjectionType.ORTHOGRAPHIC;
 
             // << UPDATE CAMERA VALUES >> -------------------------------------
             if (useLerp)
             {
                 // ( Lerp Camera Position ) ---------------------------------------
-                cam.transform.position = Vector3.Lerp(_mainCamera.transform.position, _targetPosition, _settings.PosSpeed * Time.deltaTime);
+                cam.transform.position = Vector3.Lerp(
+                    _mainCamera.transform.position,
+                    _targetPosition,
+                    _settings.PosSpeed * Time.deltaTime
+                );
 
                 // ( Slerp Camera Rotation ) ---------------------------------------
-                cam.transform.rotation = Quaternion.Slerp(_mainCamera.transform.rotation, _targetRotation, _settings.RotSpeed * Time.deltaTime);
+                cam.transform.rotation = Quaternion.Slerp(
+                    _mainCamera.transform.rotation,
+                    _targetRotation,
+                    _settings.RotSpeed * Time.deltaTime
+                );
 
                 // ( Lerp Camera Field of View ) ---------------------------------
-                cam.fieldOfView = Mathf.Lerp(_mainCamera.fieldOfView, _targetFOV, _settings.FOVSpeed * Time.deltaTime);
+                cam.fieldOfView = Mathf.Lerp(
+                    _mainCamera.fieldOfView,
+                    _targetFOV,
+                    _settings.FOVSpeed * Time.deltaTime
+                );
             }
             else
             {
@@ -247,7 +349,8 @@ namespace Darklight.UnityExt.Game
         {
             foreach (Camera camera in cameras)
             {
-                if (camera == _mainCamera) continue;
+                if (camera == _mainCamera)
+                    continue;
                 if (camera.transform.parent != _mainCamera.transform)
                     camera.transform.SetParent(_mainCamera.transform);
 
@@ -272,10 +375,11 @@ namespace Darklight.UnityExt.Game
 
         void OnDrawGizmosSelected()
         {
-            if (!_showGizmos) return;
+            if (!_showGizmos)
+                return;
 
-            //if (_bounds != null)
-            //_bounds.DrawGizmos();
+            if (_bounds != null)
+                _bounds.DrawGizmos();
 
             // Draw the camera frustum
             Gizmos.color = Color.yellow;
@@ -289,7 +393,12 @@ namespace Darklight.UnityExt.Game
         void DrawCameraFrustum(Camera cam)
         {
             Vector3[] frustumCorners = new Vector3[4];
-            cam.CalculateFrustumCorners(new Rect(0, 0, 1, 1), CameraZOffset, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
+            cam.CalculateFrustumCorners(
+                new Rect(0, 0, 1, 1),
+                CameraZOffset,
+                Camera.MonoOrStereoscopicEye.Mono,
+                frustumCorners
+            );
 
             // Transform the corners to world space considering the entire transform hierarchy
             for (int i = 0; i < 4; i++)
@@ -315,7 +424,12 @@ namespace Darklight.UnityExt.Game
         void DrawCameraView()
         {
             Vector3[] frustumCorners = new Vector3[4];
-            _mainCamera.CalculateFrustumCorners(new Rect(0, 0, 1, 1), CameraZOffset, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
+            _mainCamera.CalculateFrustumCorners(
+                new Rect(0, 0, 1, 1),
+                CameraZOffset,
+                Camera.MonoOrStereoscopicEye.Mono,
+                frustumCorners
+            );
             for (int i = 0; i < 4; i++)
             {
                 frustumCorners[i] = _mainCamera.transform.TransformPoint(frustumCorners[i]);
@@ -339,6 +453,7 @@ namespace Darklight.UnityExt.Game
         {
             SerializedObject _serializedObject;
             CameraRig _script;
+
             private void OnEnable()
             {
                 _serializedObject = new SerializedObject(target);

@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
@@ -7,7 +8,8 @@ using UnityEditor;
 public static class MaterialConverterUtility
 {
     const string AssetMenuPath = "Assets/DarklightTools/Convert Selected Built-in Materials to URP";
-    const string ConvertToURPMenuItem = "Edit/Rendering/Materials/Convert Selected Built-in Materials to URP";
+    const string ConvertToURPMenuItem =
+        "Edit/Rendering/Materials/Convert Selected Built-in Materials to URP";
 
     /// <summary>
     /// Validates if the menu item should be enabled based on material selection.
@@ -26,7 +28,7 @@ public static class MaterialConverterUtility
     private static void ConvertToURP()
     {
         Material[] selectedMaterials = Selection.GetFiltered<Material>(SelectionMode.Assets);
-        
+
         if (selectedMaterials.Length == 0)
         {
             Debug.LogWarning("No materials selected for conversion.");
@@ -35,7 +37,10 @@ public static class MaterialConverterUtility
 
         // Open the Render Pipeline Converter window
         EditorApplication.ExecuteMenuItem(ConvertToURPMenuItem);
-        
-        Debug.Log($"Please use the Render Pipeline Converter window to convert {selectedMaterials.Length} selected materials to URP.");
+
+        Debug.Log(
+            $"Please use the Render Pipeline Converter window to convert {selectedMaterials.Length} selected materials to URP."
+        );
     }
 }
+#endif

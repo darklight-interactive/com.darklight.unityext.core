@@ -161,7 +161,6 @@ namespace Darklight.UnityExt.Matrix
 
                     // Draw Partition Label
                     if (Preferences.PartitionPrefs.DrawLabels)
-
                     {
                         GUIStyle labelStyle = new GUIStyle()
                         {
@@ -280,7 +279,7 @@ namespace Darklight.UnityExt.Matrix
                     }
                 }
             }
-        }
 #endif
+        }
     }
 }

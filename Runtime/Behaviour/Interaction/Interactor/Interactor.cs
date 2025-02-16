@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.UnityExt.Editor;
@@ -49,10 +50,10 @@ namespace Darklight.UnityExt.Behaviour
         LayerMask _layerMask;
 
         [SerializeField, HideIf("IsCircle")]
-        Vector2 _dimensions = new Vector2(1, 1);
+        Vector2 _overlapDimensions = new Vector2(1, 1);
 
         [SerializeField, HideIf("IsRect")]
-        float _radius = 1;
+        float _overlapRadius = 1;
 
         [SerializeField, ShowOnly]
         Vector2 _offsetPosition = new Vector2(0, 0);
@@ -69,7 +70,7 @@ namespace Darklight.UnityExt.Behaviour
         Interactable _closestInteractable;
 
         [SerializeField]
-        protected Library<Interactable, string> _nearbyInteractables = new Library<
+        protected Library<Interactable, string> nearbyInteractables = new Library<
             Interactable,
             string
         >()
@@ -84,20 +85,47 @@ namespace Darklight.UnityExt.Behaviour
             get => _layerMask;
             set => _layerMask = value;
         }
-        public Library<Interactable, string> NearbyInteractables => _nearbyInteractables;
+        public Library<Interactable, string> NearbyInteractables => nearbyInteractables;
         public Interactable TargetInteractable => _target;
-
         public Vector2 OffsetPosition
         {
             get => _offsetPosition;
             set => _offsetPosition = value;
         }
         protected Vector2 OverlapCenter => (Vector2)transform.position + _offsetPosition;
-        public InteractorShape Shape => _shape;
+        public Vector2 OverlapDimensions
+        {
+            get => _overlapDimensions;
+            protected set => _overlapDimensions = value;
+        }
+        public float OverlapRadius
+        {
+            get => _overlapRadius;
+            protected set => _overlapRadius = value;
+        }
+        public InteractorShape Shape
+        {
+            get => _shape;
+            protected set => _shape = value;
+        }
         public bool IsCircle => _shape == InteractorShape.CIRCLE;
         public bool IsRect => _shape == InteractorShape.RECT;
 
+        // ======== [[ EVENTS ]] ================================== >>>>
+        public event Action<Interactable> OnInteractableAdded;
+        public event Action<Interactable> OnInteractableRemoved;
+
         #region ======== <METHODS> (( UNITY RUNTIME )) ================================== >>>>
+        protected virtual void Start()
+        {
+            OnInteractableAdded += (interactable) => {
+                //Debug.Log($"[{name}] OnInteractableAdded: {interactable.name}");
+            };
+            OnInteractableRemoved += (interactable) => {
+                //Debug.Log($"[{name}] OnInteractableRemoved: {interactable.name}");
+            };
+        }
+
         public virtual void Update()
         {
             RefreshNearbyInteractables();
@@ -111,13 +139,22 @@ namespace Darklight.UnityExt.Behaviour
         {
             if (IsRect)
             {
-                CustomGizmos.DrawWireRect(OverlapCenter, _dimensions, Vector3.forward, Color.red);
+#if UNITY_EDITOR
+                CustomGizmos.DrawWireRect(
+                    OverlapCenter,
+                    _overlapDimensions,
+                    Vector3.forward,
+                    Color.red
+                );
+#endif
             }
             else if (IsCircle)
             {
-                CustomGizmos.DrawWireSphere(OverlapCenter, _radius, Color.red);
+#if UNITY_EDITOR
+                CustomGizmos.DrawWireSphere(OverlapCenter, _overlapRadius, Color.red);
+#endif
             }
-            foreach (Interactable interactable in _nearbyInteractables.Keys)
+            foreach (Interactable interactable in nearbyInteractables.Keys)
             {
                 if (interactable == null)
                     continue;
@@ -144,11 +181,16 @@ namespace Darklight.UnityExt.Behaviour
 
             if (_shape == InteractorShape.RECT)
             {
-                colliders = Physics2D.OverlapBoxAll(OverlapCenter, _dimensions, 0, _layerMask);
+                colliders = Physics2D.OverlapBoxAll(
+                    OverlapCenter,
+                    _overlapDimensions,
+                    0,
+                    _layerMask
+                );
             }
             else if (_shape == InteractorShape.CIRCLE)
             {
-                colliders = Physics2D.OverlapCircleAll(OverlapCenter, _radius, _layerMask);
+                colliders = Physics2D.OverlapCircleAll(OverlapCenter, _overlapRadius, _layerMask);
             }
             foreach (Collider2D collider in colliders)
             {
@@ -165,30 +207,37 @@ namespace Darklight.UnityExt.Behaviour
         {
             if (interactable == null)
                 return;
-            if (!_nearbyInteractables.ContainsKey(interactable))
-                _nearbyInteractables.Add(interactable, interactable.Name);
-            else
-                _nearbyInteractables[interactable] = interactable.Name;
+            if (nearbyInteractables.ContainsKey(interactable))
+            {
+                nearbyInteractables[interactable] = interactable.Name;
+                return;
+            }
+
+            nearbyInteractables.Add(interactable, interactable.Name);
+            OnInteractableAdded?.Invoke(interactable);
         }
 
         public virtual void RemoveInteractable(Interactable interactable)
         {
             if (interactable == null)
                 return;
-            if (_nearbyInteractables.ContainsKey(interactable))
-                _nearbyInteractables.Remove(interactable);
+            if (nearbyInteractables.ContainsKey(interactable))
+            {
+                nearbyInteractables.Remove(interactable);
+                OnInteractableRemoved?.Invoke(interactable);
+            }
         }
 
         public Interactable GetClosestReadyInteractable(Vector3 position)
         {
-            if (_nearbyInteractables.Count == 0)
+            if (nearbyInteractables.Count == 0)
                 return null;
-            if (_nearbyInteractables.Count == 1)
-                return _nearbyInteractables.Keys.First();
+            if (nearbyInteractables.Count == 1)
+                return nearbyInteractables.Keys.First();
 
-            Interactable closestInteractable = _nearbyInteractables.Keys.First();
+            Interactable closestInteractable = nearbyInteractables.Keys.First();
             float closestDistance = float.MaxValue;
-            foreach (Interactable interactable in _nearbyInteractables.Keys)
+            foreach (Interactable interactable in nearbyInteractables.Keys)
             {
                 if (interactable == null)
                     continue;
@@ -265,9 +314,7 @@ namespace Darklight.UnityExt.Behaviour
             }
 
             // Remove interactables from the dict that are no longer in the overlap interactables.
-            List<Interactable> dictInteractables = new List<Interactable>(
-                _nearbyInteractables.Keys
-            );
+            List<Interactable> dictInteractables = new List<Interactable>(nearbyInteractables.Keys);
             List<Interactable> interactablesToRemove = new List<Interactable>();
             foreach (Interactable interactable in dictInteractables)
             {

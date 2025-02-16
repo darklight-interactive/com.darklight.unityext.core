@@ -64,6 +64,12 @@ namespace Darklight.UnityExt.Input
                 Debug.LogError("UniversalInputManager is not attached to the scene!");
         }
 
+        protected virtual void OnDestroy()
+        {
+            DisableInputs();
+            StopAllCoroutines();
+        }
+
         #region < NONPUBLIC_METHODS > [[ ENABLE/DISABLE INPUTS ]] ================================================================
         protected virtual void EnableInputs()
         {

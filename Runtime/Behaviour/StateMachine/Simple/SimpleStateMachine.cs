@@ -16,18 +16,15 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
- * 
+ *
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
 
 
 using System;
-using System.Collections.Generic;
-
-using UnityEditorInternal;
 
 namespace Darklight.UnityExt.Behaviour
 {
@@ -42,12 +39,16 @@ namespace Darklight.UnityExt.Behaviour
     public class SimpleStateMachine<TEnum> : StateMachineBase<TEnum>
         where TEnum : Enum
     {
-        public SimpleStateMachine() : base() { }
-        public SimpleStateMachine(TEnum initialState) : base(initialState) { }
+        public SimpleStateMachine()
+            : base() { }
+
+        public SimpleStateMachine(TEnum initialState)
+            : base(initialState) { }
 
         public override bool GoToState(TEnum newState, bool force = false)
         {
-            if (!force && newState.Equals(currentStateEnum)) return false;
+            if (!force && newState.Equals(currentStateEnum))
+                return false;
             currentStateEnum = newState;
             return true;
         }
