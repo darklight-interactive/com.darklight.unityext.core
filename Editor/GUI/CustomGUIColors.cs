@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// Provides extended functionality for working with Unity's Color struct.

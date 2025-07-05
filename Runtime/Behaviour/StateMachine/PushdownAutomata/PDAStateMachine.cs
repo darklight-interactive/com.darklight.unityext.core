@@ -16,13 +16,13 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
-    This script defines a finite state machine (FSM) framework. 
+    This script defines a finite state machine (FSM) framework.
     It provides an abstract base class for creating FSMs and an interface for defining states.
-    The FSM stores a dictionary of possible states, where each state is represented by an enum key 
-    and an instance of the corresponding state class as the value. 
+    The FSM stores a dictionary of possible states, where each state is represented by an enum key
+    and an instance of the corresponding state class as the value.
     The FSM allows transitioning between states and executing the current state's logic.
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
@@ -30,12 +30,10 @@
 
 using System;
 using System.Collections.Generic;
-
-using Darklight.UnityExt.Editor;
-
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// A Pushdown State Machine that allows managing stacked states using push and pop operations.
@@ -67,7 +65,8 @@ namespace Darklight.UnityExt.Behaviour
         {
             if (_states.ContainsKey(newState))
             {
-                if (_stateStack.Count > 0) _stateStack.Peek().Exit();
+                if (_stateStack.Count > 0)
+                    _stateStack.Peek().Exit();
                 _stateStack.Push(_states[newState]);
                 _states[newState].Enter();
                 RaiseStateChangedEvent(newState);
@@ -100,6 +99,5 @@ namespace Darklight.UnityExt.Behaviour
                 _stateStack.Peek().Execute();
             }
         }
-
     }
 }

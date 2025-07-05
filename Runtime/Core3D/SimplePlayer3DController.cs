@@ -1,7 +1,7 @@
-using Darklight.UnityExt.Input;
+using Darklight.Input;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Core3D
+namespace Darklight.Core3D
 {
     [RequireComponent(typeof(Rigidbody), (typeof(BoxCollider)))]
     public class SimplePlayer3DController : UniversalInputController
@@ -12,11 +12,11 @@ namespace Darklight.UnityExt.Core3D
         bool _isPreloaded = false;
         Vector3 _moveTarget = Vector3.zero;
 
-
         [Header("Settings")]
         public int speed = 10;
 
         void Start() => Preload();
+
         void Preload()
         {
             if (_rb == null)
@@ -33,7 +33,8 @@ namespace Darklight.UnityExt.Core3D
 
         void Update()
         {
-            if (!_isPreloaded) return;
+            if (!_isPreloaded)
+                return;
 
             // Move the player based on input
             _moveTarget = transform.position;
@@ -49,6 +50,5 @@ namespace Darklight.UnityExt.Core3D
             // Apply the clamped position
             _rb.MovePosition(clampedPosition);
         }
-
     }
 }

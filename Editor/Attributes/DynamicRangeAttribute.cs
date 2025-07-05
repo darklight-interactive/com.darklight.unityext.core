@@ -16,7 +16,7 @@ public class DynamicRangeSlider : MonoBehaviour
 }
 */
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public class DynamicRangeAttribute : PropertyAttribute

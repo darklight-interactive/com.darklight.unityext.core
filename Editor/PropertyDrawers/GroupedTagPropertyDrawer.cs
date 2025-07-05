@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// Property drawer for GroupedTagAttribute that allows selecting tags organized by groups.

@@ -1,6 +1,6 @@
 using System;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public interface IState
     {

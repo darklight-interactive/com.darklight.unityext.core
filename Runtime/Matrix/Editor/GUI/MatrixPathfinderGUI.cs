@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     /// <summary>
     /// Static class responsible for drawing Matrix Pathfinder GUI elements in both Scene and Inspector views

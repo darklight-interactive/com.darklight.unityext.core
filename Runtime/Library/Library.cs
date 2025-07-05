@@ -1,12 +1,11 @@
-using System.Collections.Generic;
-using UnityEngine;
 using System;
-using System.Linq;
-using Darklight.UnityExt.Editor;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Darklight.Editor;
+using UnityEngine;
 
-
-namespace Darklight.UnityExt.Library
+namespace Darklight.Library
 {
     public interface ILibrary<TKey, TValue> : IDictionary<TKey, TValue>
     {
@@ -25,19 +24,36 @@ namespace Darklight.UnityExt.Library
 
         bool HasUnsetKeysOrValues();
         bool TryGetKeyByValue(TValue value, out TKey key);
-        bool TryGetKeyByValue<T>(out TKey key) where T : TValue;
+        bool TryGetKeyByValue<T>(out TKey key)
+            where T : TValue;
     }
 
     [System.Serializable]
     public class LibraryItem<TKey, TValue>
     {
-        [SerializeField, ShowOnly] int _id;
-        [SerializeField] TKey _key;
-        [SerializeField] TValue _value;
+        [SerializeField, ShowOnly]
+        int _id;
 
-        public int Id { get => _id; }
-        public TKey Key { get => _key; set => _key = value; }
-        public TValue Value { get => _value; set => _value = value; }
+        [SerializeField]
+        TKey _key;
+
+        [SerializeField]
+        TValue _value;
+
+        public int Id
+        {
+            get => _id;
+        }
+        public TKey Key
+        {
+            get => _key;
+            set => _key = value;
+        }
+        public TValue Value
+        {
+            get => _value;
+            set => _value = value;
+        }
 
         public LibraryItem(int id, TKey key, TValue value)
         {
@@ -61,7 +77,10 @@ namespace Darklight.UnityExt.Library
 
     #region == (( CLASS : Library<TKey, TValue> )) ============================================= ))
     [System.Serializable]
-    public class Library<TKey, TValue> : LibraryBase, ILibrary<TKey, TValue>, ISerializationCallbackReceiver
+    public class Library<TKey, TValue>
+        : LibraryBase,
+            ILibrary<TKey, TValue>,
+            ISerializationCallbackReceiver
         where TKey : notnull
         where TValue : notnull
     {
@@ -70,13 +89,26 @@ namespace Darklight.UnityExt.Library
         Dictionary<TValue, TKey> _reverseDictionary = new Dictionary<TValue, TKey>();
         HashSet<TKey> _requiredKeys = new HashSet<TKey>();
 
-        [SerializeField] List<LibraryItem<TKey, TValue>> _items = new List<LibraryItem<TKey, TValue>>();
-        [SerializeField] bool _readOnlyKey = false;
-        [SerializeField] bool _readOnlyValue = false;
+        [SerializeField]
+        List<LibraryItem<TKey, TValue>> _items = new List<LibraryItem<TKey, TValue>>();
+
+        [SerializeField]
+        bool _readOnlyKey = false;
+
+        [SerializeField]
+        bool _readOnlyValue = false;
 
         #region ==== [[ PROPERTIES ]] ================================== >>>>
-        public bool ReadOnlyKey { get => _readOnlyKey; set => _readOnlyKey = value; }
-        public bool ReadOnlyValue { get => _readOnlyValue; set => _readOnlyValue = value; }
+        public bool ReadOnlyKey
+        {
+            get => _readOnlyKey;
+            set => _readOnlyKey = value;
+        }
+        public bool ReadOnlyValue
+        {
+            get => _readOnlyValue;
+            set => _readOnlyValue = value;
+        }
         public IEnumerable<TKey> RequiredKeys
         {
             get => _requiredKeys.ToList();
@@ -216,8 +248,10 @@ namespace Darklight.UnityExt.Library
                 LibraryItem<TKey, TValue> item = _items[index];
 
                 // Check if current item needs updating
-                if (!EqualityComparer<TKey>.Default.Equals(item.Key, entry.Key) ||
-                    !EqualityComparer<TValue>.Default.Equals(item.Value, entry.Value))
+                if (
+                    !EqualityComparer<TKey>.Default.Equals(item.Key, entry.Key)
+                    || !EqualityComparer<TValue>.Default.Equals(item.Value, entry.Value)
+                )
                 {
                     // Update the item and mark that a refresh was needed
                     item.Update(index, entry.Key, entry.Value);
@@ -229,7 +263,6 @@ namespace Darklight.UnityExt.Library
                 _items.Add(new LibraryItem<TKey, TValue>(index, entry.Key, entry.Value));
             }
         }
-
 
         protected virtual void InternalClear()
         {
@@ -259,7 +292,9 @@ namespace Darklight.UnityExt.Library
                 bool valueIsEnum = typeof(TValue).IsEnum;
 
                 // Check for default values if the key or value is not an enum or nullable
-                if ((!keyIsEnum && IsDefault(entry.Key)) || (!valueIsEnum && IsDefault(entry.Value)))
+                if (
+                    (!keyIsEnum && IsDefault(entry.Key)) || (!valueIsEnum && IsDefault(entry.Value))
+                )
                     return true;
 
                 // Additional checks for empty collections or strings
@@ -268,7 +303,9 @@ namespace Darklight.UnityExt.Library
             }
             return false;
         }
-        public bool TryGetValue<T>(TKey key, out T value) where T : TValue
+
+        public bool TryGetValue<T>(TKey key, out T value)
+            where T : TValue
         {
             if (_dictionary.TryGetValue(key, out TValue val) && val is T)
             {
@@ -278,12 +315,15 @@ namespace Darklight.UnityExt.Library
             value = default(T);
             return false;
         }
+
         public bool TryGetKeyByValue(TValue value, out TKey key)
         {
             GenerateReverseDictionary();
             return _reverseDictionary.TryGetValue(value, out key);
         }
-        public bool TryGetKeyByValue<T>(out TKey key) where T : TValue
+
+        public bool TryGetKeyByValue<T>(out TKey key)
+            where T : TValue
         {
             GenerateReverseDictionary();
             foreach (KeyValuePair<TValue, TKey> entry in _reverseDictionary)
@@ -300,12 +340,21 @@ namespace Darklight.UnityExt.Library
         #endregion
 
         public virtual TKey CreateDefaultKey() => default(TKey);
+
         public virtual TValue CreateDefaultValue() => default(TValue);
-        public virtual void AddDefaultItem() => InternalAdd(CreateDefaultKey(), CreateDefaultValue());
-        public virtual void AddItemWithDefaultValue(TKey key) => InternalAdd(key, CreateDefaultValue());
+
+        public virtual void AddDefaultItem() =>
+            InternalAdd(CreateDefaultKey(), CreateDefaultValue());
+
+        public virtual void AddItemWithDefaultValue(TKey key) =>
+            InternalAdd(key, CreateDefaultValue());
+
         public void RemoveAt(int index) => InternalRemove(_items[index].Key);
+
         public void Refresh() => InternalRefresh();
+
         public void Reset() => InternalReset();
+
         public void SetRequiredKeys(IEnumerable<TKey> keys)
         {
             _requiredKeys = new HashSet<TKey>(keys);
@@ -333,31 +382,47 @@ namespace Darklight.UnityExt.Library
         public ICollection<TValue> Values => _dictionary.Values;
         public int Count => _dictionary.Count;
         public bool IsReadOnly => false;
+
         public void Add(TKey key, TValue value) => InternalAdd(key, value);
+
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return _dictionary.ContainsKey(item.Key) && EqualityComparer<TValue>.Default.Equals(_dictionary[item.Key], item.Value);
+            return _dictionary.ContainsKey(item.Key)
+                && EqualityComparer<TValue>.Default.Equals(_dictionary[item.Key], item.Value);
         }
+
         public bool ContainsKey(TKey key) => _dictionary.ContainsKey(key);
+
         public bool Remove(TKey key) => InternalRemove(key);
+
         public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
-        public bool TryGetValue(TKey key, out TValue value) => _dictionary.TryGetValue(key, out value);
+
+        public bool TryGetValue(TKey key, out TValue value) =>
+            _dictionary.TryGetValue(key, out value);
+
         public void Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+
         public void Clear() => InternalClear();
+
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
             _dictionary.ToList().CopyTo(array, arrayIndex);
         }
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _dictionary.GetEnumerator();
+
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() =>
+            _dictionary.GetEnumerator();
+
         System.Collections.IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
         #region -- ( ISerializationCallbackReceiver ) <PUBLIC_INTERFACE_METHODS> --
         public void OnBeforeSerialize() { }
+
         public void OnAfterDeserialize()
         {
             _dictionary = new Dictionary<TKey, TValue>();
-            if (_items == null || _items.Count == 0) return;
+            if (_items == null || _items.Count == 0)
+                return;
 
             List<LibraryItem<TKey, TValue>> removalItems = new List<LibraryItem<TKey, TValue>>();
             foreach (LibraryItem<TKey, TValue> entry in _items)
@@ -372,7 +437,9 @@ namespace Darklight.UnityExt.Library
                 else
                 {
                     removalItems.Add(entry);
-                    Debug.LogWarning($"Duplicate key '{entry.Key}' found during deserialization. Removing the duplicate entry.");
+                    Debug.LogWarning(
+                        $"Duplicate key '{entry.Key}' found during deserialization. Removing the duplicate entry."
+                    );
                 }
             }
             foreach (LibraryItem<TKey, TValue> entry in removalItems)

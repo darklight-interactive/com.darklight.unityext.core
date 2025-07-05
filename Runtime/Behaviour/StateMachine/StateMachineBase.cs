@@ -26,10 +26,10 @@
 
 using System;
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// An abstract base for state machines to build upon

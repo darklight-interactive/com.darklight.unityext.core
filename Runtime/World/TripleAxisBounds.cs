@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Darklight.UnityExt.World
+namespace Darklight.World
 {
     /// <summary>
     /// A serializable class that represents a 3D bounding box.

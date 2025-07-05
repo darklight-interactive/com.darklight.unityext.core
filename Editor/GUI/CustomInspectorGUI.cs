@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Darklight.UnityExt.Editor.Utility;
+using Darklight.Editor.Utility;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 
 #endif
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     public static class CustomInspectorGUI
     {

@@ -1,14 +1,12 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
-
+using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-using Object = UnityEngine.Object;
-
-namespace Darklight.UnityExt.Utility
+namespace Darklight.Utility
 {
     public static class ObjectUtility
     {
@@ -44,10 +42,18 @@ namespace Darklight.UnityExt.Utility
         /// <param name="worldPositionStays">If true, retains the world position of the instantiated object. Defaults to true.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>The instantiated object.</returns>
-        public static GameObject InstantiatePrefab(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = false)
+        public static GameObject InstantiatePrefab(
+            GameObject prefab,
+            Vector3 position = default,
+            Quaternion rotation = default,
+            Transform parent = null,
+            bool worldPositionStays = false
+        )
         {
-            if (position == default) position = Vector3.zero;
-            if (rotation == default) rotation = Quaternion.identity;
+            if (position == default)
+                position = Vector3.zero;
+            if (rotation == default)
+                rotation = Quaternion.identity;
 
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -75,23 +81,54 @@ namespace Darklight.UnityExt.Utility
             return Object.Instantiate(prefab, position, rotation, parent);
         }
 
-        public static GameObject InstantiatePrefab
-            (GameObject prefab, Transform parent = null, bool worldPositionStays = false)
+        public static GameObject InstantiatePrefab(
+            GameObject prefab,
+            Transform parent = null,
+            bool worldPositionStays = false
+        )
         {
-            return InstantiatePrefab(prefab, Vector3.zero, Quaternion.identity, parent, worldPositionStays);
+            return InstantiatePrefab(
+                prefab,
+                Vector3.zero,
+                Quaternion.identity,
+                parent,
+                worldPositionStays
+            );
         }
 
-        public static TComponent InstantiatePrefabAsComponent<TComponent>(GameObject prefab, Vector3 position = default, Quaternion rotation = default, Transform parent = null, bool worldPositionStays = false)
+        public static TComponent InstantiatePrefabAsComponent<TComponent>(
+            GameObject prefab,
+            Vector3 position = default,
+            Quaternion rotation = default,
+            Transform parent = null,
+            bool worldPositionStays = false
+        )
             where TComponent : Component
         {
-            GameObject go = InstantiatePrefab(prefab, position, rotation, parent, worldPositionStays);
+            GameObject go = InstantiatePrefab(
+                prefab,
+                position,
+                rotation,
+                parent,
+                worldPositionStays
+            );
             return go.GetComponent<TComponent>();
         }
 
-        public static TComponent InstantiatePrefabAsComponent<TComponent>(GameObject prefab, Transform parent = null, bool worldPositionStays = false)
+        public static TComponent InstantiatePrefabAsComponent<TComponent>(
+            GameObject prefab,
+            Transform parent = null,
+            bool worldPositionStays = false
+        )
             where TComponent : Component
         {
-            return InstantiatePrefabAsComponent<TComponent>(prefab, Vector3.zero, Quaternion.identity, parent, worldPositionStays);
+            return InstantiatePrefabAsComponent<TComponent>(
+                prefab,
+                Vector3.zero,
+                Quaternion.identity,
+                parent,
+                worldPositionStays
+            );
         }
 
         /// <summary>
@@ -102,7 +139,11 @@ namespace Darklight.UnityExt.Utility
         /// <param name="parent">Optional parent transform for the new objects.</param>
         /// <typeparam name="T">The type of the object to instantiate, must be a GameObject or Component.</typeparam>
         /// <returns>A list of instantiated objects.</returns>
-        public static List<GameObject> InstantiateMultiple(GameObject prefab, int count, Transform parent = null)
+        public static List<GameObject> InstantiateMultiple(
+            GameObject prefab,
+            int count,
+            Transform parent = null
+        )
         {
             List<GameObject> instances = new List<GameObject>();
             for (int i = 0; i < count; i++)
@@ -120,8 +161,11 @@ namespace Darklight.UnityExt.Utility
         /// <param name="name"></param>
         /// <param name="parent"></param>
         /// <returns></returns>
-        public static GameObject CreateGameObject
-            (string name, Func<GameObject, GameObject> initializer = null, Transform parent = null)
+        public static GameObject CreateGameObject(
+            string name,
+            Func<GameObject, GameObject> initializer = null,
+            Transform parent = null
+        )
         {
             GameObject gameObject = new GameObject(name);
             if (initializer != null)
@@ -143,8 +187,11 @@ namespace Darklight.UnityExt.Utility
         /// <param name="initializer"></param>
         /// <param name="parent"></param>
         /// <returns></returns>
-        public static TComponent CreateGameObjectWithComponent<TComponent>
-            (string name, Func<TComponent, TComponent> initializer = null, Transform parent = null)
+        public static TComponent CreateGameObjectWithComponent<TComponent>(
+            string name,
+            Func<TComponent, TComponent> initializer = null,
+            Transform parent = null
+        )
             where TComponent : Component
         {
             GameObject gameObject = new GameObject(name);
@@ -160,7 +207,6 @@ namespace Darklight.UnityExt.Utility
             return component;
         }
 
-
 #if UNITY_EDITOR
         /// <summary>
         /// Creates a temporary GameObject in the Editor that is hidden and not saved with the scene.
@@ -170,8 +216,10 @@ namespace Darklight.UnityExt.Utility
         public static GameObject CreateTemporaryEditorObject(string name)
         {
             // Create the GameObject with HideFlags that make it temporary
-            GameObject tempObject = EditorUtility.CreateGameObjectWithHideFlags(name,
-                HideFlags.HideAndDontSave | HideFlags.NotEditable);
+            GameObject tempObject = EditorUtility.CreateGameObjectWithHideFlags(
+                name,
+                HideFlags.HideAndDontSave | HideFlags.NotEditable
+            );
 
             // Register the creation to allow undo
             Undo.RegisterCreatedObjectUndo(tempObject, "Create Temporary Editor Object");
@@ -179,6 +227,5 @@ namespace Darklight.UnityExt.Utility
             return tempObject;
         }
 #endif
-
     }
 }

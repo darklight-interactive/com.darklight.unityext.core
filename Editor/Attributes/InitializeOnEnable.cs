@@ -1,6 +1,6 @@
 using System;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public class InitializeOnEnableAttribute : Attribute

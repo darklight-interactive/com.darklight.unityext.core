@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public partial class Matrix
     {

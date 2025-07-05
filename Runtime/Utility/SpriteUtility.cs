@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Utility
+namespace Darklight.Utility
 {
     public static class SpriteUtility
     {

@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor.Example
+namespace Darklight.Editor.Example
 {
     public class ShowOnlyExample : MonoBehaviour
     {

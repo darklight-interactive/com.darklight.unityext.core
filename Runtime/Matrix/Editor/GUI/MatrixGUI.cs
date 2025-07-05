@@ -1,13 +1,13 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
-using Darklight.UnityExt.Matrix;
-using Darklight.UnityExt.Editor;
+using Darklight.Matrix;
+using Darklight.Editor;
 using System;
-using Darklight.UnityExt.Utility;
+using Darklight.Utility;
 using System.Collections.Generic;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public partial class Matrix
     {

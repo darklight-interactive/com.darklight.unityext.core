@@ -16,16 +16,16 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
- * 
+ *
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
 
 using UnityEngine;
 
-namespace Darklight.UnityExt.Utility
+namespace Darklight.Utility
 {
     /// <summary>
     /// A utility class for retrieving information about the screen.
@@ -33,6 +33,7 @@ namespace Darklight.UnityExt.Utility
     public static class ScreenInfoUtility
     {
         public static Vector2 ScreenSize => GetScreenSize();
+
         /// public static float ScreenAspectRatio => GetScreenAspectRatio();
 
         /// <summary>

@@ -1,6 +1,6 @@
-using Darklight.UnityExt.Behaviour;
+using Darklight.Behaviour;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public partial class BaseInteractable
     {

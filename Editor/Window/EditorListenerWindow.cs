@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// Editor window that displays the last invocation times for Unity Editor events.

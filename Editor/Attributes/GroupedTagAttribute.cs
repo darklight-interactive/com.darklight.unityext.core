@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// Attribute that allows selecting a Unity tag from a grouped dropdown list.

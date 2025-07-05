@@ -1,20 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Library;
+using Darklight.Library;
 using UnityEngine;
 
 public abstract class EnumKeyLibrary<TKey, TValue> : Library<TKey, TValue>
     where TKey : System.Enum
     where TValue : notnull
 {
-    [SerializeField] bool _defaultToAllKeys = false;
-    public EnumKeyLibrary(bool defaultToAllKeys = false) : base()
+    [SerializeField]
+    bool _defaultToAllKeys = false;
+
+    public EnumKeyLibrary(bool defaultToAllKeys = false)
+        : base()
     {
         _defaultToAllKeys = defaultToAllKeys;
     }
 
     protected List<TKey> allEnumKeys => Enum.GetValues(typeof(TKey)).Cast<TKey>().ToList();
+
     TKey GetAvailableKey()
     {
         foreach (TKey key in allEnumKeys)
@@ -28,6 +32,7 @@ public abstract class EnumKeyLibrary<TKey, TValue> : Library<TKey, TValue>
     }
 
     public sealed override TKey CreateDefaultKey() => GetAvailableKey();
+
     public sealed override void AddDefaultItem()
     {
         TKey key = GetAvailableKey();
@@ -38,7 +43,8 @@ public abstract class EnumKeyLibrary<TKey, TValue> : Library<TKey, TValue>
 
     protected sealed override void InternalRefresh()
     {
-        if (_defaultToAllKeys) SetRequiredKeys(allEnumKeys);
+        if (_defaultToAllKeys)
+            SetRequiredKeys(allEnumKeys);
         base.InternalRefresh();
     }
 }

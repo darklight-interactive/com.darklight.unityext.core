@@ -1,7 +1,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Core3D
+namespace Darklight.Core3D
 {
     public static class Spatial3D
     {

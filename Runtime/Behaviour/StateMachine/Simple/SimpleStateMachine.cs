@@ -26,7 +26,7 @@
 
 using System;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// A simple, enum based Finite State Machine.

@@ -1,10 +1,10 @@
 using System;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Darklight.UnityExt.Input
+namespace Darklight.Input
 {
     /// <summary>
     /// Listens for mouse clicks and provides both screen and world positions of the click points.

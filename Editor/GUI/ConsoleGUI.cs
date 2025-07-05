@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     public enum LogSeverity
     {

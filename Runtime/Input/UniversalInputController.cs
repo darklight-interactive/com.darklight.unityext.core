@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Input
+namespace Darklight.Input
 {
     public abstract class UniversalInputController : MonoBehaviour
     {

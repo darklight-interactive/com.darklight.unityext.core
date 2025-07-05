@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Darklight.UnityExt.Behaviour.Interface
+namespace Darklight.Behaviour.Interface
 {
     public interface IComponent<T>
     {

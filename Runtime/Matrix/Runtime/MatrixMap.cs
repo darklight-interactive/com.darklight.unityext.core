@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.Utility;
+using Darklight.Behaviour;
+using Darklight.Editor;
+using Darklight.Utility;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public partial class Matrix
     {

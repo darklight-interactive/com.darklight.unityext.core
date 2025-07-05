@@ -1,8 +1,8 @@
-using NUnit.Framework;
-using UnityEngine;
-using Darklight.UnityExt.Collection;
 using System;
 using System.Linq;
+using Darklight.Collection;
+using NUnit.Framework;
+using UnityEngine;
 
 namespace Darklight.Tests.Collection
 {
@@ -154,4 +154,4 @@ namespace Darklight.Tests.Collection
             Assert.That(index, Is.EqualTo(0));
         }
     }
-} 
+}

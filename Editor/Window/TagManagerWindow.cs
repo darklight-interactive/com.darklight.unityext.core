@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// Editor window for managing Unity tags with support for adding, removing, and viewing both built-in and custom tags.

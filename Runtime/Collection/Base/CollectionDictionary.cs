@@ -7,7 +7,7 @@ using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     /// <summary>
     /// Generic implementation of CollectionLibrary that supports key-value pairs.

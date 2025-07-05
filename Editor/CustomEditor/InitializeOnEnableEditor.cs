@@ -3,7 +3,7 @@ using NaughtyAttributes.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     [CustomEditor(typeof(MonoBehaviour), true)]
     public class InitializeOnEnableEditor : NaughtyInspector

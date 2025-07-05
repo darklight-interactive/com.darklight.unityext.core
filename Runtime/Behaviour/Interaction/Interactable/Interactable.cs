@@ -1,9 +1,9 @@
 using System;
-using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
+using Darklight.Behaviour;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public interface IInteractable
     {

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.World
+namespace Darklight.World
 {
     public enum WorldAxis
     {

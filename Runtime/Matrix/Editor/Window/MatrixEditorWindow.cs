@@ -1,11 +1,11 @@
 #if UNITY_EDITOR
 
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public class MatrixEditorWindow : EditorWindow
     {

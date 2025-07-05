@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     public static class CollectionUtils
     {

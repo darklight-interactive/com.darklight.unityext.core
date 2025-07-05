@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.Library;
+using Darklight.Editor;
+using Darklight.Library;
 using NaughtyAttributes;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public enum InteractorShape
     {

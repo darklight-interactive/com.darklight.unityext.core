@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     /// <summary>
     /// Provides a thread-safe implementation of CollectionLibrary with secure hashing capabilities.

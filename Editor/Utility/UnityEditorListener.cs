@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     /// <summary>
     /// An interface that allows for listening to editor reloads and scene view changes. <br/>
@@ -40,7 +40,7 @@ namespace Darklight.UnityExt.Editor
     [InitializeOnLoad]
     public class EditorHandler
     {
-        public static string Prefix = "( Darklight.UnityExt )";
+        public static string Prefix = "( Darklight )";
         private static List<IUnityEditorListener> Listeners = new List<IUnityEditorListener>();
 
         public static event Action OnEditorReloaded;

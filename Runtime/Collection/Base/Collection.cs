@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Darklight.UnityExt.Collection;
+using Darklight.Collection;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     /// <summary>
     /// Abstract class for a library.

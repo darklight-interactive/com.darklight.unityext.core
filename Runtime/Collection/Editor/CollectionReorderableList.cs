@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
-namespace Darklight.UnityExt.Collection.Editor
+namespace Darklight.Collection.Editor
 {
     public class CollectionReorderableList : ReorderableList
     {

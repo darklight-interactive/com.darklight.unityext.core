@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
+using Darklight.Behaviour;
+using Darklight.Editor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Users;
 
-namespace Darklight.UnityExt.Input
+namespace Darklight.Input
 {
     /// <summary>
     /// A MonoBehaviour singleton class that manages the input device type and the input actions for the current device.

@@ -1,6 +1,6 @@
 {
-    "name": "Darklight.UnityExt.Input",
-    "rootNamespace": "Darklight.UnityExt.Input",
+    "name": "Darklight.Input",
+    "rootNamespace": "Darklight.Input",
     "references": [
         "GUID:75469ad4d38634e559750d17036d5f7c",
         "GUID:c5408d0a97cf4446cafe6f414bcaa9ec",

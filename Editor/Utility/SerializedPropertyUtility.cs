@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor.Utility
+namespace Darklight.Editor.Utility
 {
 #if UNITY_EDITOR
     public static class SerializedPropertyUtility

@@ -1,7 +1,7 @@
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// Defines a basic singleton pattern for a Unity MonoBehaviour type T.

@@ -1,5 +1,5 @@
 {
-    "name": "Darklight.UnityExt.Core3D",
+    "name": "Darklight.Core3D",
     "rootNamespace": "",
     "references": [
         "GUID:c4482660f91d24956b0ee066917dbee5",

@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Core2D.Animation
+namespace Darklight.Core2D.Animation
 {
     [CustomEditor(typeof(SpriteSheet))]
     public class SpriteSheetEditor : UnityEditor.Editor

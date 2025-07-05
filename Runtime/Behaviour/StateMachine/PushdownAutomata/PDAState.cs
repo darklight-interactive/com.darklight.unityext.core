@@ -1,5 +1,3 @@
-
-
 /* ======================================================================= ]]
  * Copyright (c) 2024 Darklight Interactive. All rights reserved.
  * Licensed under the Darklight Interactive Software License Agreement.
@@ -18,13 +16,13 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
-    This script defines a finite state machine (FSM) framework. 
+    This script defines a finite state machine (FSM) framework.
     It provides an abstract base class for creating FSMs and an interface for defining states.
-    The FSM stores a dictionary of possible states, where each state is represented by an enum key 
-    and an instance of the corresponding state class as the value. 
+    The FSM stores a dictionary of possible states, where each state is represented by an enum key
+    and an instance of the corresponding state class as the value.
     The FSM allows transitioning between states and executing the current state's logic.
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
@@ -32,16 +30,13 @@
 
 using System;
 using System.Collections.Generic;
-
-using Darklight.UnityExt.Editor;
-
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public abstract partial class PDAStateMachine<TEnum>
     {
-
         /// <summary>
         /// Represents a state within the Pushdown State Machine, including entry, execution, and exit methods.
         /// </summary>
@@ -51,18 +46,26 @@ namespace Darklight.UnityExt.Behaviour
             IStateStack<TEnum> _stack;
             HashSet<State> _stackableStates = new HashSet<State>();
             HashSet<State> _unstackableStates = new HashSet<State>();
-            public State(PDAStateMachine<TEnum> stateMachine, TEnum stateType) : base(stateType)
+
+            public State(PDAStateMachine<TEnum> stateMachine, TEnum stateType)
+                : base(stateType)
             {
                 _unstackableStates.Add(this);
             }
 
-            public State(PDAStateMachine<TEnum> stateMachine, TEnum stateType, IEnumerable<State> stackableStates) : this(stateMachine, stateType)
+            public State(
+                PDAStateMachine<TEnum> stateMachine,
+                TEnum stateType,
+                IEnumerable<State> stackableStates
+            )
+                : this(stateMachine, stateType)
             {
                 _stackableStates.UnionWith(stackableStates);
-                if (_stackableStates.Contains(this)) _stackableStates.Remove(this);
+                if (_stackableStates.Contains(this))
+                    _stackableStates.Remove(this);
             }
 
-            /// <summary> 
+            /// <summary>
             /// Try to get the state we were in before the last transition.
             /// </summary>
             /// <param name="result">The previous state.</param>
@@ -79,7 +82,6 @@ namespace Darklight.UnityExt.Behaviour
 
                 return false;
             }
-
         }
     }
 }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Library
+namespace Darklight.Library
 {
     [Serializable]
     public class EnumObjectLibrary<TEnum, TObj> : EnumKeyLibrary<TEnum, TObj>
@@ -10,7 +10,9 @@ namespace Darklight.UnityExt.Library
         where TObj : UnityEngine.Object
     {
         public EnumObjectLibrary() { }
-        public EnumObjectLibrary(bool defaultToAllKeys = false) : base(defaultToAllKeys) { }
+
+        public EnumObjectLibrary(bool defaultToAllKeys = false)
+            : base(defaultToAllKeys) { }
     }
 
     [Serializable]
@@ -18,7 +20,9 @@ namespace Darklight.UnityExt.Library
         where TEnum : System.Enum
     {
         public EnumGameObjectLibrary() { }
-        public TComponent TryGetComponent<TComponent>(TEnum key) where TComponent : Component
+
+        public TComponent TryGetComponent<TComponent>(TEnum key)
+            where TComponent : Component
         {
             if (TryGetValue(key, out GameObject obj))
             {
@@ -35,8 +39,5 @@ namespace Darklight.UnityExt.Library
     [Serializable]
     public class EnumComponentLibrary<TEnum, TComponent> : EnumObjectLibrary<TEnum, TComponent>
         where TEnum : System.Enum
-        where TComponent : Component
-    {
-
-    }
+        where TComponent : Component { }
 }

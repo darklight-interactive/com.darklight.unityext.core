@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
-using static Darklight.UnityExt.Core2D.Spatial2D;
+using static Darklight.Core2D.Spatial2D;
 
-namespace Darklight.UnityExt.Core2D
+namespace Darklight.Core2D
 {
     /// <summary>
     /// Interface for 2D Spatial Objects.

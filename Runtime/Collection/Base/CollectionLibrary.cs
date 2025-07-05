@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     public enum CollectionEventType
     {

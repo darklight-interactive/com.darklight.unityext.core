@@ -1,10 +1,15 @@
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
 public static class Shape2DUtility
 {
-    public static Vector3[] GenerateRadialPoints(Vector3 center, float radius, int count, Vector3 normal)
+    public static Vector3[] GenerateRadialPoints(
+        Vector3 center,
+        float radius,
+        int count,
+        Vector3 normal
+    )
     {
         List<Vector3> positions = new List<Vector3>();
 
@@ -13,7 +18,8 @@ public static class Shape2DUtility
         for (int i = 0; i < count; i++)
         {
             float angle = i * angleStep;
-            Vector3 newPoint = center + Quaternion.AngleAxis(angle, normal) * Vector3.right * radius;
+            Vector3 newPoint =
+                center + Quaternion.AngleAxis(angle, normal) * Vector3.right * radius;
             positions.Add(newPoint);
         }
         return positions.ToArray();

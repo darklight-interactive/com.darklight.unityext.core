@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     [CustomPropertyDrawer(typeof(CreateAssetAttribute))]
     public class CreateAssetDrawer : PropertyDrawer

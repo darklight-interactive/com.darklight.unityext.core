@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.Library;
-using Darklight.UnityExt.Utility;
+using Darklight.Editor;
+using Darklight.Library;
+using Darklight.Utility;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     public partial class BaseInteractable
     {

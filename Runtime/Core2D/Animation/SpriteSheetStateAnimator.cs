@@ -1,10 +1,10 @@
 using System;
-using Darklight.UnityExt.Collection;
-using Darklight.UnityExt.Library;
+using Darklight.Collection;
+using Darklight.Library;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Core2D.Animation
+namespace Darklight.Core2D.Animation
 {
     public class SpriteSheetStateAnimator<TState> : SpriteSheetAnimator
     {

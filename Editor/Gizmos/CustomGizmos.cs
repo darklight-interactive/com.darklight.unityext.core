@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.XR;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     public static class CustomGizmos
     {

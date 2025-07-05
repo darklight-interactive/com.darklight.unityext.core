@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Core2D.Animation
+namespace Darklight.Core2D.Animation
 {
     [ExecuteAlways]
     [RequireComponent(typeof(SpriteRenderer))]

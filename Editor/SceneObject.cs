@@ -4,9 +4,8 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
-
     // <summary>
     //  A wrapper class for Scene Assets. This allows for the use of Scene Assets in the inspector.
     // </summary>
@@ -41,18 +40,29 @@ namespace Darklight.UnityExt.Editor
                 EditorBuildSettingsScene scene = EditorBuildSettings.scenes[i];
                 if (scene.path.IndexOf(sceneObjectName) != -1)
                 {
-                    return AssetDatabase.LoadAssetAtPath(scene.path, typeof(SceneAsset)) as SceneAsset;
+                    return AssetDatabase.LoadAssetAtPath(scene.path, typeof(SceneAsset))
+                        as SceneAsset;
                 }
             }
 
-            Debug.Log("Scene [" + sceneObjectName + "] cannot be used. Add this scene to the 'Scenes in the Build' in the build settings.");
+            Debug.Log(
+                "Scene ["
+                    + sceneObjectName
+                    + "] cannot be used. Add this scene to the 'Scenes in the Build' in the build settings."
+            );
             return null;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var sceneObj = GetSceneObject(property.FindPropertyRelative("m_SceneName").stringValue);
-            var newScene = EditorGUI.ObjectField(position, label, sceneObj, typeof(SceneAsset), false);
+            var newScene = EditorGUI.ObjectField(
+                position,
+                label,
+                sceneObj,
+                typeof(SceneAsset),
+                false
+            );
             if (newScene == null)
             {
                 var prop = property.FindPropertyRelative("m_SceneName");
@@ -65,7 +75,11 @@ namespace Darklight.UnityExt.Editor
                     var scnObj = GetSceneObject(newScene.name);
                     if (scnObj == null)
                     {
-                        Debug.LogWarning("The scene " + newScene.name + " cannot be used. To use this scene add it to the build settings for the project.");
+                        Debug.LogWarning(
+                            "The scene "
+                                + newScene.name
+                                + " cannot be used. To use this scene add it to the build settings for the project."
+                        );
                     }
                     else
                     {

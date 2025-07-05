@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.World;
+using Darklight.Editor;
+using Darklight.World;
 using NaughtyAttributes;
 using UnityEngine;
 using Camera = UnityEngine.Camera;
@@ -9,7 +9,7 @@ using Camera = UnityEngine.Camera;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Game
+namespace Darklight.Game
 {
     /// <summary>
     /// This Camera Rig is the main Monobehaviour reference for the full Camera System.

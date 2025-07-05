@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Core2D.Animation
+namespace Darklight.Core2D.Animation
 {
     /// <summary>
     /// ScriptableObject that holds a collection of sprites for frame animation

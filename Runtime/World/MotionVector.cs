@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Darklight.UnityExt.World
+namespace Darklight.World
 {
     [System.Serializable]
     public class MotionVector

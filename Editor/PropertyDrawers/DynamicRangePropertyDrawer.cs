@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Linq;
 using System;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     [CustomPropertyDrawer(typeof(DynamicRangeAttribute))]
     public class DynamicRangeDrawer : PropertyDrawer

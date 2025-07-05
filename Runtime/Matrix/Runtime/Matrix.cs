@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
+using Darklight.Behaviour;
+using Darklight.Editor;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     [ExecuteAlways]
     public partial class Matrix : MonoBehaviour, IUnityEditorListener

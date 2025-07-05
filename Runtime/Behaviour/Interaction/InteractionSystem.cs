@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Darklight.UnityExt.Behaviour;
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.Library;
-using Darklight.UnityExt.Utility;
+using Darklight.Behaviour;
+using Darklight.Editor;
+using Darklight.Library;
+using Darklight.Utility;
 using NaughtyAttributes;
 using UnityEngine;
 #if UNITY_EDITOR

@@ -1,7 +1,6 @@
-
 using System.Collections.Generic;
-using Darklight.UnityExt.Library;
-using Darklight.UnityExt.Utility;
+using Darklight.Library;
+using Darklight.Utility;
 using UnityEngine;
 
 [System.Serializable]

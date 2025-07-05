@@ -29,10 +29,10 @@
  */
 
 using System;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// Abstract base class for finite states within a state machine.
@@ -69,7 +69,8 @@ namespace Darklight.UnityExt.Behaviour
         /// </summary>
         /// <param name="finiteStateMachine">The parent state machine</param>
         /// <param name="stateType">The enum value representing this state</param>
-        public FiniteState(TEnum stateType) : base(stateType) { }
+        public FiniteState(TEnum stateType)
+            : base(stateType) { }
 
         /// <summary>
         /// Called when the state is entered

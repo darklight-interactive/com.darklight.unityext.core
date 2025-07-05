@@ -32,7 +32,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Behaviour
+namespace Darklight.Behaviour
 {
     /// <summary>
     /// A generic finite state machine implementation that manages state transitions and execution.

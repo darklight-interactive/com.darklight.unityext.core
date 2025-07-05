@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Collection
+namespace Darklight.Collection
 {
     /// <summary>
     /// Defines the base interface for collection items.

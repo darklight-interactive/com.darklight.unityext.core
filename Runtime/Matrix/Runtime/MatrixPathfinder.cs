@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.UnityExt.Behaviour;
+using Darklight.Behaviour;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     /// <summary>
     /// Implements A* pathfinding for Matrix nodes using the base AStarPathfinder implementation.

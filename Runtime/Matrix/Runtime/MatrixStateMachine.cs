@@ -1,6 +1,6 @@
-using Darklight.UnityExt.Behaviour;
+using Darklight.Behaviour;
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public partial class Matrix
     {

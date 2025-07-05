@@ -1,8 +1,8 @@
-using Darklight.UnityExt.Game;
-using Darklight.UnityExt.World;
+using Darklight.Game;
+using Darklight.World;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Core2D
+namespace Darklight.Core2D
 {
     public class CameraRig2D : CameraRig
     {

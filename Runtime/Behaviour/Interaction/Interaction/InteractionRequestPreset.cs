@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Darklight.UnityExt.Library;
+using Darklight.Library;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Darklight/Interaction/Interactable/RequestPreset")]

@@ -4,9 +4,9 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor.Window
+namespace Darklight.Editor.Window
 {
-    using Darklight.UnityExt.Editor.Utility;
+    using Darklight.Editor.Utility;
     using UnityEditor;
     using UnityEngine;
 

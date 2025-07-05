@@ -5,8 +5,7 @@ using NaughtyAttributes.Editor;
 using UnityEditor;
 #endif
 
-
-namespace Darklight.UnityExt.Collection.Editor
+namespace Darklight.Collection.Editor
 {
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(Collection), true)]

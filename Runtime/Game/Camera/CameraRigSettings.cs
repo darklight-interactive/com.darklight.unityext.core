@@ -1,9 +1,9 @@
 using System;
-using Darklight.UnityExt.Editor;
+using Darklight.Editor;
 using NaughtyAttributes;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Game
+namespace Darklight.Game
 {
     [Serializable]
     public class CameraRigSettings

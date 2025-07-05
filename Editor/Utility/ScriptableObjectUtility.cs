@@ -16,23 +16,22 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
- * 
+ *
  * ------------------------------------------------------------------ >>
- * MAJOR AUTHORS: 
+ * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
  */
 
 
-using UnityEngine;
-using System.IO;
 using System;
-
+using System.IO;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Utility
+namespace Darklight.Utility
 {
     /// <summary>
     /// Utility class for creating, loading, and deleting ScriptableObjects within the Unity Editor.
@@ -46,7 +45,8 @@ namespace Darklight.UnityExt.Utility
         /// <param name="pathToDirectory">The directory path where the ScriptableObject is or will be stored.</param>
         /// <param name="assetName">The name of the ScriptableObject asset.</param>
         /// <returns>The created or loaded ScriptableObject of type <typeparamref name="T"/>.</returns>
-        public static T CreateOrLoadScriptableObject<T>(string pathToDirectory, string assetName) where T : ScriptableObject
+        public static T CreateOrLoadScriptableObject<T>(string pathToDirectory, string assetName)
+            where T : ScriptableObject
         {
             // Ensure the path is formatted correctly
             if (!pathToDirectory.EndsWith("/"))
@@ -89,7 +89,8 @@ namespace Darklight.UnityExt.Utility
         /// <typeparam name="T">The type of ScriptableObject to create or load.</typeparam>
         /// <param name="pathToDirectory">The directory path where the ScriptableObject is or will be stored.</param>
         /// <returns>The created or loaded ScriptableObject of type <typeparamref name="T"/>.</returns>
-        public static T CreateOrLoadScriptableObject<T>(string pathToDirectory) where T : ScriptableObject
+        public static T CreateOrLoadScriptableObject<T>(string pathToDirectory)
+            where T : ScriptableObject
         {
             return CreateOrLoadScriptableObject<T>(pathToDirectory, typeof(T).Name);
         }
@@ -121,12 +122,14 @@ namespace Darklight.UnityExt.Utility
             }
 #endif
         }
+
         /// <summary>
         /// Deletes a ScriptableObject asset named after the type <typeparamref name="T"/> from the given directory.
         /// </summary>
         /// <typeparam name="T">The type of ScriptableObject to delete.</typeparam>
         /// <param name="pathToDirectory">The directory path where the ScriptableObject is stored.</param>
-        public static void DeleteScriptableObject<T>(string pathToDirectory) where T : ScriptableObject
+        public static void DeleteScriptableObject<T>(string pathToDirectory)
+            where T : ScriptableObject
         {
             DeleteScriptableObject(pathToDirectory, typeof(T).Name);
         }

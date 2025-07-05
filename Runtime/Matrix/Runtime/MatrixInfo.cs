@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Darklight.UnityExt.Matrix
+namespace Darklight.Matrix
 {
     public partial class Matrix
     {

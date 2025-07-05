@@ -3,7 +3,7 @@ using NaughtyAttributes.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor.Example
+namespace Darklight.Editor.Example
 {
     /// <summary>
     /// Example class demonstrating various NaughtyAttributes implementations

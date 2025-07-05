@@ -1,8 +1,8 @@
-using NUnit.Framework;
-using UnityEngine;
-using Darklight.UnityExt.Collection;
 using System.Collections.Generic;
 using System.Linq;
+using Darklight.Collection;
+using NUnit.Framework;
+using UnityEngine;
 
 namespace Darklight.Tests.Collection
 {
@@ -43,7 +43,8 @@ namespace Darklight.Tests.Collection
             public int Id { get; }
             public object Value { get; }
 
-            public TestCollectionItem(int id, object value) : base(id, value)
+            public TestCollectionItem(int id, object value)
+                : base(id, value)
             {
                 Id = id;
                 Value = value;
@@ -65,9 +66,7 @@ namespace Darklight.Tests.Collection
 
         protected IEnumerable<CollectionItem> GetTestItems(int startIndex, int count)
         {
-            return _testItems.Values
-                .Skip(startIndex)
-                .Take(count);
+            return _testItems.Values.Skip(startIndex).Take(count);
         }
 
         protected CollectionItem GetTestItem(int index)
@@ -82,8 +81,7 @@ namespace Darklight.Tests.Collection
 
         protected IEnumerable<CollectionItem> GetTestItemsInRange(int startId, int endId)
         {
-            return _testItems.Values
-                .Where(item => item.Id >= startId && item.Id <= endId);
+            return _testItems.Values.Where(item => item.Id >= startId && item.Id <= endId);
         }
 
         protected void AssertCollectionEquals<T>(IEnumerable<T> expected, IEnumerable<T> actual)
@@ -122,16 +120,21 @@ namespace Darklight.Tests.Collection
             Assert.That(distinctCount, Is.EqualTo(collection.Count()));
         }
 
-        protected void AssertItemProperties(CollectionItem item, int expectedId, GameObject expectedValue)
+        protected void AssertItemProperties(
+            CollectionItem item,
+            int expectedId,
+            GameObject expectedValue
+        )
         {
             Assert.That(item.Id, Is.EqualTo(expectedId));
             Assert.That(item.Object, Is.EqualTo(expectedValue));
         }
 
         protected void AssertRangeProperties(
-            IEnumerable<CollectionItem> items, 
-            int expectedStartId, 
-            int expectedCount)
+            IEnumerable<CollectionItem> items,
+            int expectedStartId,
+            int expectedCount
+        )
         {
             var itemsList = items.ToList();
             Assert.That(itemsList.Count, Is.EqualTo(expectedCount));
@@ -139,4 +142,4 @@ namespace Darklight.Tests.Collection
             Assert.That(itemsList.Last().Id, Is.EqualTo(expectedStartId + expectedCount - 1));
         }
     }
-} 
+}

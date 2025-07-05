@@ -1,8 +1,8 @@
-using Darklight.UnityExt.Editor.Utility;
+using Darklight.Editor.Utility;
 using UnityEditor;
 using UnityEngine;
 
-namespace Darklight.UnityExt.Editor
+namespace Darklight.Editor
 {
     public class ShowOnlyAttribute : PropertyAttribute { }
 
