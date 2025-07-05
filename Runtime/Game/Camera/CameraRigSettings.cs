@@ -1,14 +1,10 @@
 using System;
-
 using Darklight.UnityExt.Editor;
-
 using NaughtyAttributes;
-
 using UnityEngine;
 
 namespace Darklight.UnityExt.Game
 {
-
     [Serializable]
     public class CameraRigSettings
     {
@@ -16,26 +12,74 @@ namespace Darklight.UnityExt.Game
         readonly Vector2 ROTATION_RANGE = new Vector2(-180, 180);
         readonly Vector2 SPEED_RANGE = new Vector2(0, 100);
 
-        public ProjectionType Projection = ProjectionType.PERPSECTIVE;
+        public enum ProjectionType
+        {
+            PERPSECTIVE,
+            ORTHOGRAPHIC
+        }
+
+        [Header("Projection")]
+        [SerializeField]
+        ProjectionType _projection = ProjectionType.PERPSECTIVE;
+
+        [SerializeField, ShowIf("IsPerspective"), AllowNesting, Range(0.1f, 190)]
+        float _fov = 90f;
+
+        [SerializeField, HideIf("IsPerspective"), AllowNesting, Range(0.1f, 100)]
+        float _orthographicSize = 10f;
+
+        [SerializeField, DynamicRange("SPEED_RANGE")]
+        float _fovSpeed = 10f;
 
         [Header("Position")]
-        public float PosSpeed = 10f;
-        [DynamicRange("POSITION_RANGE")] public float PositionOffsetX = 0f;
-        [DynamicRange("POSITION_RANGE")] public float PositionOffsetY = 10f;
-        [DynamicRange("POSITION_RANGE")] public float PositionOffsetZ = -10f;
+        [SerializeField, DynamicRange("SPEED_RANGE")]
+        float _posSpeed = 10f;
+
+        [SerializeField, DynamicRange("POSITION_RANGE")]
+        float _positionOffsetX = 0f;
+
+        [SerializeField, DynamicRange("POSITION_RANGE")]
+        float _positionOffsetY = 10f;
+
+        [SerializeField, DynamicRange("POSITION_RANGE")]
+        float _positionOffsetZ = -10f;
 
         [Header("Rotation")]
-        public bool LookAtTarget;
-        [SerializeField] public float RotSpeed = 10f;
-        [ShowIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")] public float OrbitAngle = 0f;
-        [DynamicRange("ROTATION_RANGE")] public float RotOffsetX = 0f;
-        [HideIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")] public float RotOffsetY = 0f;
-        [HideIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")] public float RotOffsetZ = 0f;
+        [SerializeField]
+        bool _lookAtTarget;
 
-        [Header("Field of View")]
-        [SerializeField, Range(0.1f, 190)] public float FOV = 90f;
-        [SerializeField] public float FOVSpeed = 10f;
+        [SerializeField, DynamicRange("SPEED_RANGE")]
+        float _rotSpeed = 10f;
 
-        public enum ProjectionType { PERPSECTIVE, ORTHOGRAPHIC }
+        [SerializeField, ShowIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")]
+        float _orbitAngle = 0f;
+
+        [SerializeField, DynamicRange("ROTATION_RANGE")]
+        float _rotOffsetX = 0f;
+
+        [SerializeField, HideIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")]
+        float _rotOffsetY = 0f;
+
+        [SerializeField, HideIf("LookAtTarget"), AllowNesting, DynamicRange("ROTATION_RANGE")]
+        float _rotOffsetZ = 0f;
+
+        // << PROPERTIES >> -------------------------------------------------
+
+        public ProjectionType Projection => _projection;
+        public bool IsPerspective => _projection == ProjectionType.PERPSECTIVE;
+
+        public float PerspectiveFOV => _fov;
+        public float OrthographicSize => _orthographicSize;
+        public float FOVSpeed => _fovSpeed;
+        public float PosSpeed => _posSpeed;
+        public float PositionOffsetX => _positionOffsetX;
+        public float PositionOffsetY => _positionOffsetY;
+        public float PositionOffsetZ => _positionOffsetZ;
+        public bool LookAtTarget => _lookAtTarget;
+        public float RotSpeed => _rotSpeed;
+        public float OrbitAngle => _orbitAngle;
+        public float RotOffsetX => _rotOffsetX;
+        public float RotOffsetY => _rotOffsetY;
+        public float RotOffsetZ => _rotOffsetZ;
     }
 }

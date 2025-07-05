@@ -139,8 +139,10 @@ namespace Darklight.UnityExt.Input
             ResetInputEvents();
         }
 
-        public override void Initialize()
+        protected override void Initialize()
         {
+            base.Initialize();
+
             // Print all connected devices
             LoadAllConnectedDevices();
         }

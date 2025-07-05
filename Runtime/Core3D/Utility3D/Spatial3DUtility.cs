@@ -33,6 +33,7 @@ namespace Darklight.UnityExt.Core3D
                 Direction.RIGHT => Vector3.right,
                 Direction.UP => Vector3.up,
                 Direction.DOWN => Vector3.down,
+                _ => Vector3.zero
             };
         }
 

@@ -34,13 +34,16 @@ public class InteractionSystem : MonoBehaviourSingleton<InteractionSystem>, IUni
         get => Instance._settings;
     }
 
-    public void OnEditorReloaded()
+    public override void OnEditorReloaded()
     {
+        base.OnEditorReloaded();
         Registry.ResetRegistry();
     }
 
-    public override void Initialize()
+    protected override void Initialize()
     {
+        base.Initialize();
+
         // Confirm Settings are loaded
         if (_settings == null)
             _settings = Factory.CreateSettings();
@@ -461,7 +464,7 @@ public class InteractionSystem : MonoBehaviourSingleton<InteractionSystem>, IUni
             {
                 _serializedObject = new SerializedObject(target);
                 _script = (InteractionSystem)target;
-                _script.Awake();
+                _script.Initialize();
             }
 
             public override void OnInspectorGUI()

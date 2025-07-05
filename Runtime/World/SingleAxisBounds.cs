@@ -80,6 +80,23 @@ namespace Darklight.UnityExt.World
             }
         }
 
+        void GetAxisNormal(out Vector3 normal)
+        {
+            normal = Vector3.zero;
+            switch (_axis)
+            {
+                case WorldAxis.X:
+                    normal = Vector3.forward;
+                    break;
+                case WorldAxis.Y:
+                    normal = Vector3.right;
+                    break;
+                case WorldAxis.Z:
+                    normal = Vector3.up;
+                    break;
+            }
+        }
+
         void GetAxisColor(out Color color)
         {
             color = Color.white;
@@ -129,18 +146,14 @@ namespace Darklight.UnityExt.World
             Vector3 maxPoint = origin + direction * Max;
 
             // Draw the min and max points
-            //CustomGizmos.DrawLine(minPoint, maxPoint, color);
+            CustomGizmos.DrawLine(minPoint, maxPoint, color);
 
             if (_showPlaneGizmo)
             {
+                GetAxisNormal(out Vector3 normal);
                 // Draw the plane parallel to the current axis
                 Color planeColor = new Color(color.r, color.g, color.b, 0.2f);
-                /* CustomGizmos.DrawSolidRect(
-                    origin,
-                    new Vector2(length, length),
-                    direction,
-                    planeColor
-                ); */
+                CustomGizmos.DrawSolidRect(origin, new Vector2(length, length), normal, planeColor);
             }
         }
     }

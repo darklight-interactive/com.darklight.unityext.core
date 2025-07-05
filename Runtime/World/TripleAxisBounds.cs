@@ -1,30 +1,28 @@
-using Darklight.UnityExt.Editor;
-using Darklight.UnityExt.World;
-using NaughtyAttributes;
+using System;
 using UnityEngine;
 
 namespace Darklight.UnityExt.World
 {
-    [CreateAssetMenu(
-        fileName = "NewTripleAxisBounds",
-        menuName = "Darklight/World/TripleAxisBounds",
-        order = 1
-    )]
-    public class TripleAxisBounds : ScriptableObject
+    /// <summary>
+    /// A serializable class that represents a 3D bounding box.
+    /// </summary>
+    /// <remarks>
+    /// This is used to check if a point is within the bounds of the world.
+    /// </remarks>
+    [Serializable]
+    public class TripleAxisBounds
     {
         const int DEFAULT_RANGE_VALUE = 1000;
-
-        public bool ShowGizmos = true;
         public Vector3 Center = Vector3.zero;
-        public SingleAxisBounds XAxisBounds = new SingleAxisBounds(
+        public SingleAxisBounds xAxisBounds = new SingleAxisBounds(
             WorldAxis.X,
             new Vector2(-DEFAULT_RANGE_VALUE, DEFAULT_RANGE_VALUE)
         );
-        public SingleAxisBounds YAxisBounds = new SingleAxisBounds(
+        public SingleAxisBounds yAxisBounds = new SingleAxisBounds(
             WorldAxis.Y,
             new Vector2(-DEFAULT_RANGE_VALUE, DEFAULT_RANGE_VALUE)
         );
-        public SingleAxisBounds ZAxisBounds = new SingleAxisBounds(
+        public SingleAxisBounds zAxisBounds = new SingleAxisBounds(
             WorldAxis.Z,
             new Vector2(-DEFAULT_RANGE_VALUE, DEFAULT_RANGE_VALUE)
         );
@@ -34,7 +32,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Left
         {
-            get => Center.x + XAxisBounds.Min;
+            get => Center.x + xAxisBounds.Min;
         }
 
         /// <summary>
@@ -42,7 +40,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Right
         {
-            get => Center.x + XAxisBounds.Max;
+            get => Center.x + xAxisBounds.Max;
         }
 
         /// <summary>
@@ -50,7 +48,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Top
         {
-            get => Center.y + YAxisBounds.Max;
+            get => Center.y + yAxisBounds.Max;
         }
 
         /// <summary>
@@ -59,7 +57,7 @@ namespace Darklight.UnityExt.World
 
         public float Bottom
         {
-            get => Center.y + YAxisBounds.Min;
+            get => Center.y + yAxisBounds.Min;
         }
 
         /// <summary>
@@ -67,7 +65,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Front
         {
-            get => Center.z + ZAxisBounds.Min;
+            get => Center.z + zAxisBounds.Min;
         }
 
         /// <summary>
@@ -75,7 +73,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Back
         {
-            get => Center.z + ZAxisBounds.Max;
+            get => Center.z + zAxisBounds.Max;
         }
 
         /// <summary>
@@ -83,7 +81,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Width
         {
-            get => XAxisBounds.Max - XAxisBounds.Min;
+            get => xAxisBounds.Max - xAxisBounds.Min;
         }
 
         /// <summary>
@@ -91,7 +89,7 @@ namespace Darklight.UnityExt.World
         /// /// </summary>
         public float Height
         {
-            get => YAxisBounds.Max - YAxisBounds.Min;
+            get => yAxisBounds.Max - yAxisBounds.Min;
         }
 
         /// <summary>
@@ -99,7 +97,7 @@ namespace Darklight.UnityExt.World
         /// </summary>
         public float Depth
         {
-            get => ZAxisBounds.Max - ZAxisBounds.Min;
+            get => zAxisBounds.Max - zAxisBounds.Min;
         }
 
         /// <summary>
@@ -162,12 +160,9 @@ namespace Darklight.UnityExt.World
 
         public void DrawGizmos()
         {
-            if (!ShowGizmos)
-                return;
-
-            XAxisBounds.DrawGizmos(Center, YAxisBounds.Length);
-            YAxisBounds.DrawGizmos(Center, XAxisBounds.Length);
-            ZAxisBounds.DrawGizmos(Center, XAxisBounds.Length);
+            xAxisBounds.DrawGizmos(Center, xAxisBounds.Length);
+            yAxisBounds.DrawGizmos(Center, yAxisBounds.Length);
+            zAxisBounds.DrawGizmos(Center, zAxisBounds.Length);
         }
     }
 }

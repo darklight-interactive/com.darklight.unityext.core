@@ -68,7 +68,7 @@ namespace Darklight.UnityExt.Core2D
         protected override float CalculateTargetFOV()
         {
             if (_bounds == null)
-                return Settings.FOV;
+                return Settings.PerspectiveFOV;
 
             // Get necessary parameters
             float distance = CameraZOffset; // Distance from the camera to the target (absolute value of z offset)
@@ -82,7 +82,7 @@ namespace Darklight.UnityExt.Core2D
             // Clamp the target FOV to not exceed the maximum allowed FOV
             float minFOV = 1f; // Optional: Set a minimum FOV to prevent extreme zoom-in
             float maxFOV = maxVerticalFOVToFitWidth;
-            float targetFOV = Mathf.Clamp(Settings.FOV, minFOV, maxFOV);
+            float targetFOV = Mathf.Clamp(Settings.PerspectiveFOV, minFOV, maxFOV);
 
             //Debug.Log($"Calculated Vertical FOV: {targetFOV} degrees (Max Allowed FOV: {maxFOV} degrees)");
 

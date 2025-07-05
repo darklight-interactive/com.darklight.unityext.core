@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.UnityExt.Editor;
+using Darklight.UnityExt.World;
+using NaughtyAttributes;
 using UnityEngine;
 using Camera = UnityEngine.Camera;
 #if UNITY_EDITOR
 using UnityEditor;
-
 #endif
 
 namespace Darklight.UnityExt.Game
@@ -43,15 +44,24 @@ namespace Darklight.UnityExt.Game
         [SerializeField]
         CameraRigSettings _settings;
 
-        [Header("Debug")]
         [SerializeField]
-        bool _showGizmos;
+        TripleAxisBounds _bounds;
 
+        [Header("Editor")]
         [SerializeField]
         bool _lerpInEditor;
 
         [SerializeField]
-        CameraBounds _bounds;
+        bool _drawBoundsGizmos;
+
+        [SerializeField]
+        bool _cameraLookGizmos;
+
+        [SerializeField]
+        bool _cameraFrustumGizmos;
+
+        [SerializeField]
+        bool _cameraViewGizmos;
 
         // << PROPERTIES >> -------------------------------------------------
 
@@ -68,7 +78,7 @@ namespace Darklight.UnityExt.Game
         public Vector3 CameraPosition => _mainCamera.transform.position;
         public virtual Quaternion CameraRotation => _mainCamera.transform.rotation;
         public float CameraZOffset => Mathf.Abs(_settings.PositionOffsetZ);
-        public float CameraFOV => _settings.FOV;
+        public float CameraFOV => _settings.PerspectiveFOV;
         public float CameraAspect => _mainCamera.aspect;
         public Transform FollowTarget => _followTarget;
         public CameraRigSettings Settings => _settings;
@@ -210,7 +220,10 @@ namespace Darklight.UnityExt.Game
 
         protected virtual float CalculateTargetFOV()
         {
-            return _settings.FOV;
+            if (_settings.IsPerspective)
+                return _settings.PerspectiveFOV;
+            else
+                return _settings.OrthographicSize;
         }
 
         Vector3 EnforceBounds(Vector3 position)
@@ -219,6 +232,8 @@ namespace Darklight.UnityExt.Game
             float maxXBound = _bounds.Right;
             float minYBound = _bounds.Bottom;
             float maxYBound = _bounds.Top;
+            float minZBound = _bounds.Front;
+            float maxZBound = _bounds.Back;
 
             // << CALCULATE POSITION >> ------------------------------
             Vector3 adjustedPosition = position;
@@ -234,6 +249,12 @@ namespace Darklight.UnityExt.Game
                 adjustedPosition.y = minYBound + HalfHeight;
             else if (adjustedPosition.y > maxYBound)
                 adjustedPosition.y = maxYBound - HalfHeight;
+
+            // ( Check the adjusted position against the Z bounds )
+            if (adjustedPosition.z < minZBound)
+                adjustedPosition.z = minZBound + CameraZOffset;
+            else if (adjustedPosition.z > maxZBound)
+                adjustedPosition.z = maxZBound - CameraZOffset;
 
             // << CALCULATE FRUSTRUM OFFSET >> ------------------------------
             Vector3 frustrumOffset = Vector3.zero;
@@ -259,6 +280,12 @@ namespace Darklight.UnityExt.Game
                     frustrumOffset.y = Mathf.Max(frustrumOffset.y, minYBound - corner.y);
                 else if (corner.y > maxYBound)
                     frustrumOffset.y = Mathf.Min(frustrumOffset.y, maxYBound - corner.y);
+
+                // ( Z Axis Bounds ) ------------------------------------------------------
+                if (corner.z < minZBound)
+                    frustrumOffset.z = Mathf.Max(frustrumOffset.z, minZBound - corner.z);
+                else if (corner.z > maxZBound)
+                    frustrumOffset.z = Mathf.Min(frustrumOffset.z, maxZBound - corner.z);
             }
             return adjustedPosition + frustrumOffset;
         }
@@ -300,13 +327,14 @@ namespace Darklight.UnityExt.Game
 
         void UpdateMainCamera(Camera cam, bool useLerp)
         {
+            // Set the camera to orthographic or perspective
+            cam.orthographic =
+                _settings.Projection == CameraRigSettings.ProjectionType.ORTHOGRAPHIC;
+
             // << CALCULATE TARGET VALUES >> -------------------------------------
             _targetPosition = CalculateTargetPosition();
             _targetRotation = CalculateTargetRotation();
             _targetFOV = CalculateTargetFOV();
-
-            cam.orthographic =
-                _settings.Projection == CameraRigSettings.ProjectionType.ORTHOGRAPHIC;
 
             // << UPDATE CAMERA VALUES >> -------------------------------------
             if (useLerp)
@@ -325,12 +353,22 @@ namespace Darklight.UnityExt.Game
                     _settings.RotSpeed * Time.deltaTime
                 );
 
-                // ( Lerp Camera Field of View ) ---------------------------------
-                cam.fieldOfView = Mathf.Lerp(
-                    _mainCamera.fieldOfView,
-                    _targetFOV,
-                    _settings.FOVSpeed * Time.deltaTime
-                );
+                if (_settings.IsPerspective)
+                    // ( Lerp Camera Field of View ) ---------------------------------
+                    cam.fieldOfView = Mathf.Lerp(
+                        _mainCamera.fieldOfView,
+                        _targetFOV,
+                        _settings.FOVSpeed * Time.deltaTime
+                    );
+                else
+                {
+                    // ( Lerp Camera Orthographic Size ) -----------------------------
+                    cam.orthographicSize = Mathf.Lerp(
+                        _mainCamera.orthographicSize,
+                        _targetFOV,
+                        _settings.FOVSpeed * Time.deltaTime
+                    );
+                }
             }
             else
             {
@@ -341,7 +379,10 @@ namespace Darklight.UnityExt.Game
                 cam.transform.rotation = _targetRotation;
 
                 // ( Set Camera Field of View ) ---------------------------------
-                cam.fieldOfView = _targetFOV;
+                if (_settings.IsPerspective)
+                    cam.fieldOfView = _targetFOV;
+                else
+                    cam.orthographicSize = _targetFOV;
             }
         }
 
@@ -375,19 +416,40 @@ namespace Darklight.UnityExt.Game
 
         void OnDrawGizmosSelected()
         {
-            if (!_showGizmos)
-                return;
-
-            if (_bounds != null)
+            // Draw the bounds
+            if (_drawBoundsGizmos && _bounds != null)
                 _bounds.DrawGizmos();
 
+            // Draw the camera look direction
+            if (_cameraLookGizmos)
+            {
+                Gizmos.color = Color.red;
+                DrawCameraLookDirection();
+            }
+
             // Draw the camera frustum
-            Gizmos.color = Color.yellow;
-            DrawCameraFrustum(_mainCamera);
+            if (_cameraFrustumGizmos)
+            {
+                Gizmos.color = Color.yellow;
+                DrawCameraFrustum(_mainCamera);
+            }
 
             // Draw the camera view
-            Gizmos.color = Color.cyan;
-            DrawCameraView();
+            if (_cameraViewGizmos)
+            {
+                Gizmos.color = Color.cyan;
+                DrawCameraView();
+            }
+        }
+
+        void DrawCameraLookDirection()
+        {
+            Vector3 camPosition = _mainCamera.transform.position;
+            Vector3 camForward = _mainCamera.transform.forward;
+            Gizmos.DrawLine(
+                camPosition,
+                camPosition + camForward * (_settings.PositionOffsetZ * -1)
+            );
         }
 
         void DrawCameraFrustum(Camera cam)
