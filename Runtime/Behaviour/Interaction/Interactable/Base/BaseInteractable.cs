@@ -92,6 +92,7 @@ namespace Darklight.Behaviour
                 return data.Layer;
             }
         }
+        public override Collider Collider => GetComponent<Collider>();
         public override InteractionRequestDataObject Request
         {
             get { return _request; }
@@ -191,6 +192,8 @@ namespace Darklight.Behaviour
         public override void Initialize()
         {
             // << SET TO READY STATE >> ------------------------------------
+            if (stateMachine == null)
+                stateMachine = new InternalStateMachine(this);
             stateMachine.GoToState(State.READY);
         }
 

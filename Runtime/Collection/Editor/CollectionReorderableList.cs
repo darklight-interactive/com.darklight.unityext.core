@@ -267,6 +267,7 @@ namespace Darklight.Collection.Editor
                 }
             }
 
+            /*
             // Draw foldout only if there are properties to show
             if (hasSerializedProperties)
             {
@@ -340,6 +341,15 @@ namespace Darklight.Collection.Editor
                 );
                 EditorGUI.PropertyField(objectFieldRect, property, GUIContent.none);
             }
+            */
+
+            var objectFieldRect = new Rect(
+                rect.x,
+                rect.y,
+                rect.width - 20,
+                EditorGUIUtility.singleLineHeight
+            );
+            EditorGUI.PropertyField(objectFieldRect, property, GUIContent.none);
         }
 
         private void DrawCollectionValue(Rect rect, SerializedProperty property)

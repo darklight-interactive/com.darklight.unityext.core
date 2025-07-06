@@ -38,7 +38,7 @@ namespace Darklight.Collection
 
             OnCollectionChanged += (sender, args) =>
             {
-                Debug.Log($"CollectionDictionary changed: {args.EventType}");
+                //Debug.Log($"CollectionDictionary changed: {args.EventType}");
                 _dictionaryItems = _concurrentDict.Values.ToList();
             };
         }

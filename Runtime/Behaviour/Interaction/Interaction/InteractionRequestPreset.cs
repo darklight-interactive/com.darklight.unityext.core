@@ -2,20 +2,24 @@ using System.Collections.Generic;
 using Darklight.Library;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Darklight/Interaction/Interactable/RequestPreset")]
-public class InteractionRequestDataObject : EnumGameObjectScriptableLibrary<InteractionType>
+namespace Darklight.Behaviour
 {
-    [SerializeField]
-    EnumGameObjectLibrary<InteractionType> _dataLibrary = new EnumGameObjectLibrary<InteractionType>
+    [CreateAssetMenu(menuName = "Darklight/Interaction/Interactable/RequestPreset")]
+    public class InteractionRequestDataObject : EnumGameObjectScriptableLibrary<InteractionType>
     {
-        ReadOnlyKey = false,
-        ReadOnlyValue = false
-    };
+        [SerializeField]
+        EnumGameObjectLibrary<InteractionType> _dataLibrary =
+            new EnumGameObjectLibrary<InteractionType>
+            {
+                ReadOnlyKey = false,
+                ReadOnlyValue = false
+            };
 
-    public override EnumGameObjectLibrary<InteractionType> DataLibrary => _dataLibrary;
+        public override EnumGameObjectLibrary<InteractionType> DataLibrary => _dataLibrary;
 
-    public List<InteractionType> GetKeys()
-    {
-        return new List<InteractionType>(Keys);
+        public List<InteractionType> GetKeys()
+        {
+            return new List<InteractionType>(Keys);
+        }
     }
 }

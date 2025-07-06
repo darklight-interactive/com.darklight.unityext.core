@@ -18,6 +18,8 @@ namespace Darklight.Game
     [ExecuteAlways]
     public class CameraRig : MonoBehaviour
     {
+        Vector2 _lookInput;
+
         [SerializeField, ShowOnly]
         Vector3 _rigOrigin;
 
@@ -46,6 +48,22 @@ namespace Darklight.Game
 
         [SerializeField]
         TripleAxisBounds _bounds;
+
+        [Header("Input Orbit Control")]
+        [SerializeField]
+        bool _enableInputOrbit = true;
+
+        [SerializeField, ShowIf("_enableInputOrbit"), AllowNesting, Range(0.1f, 10f)]
+        float _orbitSensitivity = 2f;
+
+        [SerializeField, ShowIf("_enableInputOrbit"), AllowNesting, Range(-360f, 0f)]
+        float _minOrbitAngle = 0f;
+
+        [SerializeField, ShowIf("_enableInputOrbit"), AllowNesting, Range(0f, 360f)]
+        float _maxOrbitAngle = 360f;
+
+        [SerializeField, ShowOnly]
+        float _currentOrbitAngle;
 
         [Header("Editor")]
         [SerializeField]
@@ -146,18 +164,46 @@ namespace Darklight.Game
 
             // < INITIALIZE MAIN CAMERA >
             _mainCamera.transform.SetParent(transform);
+
+            // Initialize the current orbit angle with the settings value
+            _currentOrbitAngle = _settings.OrbitAngle;
         }
 
         void FixedUpdate()
         {
             if (Application.isPlaying)
+            {
+                UpdateInputOrbit();
                 UpdateCameraRig(true);
+            }
         }
         #endregion
 
         #region < NONPUBLIC_METHODS > [[ CALCULATIONS ]] ================================================================
         /// <summary>
-        /// Calculate the target position of the camera based on the preset values.
+        /// Update the orbit angle based on input from the GlobalInputReader.
+        /// </summary>
+        void UpdateInputOrbit()
+        {
+            if (!_enableInputOrbit || !Application.isPlaying)
+                return;
+
+            // Apply horizontal look input to orbit angle (X-axis controls horizontal orbit)
+            if (Mathf.Abs(_lookInput.x) > 0.01f)
+            {
+                _currentOrbitAngle +=
+                    (_lookInput.x * -1) * _orbitSensitivity * Time.deltaTime * 60f; // Convert to degrees per second
+                // Clamp the orbit angle within the specified range
+                _currentOrbitAngle = Mathf.Clamp(
+                    _currentOrbitAngle,
+                    _minOrbitAngle,
+                    _maxOrbitAngle
+                );
+            }
+        }
+
+        /// <summary>
+        /// /// Calculate the target position of the camera based on the preset values.
         /// </summary>
         /// <returns></returns>
         protected virtual Vector3 CalculateTargetPosition()
@@ -172,10 +218,13 @@ namespace Darklight.Game
             if (_bounds != null)
                 adjustedPosition = EnforceBounds(adjustedPosition);
 
-            if (Mathf.Abs(_settings.OrbitAngle) > 0)
+            // Use the current orbit angle (either from input or settings)
+            float orbitAngle = _enableInputOrbit ? _currentOrbitAngle : _settings.OrbitAngle;
+
+            if (Mathf.Abs(orbitAngle) > 0)
             {
                 // Calculate the orbit position based on the radius and current offset (angle in degrees)
-                float orbitRadians = (_settings.OrbitAngle + 90) * Mathf.Deg2Rad; // Convert degrees to radians
+                float orbitRadians = (orbitAngle + 90) * Mathf.Deg2Rad; // Convert degrees to radians
 
                 // Set the radius to match the z offset
                 float orbitRadius = _settings.PositionOffsetZ;
@@ -406,9 +455,45 @@ namespace Darklight.Game
         #endregion
 
         #region ( HANDLERS ) <PUBLIC_METHODS> ================================================
+        /// <summary>
+        /// Set the follow target for the camera rig.
+        /// </summary>
+        /// <param name="target">The transform to follow.</param>
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target;
+        }
+
+        /// <summary>
+        /// Set the current orbit angle manually.
+        /// </summary>
+        /// <param name="angle">The orbit angle in degrees.</param>
+        public void SetOrbitAngle(float angle)
+        {
+            _currentOrbitAngle = Mathf.Clamp(angle, _minOrbitAngle, _maxOrbitAngle);
+        }
+
+        /// <summary>
+        /// Get the current orbit angle.
+        /// </summary>
+        /// <returns>The current orbit angle in degrees.</returns>
+        public float GetOrbitAngle()
+        {
+            return _currentOrbitAngle;
+        }
+
+        /// <summary>
+        /// Enable or disable input-based orbit control.
+        /// </summary>
+        /// <param name="enable">Whether to enable input orbit control.</param>
+        public void SetInputOrbitEnabled(bool enable)
+        {
+            _enableInputOrbit = enable;
+        }
+
+        public void SetLookInput(Vector2 lookInput)
+        {
+            _lookInput = lookInput;
         }
         #endregion
 

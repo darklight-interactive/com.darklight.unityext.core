@@ -1,20 +1,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IInteractionCommand
+namespace Darklight.Behaviour
 {
-    void Execute();
-}
-
-public abstract class InteractionCommand<IReciever> : IInteractionCommand
-    where IReciever : InteractionReciever
-{
-    protected IReciever _reciever;
-
-    public InteractionCommand(IReciever reciever)
+    public interface IInteractionCommand
     {
-        _reciever = reciever;
+        void Execute();
     }
 
-    public abstract void Execute();
+    public abstract class InteractionCommand<IReciever> : IInteractionCommand
+        where IReciever : InteractionReciever
+    {
+        protected IReciever _reciever;
+
+        public InteractionCommand(IReciever reciever)
+        {
+            _reciever = reciever;
+        }
+
+        public abstract void Execute();
+    }
 }

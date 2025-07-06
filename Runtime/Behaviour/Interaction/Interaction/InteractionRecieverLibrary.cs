@@ -3,20 +3,24 @@ using Darklight.Library;
 using Darklight.Utility;
 using UnityEngine;
 
-[System.Serializable]
-public class InteractionRecieverLibrary : EnumComponentLibrary<InteractionType, InteractionReciever>
+namespace Darklight.Behaviour
 {
-    public InteractionRecieverLibrary()
+    [System.Serializable]
+    public class InteractionRecieverLibrary
+        : EnumComponentLibrary<InteractionType, InteractionReciever>
     {
-        ReadOnlyKey = true;
-        ReadOnlyValue = true;
-        RequiredKeys = new InteractionType[] { };
-        this.Refresh();
-    }
+        public InteractionRecieverLibrary()
+        {
+            ReadOnlyKey = true;
+            ReadOnlyValue = true;
+            RequiredKeys = new InteractionType[] { };
+            this.Refresh();
+        }
 
-    protected override void InternalClear()
-    {
-        //Debug.Log("InteractionRecieverLibrary: InternalClear called.");
-        base.InternalClear();
+        protected override void InternalClear()
+        {
+            //Debug.Log("InteractionRecieverLibrary: InternalClear called.");
+            base.InternalClear();
+        }
     }
 }

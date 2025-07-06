@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using NaughtyAttributes.Editor;
 using UnityEditor;
@@ -9,11 +10,30 @@ namespace Darklight.Editor
     public class InitializeOnEnableEditor : NaughtyInspector
     {
         private InitializeOnEnableAttribute _initializeAttr;
+        private bool _shouldUseNaughtyInspector;
 
         protected override void OnEnable()
         {
             var targetType = target.GetType();
             _initializeAttr = targetType.GetCustomAttribute<InitializeOnEnableAttribute>();
+
+            // ✅ Check if NaughtyInspector is safe to run:
+            var nonSerializedFields = targetType.GetFields(
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public
+            );
+            _shouldUseNaughtyInspector = false;
+
+            foreach (var field in nonSerializedFields)
+            {
+                if (
+                    field.GetCustomAttribute<NaughtyAttributes.ShowNonSerializedFieldAttribute>()
+                    != null
+                )
+                {
+                    _shouldUseNaughtyInspector = true;
+                    break;
+                }
+            }
 
             if (_initializeAttr != null)
             {
@@ -23,7 +43,6 @@ namespace Darklight.Editor
 
         public override void OnInspectorGUI()
         {
-            // Only if the target class has the attribute
             if (_initializeAttr != null)
             {
                 if (GUILayout.Button("Initialize"))
@@ -32,7 +51,15 @@ namespace Darklight.Editor
                 }
             }
 
-            base.OnInspectorGUI();
+            try
+            {
+                base.OnInspectorGUI(); // This will draw all NaughtyAttributes, even if there are no non-serialized fields
+            }
+            catch (ArgumentNullException ex)
+            {
+                //Debug.LogWarning("NaughtyInspector failed to draw non-serialized fields");
+                //DrawDefaultInspector(); // Fallback to default inspector
+            }
         }
 
         private void InvokeAttributeMethod()

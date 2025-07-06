@@ -45,6 +45,7 @@ namespace Darklight.Behaviour
         public abstract string Name { get; }
         public abstract string Key { get; }
         public abstract string Layer { get; }
+        public abstract Collider Collider { get; }
         public abstract InteractionRequestDataObject Request { get; protected set; }
         public abstract InteractionRecieverLibrary Recievers { get; protected set; }
         public abstract bool IsRegistered { get; protected set; }
@@ -117,7 +118,7 @@ namespace Darklight.Behaviour
 
         protected virtual void OnDrawGizmos()
         {
-            Vector2 labelPos = (Vector2)transform.position + (Vector2.up * 0.25f);
+            Vector3 labelPos = transform.position + (Vector3.up * 0.25f);
 #if UNITY_EDITOR
             CustomGizmos.DrawLabel(
                 CurrentState.ToString(),
