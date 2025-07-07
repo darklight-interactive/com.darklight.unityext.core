@@ -5,37 +5,15 @@ using UnityEngine;
 
 namespace Darklight.Behaviour
 {
-    public interface IInteractable
-    {
-        string Name { get; }
-        string Key { get; }
-        string Layer { get; }
-        Vector3 Position { get; }
-
-        InteractionRequestDataObject Request { get; }
-        InteractionRecieverLibrary Recievers { get; }
-
-        bool IsPreloaded { get; }
-        bool IsRegistered { get; }
-        bool IsInitialized { get; }
-
-        // ===================== [[ METHODS ]] =====================
-        void Preload();
-        void Register();
-        void Initialize();
-        void Refresh();
-        void Reset();
-
-        bool AcceptTarget(IInteractor interactor, bool force = false);
-        bool AcceptInteraction(IInteractor interactor, bool force = false);
-    }
-
     /// <summary>
-    /// This is the base interactable class uses the BaseInteractableData and BaseInteractableStateMachine
+    /// This is the base interactable class. Having a non-generic abstract class
+    /// allows for the creation of a generic interactable class that can be
+    /// used for unique interactable types, but still have the same base and
+    /// therefore can be referenced as an non-generic Interactable.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TStateMachine"></typeparam>
-    public abstract class Interactable : MonoBehaviour, IInteractable
+    public abstract class Interactable : MonoBehaviour
     {
         protected const string PREFIX = "INTRCTBL";
         protected const string DEFAULT_NAME = "DefaultName";
@@ -92,9 +70,23 @@ namespace Darklight.Behaviour
         }
     }
 
-    public abstract class Interactable<TInfo, TStateMachine, TStateEnum, TTypeEnum>
-        : Interactable,
-            IInteractable
+    /// <summary>
+    /// This is the base interactable class uses the BaseInteractableData and BaseInteractableStateMachine
+    /// </summary>
+    /// <typeparam name="TInfo">
+    /// The data class for the interactable. This is used to store serialized data
+    /// for the interactable.
+    /// </typeparam>
+    /// <typeparam name="TStateMachine">
+    /// The state machine for the interactable.
+    /// </typeparam>
+    /// <typeparam name="TStateEnum">
+    /// The state enum for the interactable.
+    /// </typeparam>
+    /// <typeparam name="TTypeEnum">
+    /// The type enum for the interactable.
+    /// </typeparam>
+    public abstract class Interactable<TInfo, TStateMachine, TStateEnum, TTypeEnum> : Interactable
         where TInfo : class
         where TStateMachine : FiniteStateMachine<TStateEnum>
         where TStateEnum : Enum

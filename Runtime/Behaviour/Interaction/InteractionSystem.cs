@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Darklight.Behaviour;
+using Darklight.Collection;
 using Darklight.Editor;
-using Darklight.Library;
 using Darklight.Utility;
 using NaughtyAttributes;
 using UnityEngine;
@@ -29,7 +29,8 @@ namespace Darklight.Behaviour
 
         [HorizontalLine(4, color: EColor.Gray)]
         [SerializeField]
-        Library<string, Interactable> _interactableRegistry = new Library<string, Interactable>();
+        CollectionDictionary<string, Interactable> _interactableRegistry =
+            new CollectionDictionary<string, Interactable>();
 
         public static InteractionSystemSettings Settings
         {
@@ -62,7 +63,7 @@ namespace Darklight.Behaviour
         }
 
         #region == INVOKER <STATIC_CLASS> == [[ Command Invoker ]] =========================== >>>>
-        public static class Invoker
+        static class Invoker
         {
             static IInteractionCommand _command;
 
@@ -85,7 +86,7 @@ namespace Darklight.Behaviour
         #endregion
 
         #region == FACTORY <STATIC_CLASS> == [[ Factory Methods ]] =========================== >>>>
-        public static class Factory
+        static class Factory
         {
             const string ASSET_PATH = "Assets/Resources/Darklight/InteractionSystem";
             const string SETTINGS_PATH = ASSET_PATH + "/Settings";
@@ -116,11 +117,11 @@ namespace Darklight.Behaviour
                         REQUEST_PATH,
                         name
                     );
-                request.RequiredKeys = keys;
-                request.Refresh();
+                //request.DataCollection.Keys.AddRange(keys);
                 return request;
             }
 
+            /*
             static void InstantiateInteractionReciever(
                 Interactable interactable,
                 InteractionType key,
@@ -240,20 +241,15 @@ namespace Darklight.Behaviour
                 }
                 return null;
             }
+            */
         }
         #endregion
 
         #region == REGISTRY <STATIC_CLASS> == [[ Interactable Registry ]] =========================== >>>>
         public static class Registry
         {
-            public static Library<string, Interactable> Interactables = new Library<
-                string,
-                Interactable
-            >()
-            {
-                ReadOnlyKey = true,
-                ReadOnlyValue = true
-            };
+            public static CollectionDictionary<string, Interactable> Interactables =
+                new CollectionDictionary<string, Interactable>();
 
             static void ReloadInteractables()
             {
@@ -350,7 +346,7 @@ namespace Darklight.Behaviour
                 Interactables.Clear();
             }
 
-            public static Library<string, Interactable> GetLibrary()
+            public static CollectionDictionary<string, Interactable> GetLibrary()
             {
                 return Interactables;
             }

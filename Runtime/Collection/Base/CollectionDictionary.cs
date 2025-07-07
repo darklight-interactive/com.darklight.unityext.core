@@ -20,46 +20,43 @@ namespace Darklight.Collection
         where TKey : notnull
         where TValue : notnull
     {
+        #region ---- < FIELDS > ================================================================
+        /// <summary>
+        /// The concurrent dictionary that stores the items.
+        /// </summary>
         private readonly ConcurrentDictionary<
             int,
             KeyValueCollectionItem<TKey, TValue>
         > _concurrentDict;
+
+        /// <summary>
+        /// The lock for the concurrent dictionary.
+        /// </summary>
         private readonly ReaderWriterLockSlim _lock;
 
-        [SerializeField]
-        private List<KeyValueCollectionItem<TKey, TValue>> _dictionaryItems = new();
+        /// <summary>
+        /// Whether the collection is read-only.
+        /// </summary>
         private bool _isReadOnly;
 
-        public CollectionDictionary()
-        {
-            _concurrentDict = new ConcurrentDictionary<int, KeyValueCollectionItem<TKey, TValue>>();
-            _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-            _isReadOnly = false;
+        [SerializeField]
+        [Tooltip("The list of key-value items in the collection.")]
+        private List<KeyValueCollectionItem<TKey, TValue>> _dictionaryItems = new();
 
-            OnCollectionChanged += (sender, args) =>
-            {
-                //Debug.Log($"CollectionDictionary changed: {args.EventType}");
-                _dictionaryItems = _concurrentDict.Values.ToList();
-            };
-        }
+        #endregion
+
+        #region ---- < PROPERTIES > ================================================================
 
         public override int Capacity => _concurrentDict.Count;
         public override int Count => _dictionaryItems.Count;
         public override IEnumerable<int> IDs => _dictionaryItems.Select(x => x.Id);
         public override bool IsReadOnly => _isReadOnly;
         public override bool IsSynchronized => true;
-
+        public override object SyncRoot => _lock;
         public override IEnumerable<CollectionItem> Items =>
             _concurrentDict.Values.Select(item => (CollectionItem)item);
         public IEnumerable<TKey> Keys => _dictionaryItems.Select(x => x.Key);
-
-        public override object SyncRoot => _lock;
         public IEnumerable<TValue> Values => _dictionaryItems.Select(x => x.Value);
-
-        ICollection<TKey> IDictionary<TKey, TValue>.Keys =>
-            _dictionaryItems.Select(x => x.Key).ToList();
-        ICollection<TValue> IDictionary<TKey, TValue>.Values =>
-            _dictionaryItems.Select(x => x.Value).ToList();
 
         public TValue this[TKey key]
         {
@@ -100,6 +97,44 @@ namespace Darklight.Collection
             }
         }
 
+        #endregion
+
+        #region < CONSTRUCTOR > ================================================================
+        public CollectionDictionary()
+        {
+            _concurrentDict = new ConcurrentDictionary<int, KeyValueCollectionItem<TKey, TValue>>();
+            _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+            _isReadOnly = false;
+
+            OnCollectionChanged += (sender, args) =>
+            {
+                //Debug.Log($"CollectionDictionary changed: {args.EventType}");
+                _dictionaryItems = _concurrentDict.Values.ToList();
+            };
+        }
+
+        public CollectionDictionary(IEnumerable<TKey> keys)
+            : this()
+        {
+            foreach (var key in keys)
+            {
+                Add(key, default);
+            }
+        }
+
+        public CollectionDictionary(IEnumerable<KeyValuePair<TKey, TValue>> items)
+            : this()
+        {
+            foreach (var item in items)
+            {
+                Add(item.Key, item.Value);
+            }
+        }
+
+        #endregion
+
+        #region ---- < PUBLIC_METHODS > [Collection Management] ================================================================
+
         public void Add(KeyValuePair<TKey, TValue> item)
         {
             Add(item.Key, item.Value);
@@ -137,6 +172,11 @@ namespace Darklight.Collection
             }
         }
 
+        public override void AddDefaultItem()
+        {
+            Add(GetNextKey(), default);
+        }
+
         public new void Clear()
         {
             _lock.EnterWriteLock();
@@ -153,6 +193,15 @@ namespace Darklight.Collection
             }
         }
 
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ Getters ]] ================================================================
+
+        /// <summary>
+        /// Checks if the collection contains the specified item.
+        /// </summary>
+        /// <param name="item">The item to check for.</param>
+        /// <returns>True if the collection contains the item, false otherwise.</returns>
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
             _lock.EnterReadLock();
@@ -167,45 +216,6 @@ namespace Darklight.Collection
             {
                 _lock.ExitReadLock();
             }
-        }
-
-        public bool ContainsKey(TKey key)
-        {
-            _lock.EnterReadLock();
-            try
-            {
-                foreach (var item in _dictionaryItems)
-                {
-                    if (item.Key.Equals(key))
-                        return true;
-                }
-                return false;
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
-
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-        {
-            _lock.EnterReadLock();
-            try
-            {
-                var pairs = _dictionaryItems
-                    .Select(x => new KeyValuePair<TKey, TValue>(x.Key, x.Value))
-                    .ToArray();
-                Array.Copy(pairs, 0, array, arrayIndex, pairs.Length);
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
-
-        public override void AddDefaultItem()
-        {
-            Add(GetNextKey(), default);
         }
 
         /// <summary>
@@ -241,17 +251,106 @@ namespace Darklight.Collection
             }
         }
 
-        public TKey GetKey(TValue value)
+        /// <summary>
+        /// Tries to get the key for the specified value.
+        /// </summary>
+        /// <param name="value">The value to get the key for.</param>
+        /// <param name="key">The key for the specified value.</param>
+        /// <returns>True if the key was found, false otherwise.</returns>
+        public bool TryGetKey(TValue value, out TKey key)
         {
-            foreach (var item in _dictionaryItems)
+            _lock.EnterReadLock();
+            try
             {
-                if (EqualityComparer<TValue>.Default.Equals(item.Value, value))
+                foreach (var item in _dictionaryItems)
                 {
-                    return item.Key;
+                    if (EqualityComparer<TValue>.Default.Equals(item.Value, value))
+                    {
+                        key = item.Key;
+                        return true;
+                    }
                 }
+                key = default;
+                return false;
             }
-            return default;
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
+
+        /// <summary>
+        /// Tries to get the value for the specified key.
+        /// </summary>
+        /// <param name="key">The key to get the value for.</param>
+        /// <param name="value">The value for the specified key.</param>
+        /// <returns>True if the value was found, false otherwise.</returns>
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                var item = _dictionaryItems.FirstOrDefault(x => x.Key.Equals(key));
+                if (item != null)
+                {
+                    value = item.Value;
+                    return true;
+                }
+                value = default;
+                return false;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Checks if the collection contains the specified key.
+        /// </summary>
+        /// <param name="key">The key to check for.</param>
+        /// <returns>True if the collection contains the key, false otherwise.</returns>
+        public bool ContainsKey(TKey key)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                foreach (var item in _dictionaryItems)
+                {
+                    if (item.Key.Equals(key))
+                        return true;
+                }
+                return false;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Copies the collection to an array.
+        /// </summary>
+        /// <param name="array">The array to copy the collection to.</param>
+        /// <param name="arrayIndex">The index to start copying from.</param>
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                var pairs = _dictionaryItems
+                    .Select(x => new KeyValuePair<TKey, TValue>(x.Key, x.Value))
+                    .ToArray();
+                Array.Copy(pairs, 0, array, arrayIndex, pairs.Length);
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        #endregion
+
 
         public override void Refresh()
         {
@@ -312,26 +411,7 @@ namespace Darklight.Collection
             this[key] = value;
         }
 
-        public bool TryGetValue(TKey key, out TValue value)
-        {
-            _lock.EnterReadLock();
-            try
-            {
-                var item = _dictionaryItems.FirstOrDefault(x => x.Key.Equals(key));
-                if (item != null)
-                {
-                    value = item.Value;
-                    return true;
-                }
-                value = default;
-                return false;
-            }
-            finally
-            {
-                _lock.ExitReadLock();
-            }
-        }
-
+        #region < TYPE_CONVERSIONS > [[ Type Conversions ]] ================================================================
         IEnumerator<KeyValueCollectionItem<TKey, TValue>> IEnumerable<
             KeyValueCollectionItem<TKey, TValue>
         >.GetEnumerator()
@@ -363,5 +443,12 @@ namespace Darklight.Collection
                 _lock.ExitReadLock();
             }
         }
+
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys =>
+            _dictionaryItems.Select(x => x.Key).ToList();
+        ICollection<TValue> IDictionary<TKey, TValue>.Values =>
+            _dictionaryItems.Select(x => x.Value).ToList();
+
+        #endregion
     }
 }

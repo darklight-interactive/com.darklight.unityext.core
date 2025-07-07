@@ -16,7 +16,15 @@ namespace Darklight.Collection
             INotifyCollectionChanged,
             IDisposable
     {
+
+        /// <summary>
+        /// The event handler for the collection changed event.
+        /// </summary>
         private EventHandler<CollectionEventArgs> _collectionChanged;
+
+        /// <summary>
+        /// The event handler for the collection changing event.
+        /// </summary>
         private EventHandler<CollectionEventArgs> _collectionChanging;
         private List<CollectionItem> _items = new();
 
@@ -57,13 +65,14 @@ namespace Darklight.Collection
         }
         public abstract int Capacity { get; }
         public abstract int Count { get; }
-        public object Current => Items.ElementAtOrDefault(_position);
-        public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
         public abstract bool IsReadOnly { get; }
         public abstract bool IsSynchronized { get; }
+        public abstract object SyncRoot { get; }
+
+        public object Current => Items.ElementAtOrDefault(_position);
+        public virtual IEnumerable<int> IDs => Items.Select(x => x.Id);
         public virtual IEnumerable<CollectionItem> Items => _items;
         public virtual IEnumerable<object> Objects => Items.Select(x => x.Object);
-        public abstract object SyncRoot { get; }
 
         /// <summary>
         /// Gets whether events are currently suspended.

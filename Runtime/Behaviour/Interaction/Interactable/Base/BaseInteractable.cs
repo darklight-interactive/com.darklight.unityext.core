@@ -20,8 +20,7 @@ namespace Darklight.Behaviour
     {
         public enum Type
         {
-            INTERACTABLE,
-            INTERACTOR
+            INTERACTABLE
         }
 
         public enum State
@@ -150,6 +149,7 @@ namespace Darklight.Behaviour
 
         protected virtual bool ValidateRegister(bool logErrors = false)
         {
+            /*
             bool isValid = IsRegistered && Recievers.Count > 0 && !Recievers.HasUnsetKeysOrValues();
 
             if (!isValid && logErrors)
@@ -165,6 +165,8 @@ namespace Darklight.Behaviour
             }
 
             return isValid;
+                        */
+            return true;
         }
         #endregion
 
