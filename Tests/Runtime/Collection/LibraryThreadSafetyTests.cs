@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Darklight.Collection;
+using Darklight.Collections;
 using NUnit.Framework;
 using UnityEngine;
 

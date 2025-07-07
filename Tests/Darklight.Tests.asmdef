@@ -4,8 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Darklight.Collection",
-        "Darklight.Collection.Editor"
+        "Darklight.Collections",
+        "Darklight.Collections.Editor"
     ],
     "includePlatforms": [
         "Editor"

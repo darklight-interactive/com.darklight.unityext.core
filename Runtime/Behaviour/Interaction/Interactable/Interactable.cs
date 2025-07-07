@@ -1,48 +1,63 @@
 using System;
+using System.Collections.Generic;
 using Darklight.Behaviour;
+using Darklight.Collections;
 using Darklight.Editor;
+using NaughtyAttributes;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+using NaughtyAttributes.Editor;
+#endif
 
 namespace Darklight.Behaviour
 {
     /// <summary>
-    /// This is the base interactable class. Having a non-generic abstract class
+    /// This is the interface for the interactable class. This is used to
+    /// define the base properties and methods for all interactable types.
+    /// </summary>
+    public interface IInteractable
+    {
+        InteractableData Data { get; }
+        Collider Collider { get; }
+        Action OnAcceptTarget { get; set; }
+        Action OnAcceptInteraction { get; set; }
+        Action OnReset { get; set; }
+        void Initialize();
+        void Refresh();
+        void Reset();
+        bool AcceptTarget(IInteractor interactor, bool force = false);
+        bool AcceptInteraction(IInteractor interactor, bool force = false);
+        bool Validate(out string outLog);
+        string Print();
+    }
+
+    /// <summary>
+    /// This is the abstract interactable class. Having a non-generic abstract class
     /// allows for the creation of a generic interactable class that can be
     /// used for unique interactable types, but still have the same base and
     /// therefore can be referenced as an non-generic Interactable.
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TStateMachine"></typeparam>
-    public abstract class Interactable : MonoBehaviour
+    public abstract class Interactable : MonoBehaviour, IInteractable
     {
         protected const string PREFIX = "INTRCTBL";
         protected const string DEFAULT_NAME = "DefaultName";
         protected const string DEFAULT_KEY = "DefaultKey";
         protected const string DEFAULT_LAYER = "Default";
 
-        public abstract string Name { get; }
-        public abstract string Key { get; }
-        public abstract string Layer { get; }
+        public abstract InteractableData Data { get; }
         public abstract Collider Collider { get; }
-        public abstract InteractionRequestDataObject Request { get; protected set; }
-        public abstract InteractionRecieverLibrary Recievers { get; protected set; }
-        public abstract bool IsRegistered { get; protected set; }
-        public abstract bool IsPreloaded { get; protected set; }
-        public abstract bool IsInitialized { get; protected set; }
+        public abstract Action OnAcceptTarget { get; set; }
+        public abstract Action OnAcceptInteraction { get; set; }
+        public abstract Action OnReset { get; set; }
 
-        public Vector3 Position => transform.position;
+        protected virtual void Start() => Initialize();
 
-        /// <summary>
-        /// Preload the interactable with core data & subscriptions <br/>
-        /// This is called when the interactable is first created or enabled
-        /// </summary>
-        public abstract void Preload();
+        protected virtual void Update() => Refresh();
 
-        /// <summary>
-        /// Register the interactable with the Interaction System <br/>
-        /// This is called when the interactable is enabled
-        /// </summary>
-        public abstract void Register();
+        protected abstract void OnDrawGizmos();
 
         /// <summary>
         /// Initialize the interactable within the scene by
@@ -61,104 +76,134 @@ namespace Darklight.Behaviour
         /// Reset the interactable to its default state & values
         /// </summary>
         public abstract void Reset();
+
+        /// <summary>
+        /// Validate the interactable to ensure it is properly configured
+        /// </summary>
+        /// <returns>True if the interactable is valid, false otherwise</returns>
+        public abstract bool Validate(out string outLog);
         public abstract bool AcceptTarget(IInteractor interactor, bool force = false);
         public abstract bool AcceptInteraction(IInteractor interactor, bool force = false);
-
-        public virtual string Print()
-        {
-            return $"{Name} : {Key}";
-        }
+        public abstract string Print();
     }
 
-    /// <summary>
-    /// This is the base interactable class uses the BaseInteractableData and BaseInteractableStateMachine
-    /// </summary>
-    /// <typeparam name="TInfo">
-    /// The data class for the interactable. This is used to store serialized data
-    /// for the interactable.
-    /// </typeparam>
-    /// <typeparam name="TStateMachine">
-    /// The state machine for the interactable.
-    /// </typeparam>
-    /// <typeparam name="TStateEnum">
-    /// The state enum for the interactable.
-    /// </typeparam>
-    /// <typeparam name="TTypeEnum">
-    /// The type enum for the interactable.
-    /// </typeparam>
-    public abstract class Interactable<TInfo, TStateMachine, TStateEnum, TTypeEnum> : Interactable
-        where TInfo : class
-        where TStateMachine : FiniteStateMachine<TStateEnum>
-        where TStateEnum : Enum
-        where TTypeEnum : Enum
+    [Serializable]
+    public abstract class Interactable<TData, TType> : Interactable, IInteractable
+        where TData : InteractableData
+        where TType : System.Enum
     {
-        public abstract TInfo Info { get; }
-        public abstract TStateMachine StateMachine { get; }
-        public abstract TStateEnum CurrentState { get; }
-        public abstract TTypeEnum TypeKey { get; }
+        [SerializeField]
+        [
+            Expandable,
+            CreateAsset(
+                "NewInteractableData",
+                "Assets/Resources/Darklight/Interaction/InteractableData"
+            )
+        ]
+        private TData _data;
 
-        #region [[ EVENTS ]] <PUBLIC> ================================== >>>>
-        public delegate void InteractionEvent();
-        #endregion
+        [SerializeField]
+        private List<TType> _recieverRequest;
 
-        #region [[ UNITY_METHODS ]] < PROTECTED > ================================== >>>>
-        protected void Awake() => Preload();
+        [SerializeField]
+        private CollectionDictionary<TType, InteractionReciever<TData, TType>> _activeRecievers;
 
-        protected void Start() => Initialize();
-
-        protected void Update() => Refresh();
-
-        protected virtual void OnDrawGizmos()
+        public override InteractableData Data => _data;
+        public List<TType> RecieverRequest => _recieverRequest;
+        public CollectionDictionary<TType, InteractionReciever<TData, TType>> ActiveRecievers
         {
-            Vector3 labelPos = transform.position + (Vector3.up * 0.25f);
-#if UNITY_EDITOR
-            CustomGizmos.DrawLabel(
-                CurrentState.ToString(),
-                labelPos,
-                new GUIStyle()
-                {
-                    fontSize = 12,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleCenter,
-                    normal = new GUIStyleState() { textColor = Color.white }
-                }
+            get => _activeRecievers;
+            set => _activeRecievers = value;
+        }
+
+        #region [[ PUBLIC_METHODS ]] < > ================================== >>>>
+        public override void Initialize()
+        {
+            if (_data == null)
+            {
+                Debug.LogError($"{PREFIX} {Data.Key} :: Data is null", this);
+                return;
+            }
+
+            if (_recieverRequest == null)
+            {
+                Debug.LogError($"{PREFIX} {Data.Key} :: Request is null", this);
+                return;
+            }
+
+            InteractionSystem<TData, TType>.Instance.Registry.TryRegisterInteractable(
+                this,
+                out bool result
             );
-#endif
+            if (!result)
+            {
+                Debug.LogError($"{PREFIX} {Data.Key} :: Failed to register", this);
+                return;
+            }
+
+            if (!Validate(out string outLog))
+            {
+                Debug.LogError(outLog, this);
+                return;
+            }
+        }
+
+        public override bool AcceptTarget(IInteractor interactor, bool force = false)
+        {
+            if (interactor == null)
+            {
+                Debug.LogError($"{PREFIX} {Data.Key} :: Interactor is null", this);
+                return false;
+            }
+
+            OnAcceptTarget?.Invoke();
+            return true;
+        }
+
+        public override bool AcceptInteraction(IInteractor interactor, bool force = false)
+        {
+            if (interactor == null)
+            {
+                Debug.LogError($"{PREFIX} {Data.Key} :: Interactor is null", this);
+                return false;
+            }
+
+            Debug.Log($"{PREFIX} {Data.Key} :: AcceptInteraction from {interactor}", this);
+            OnAcceptInteraction?.Invoke();
+            return true;
+        }
+
+        public override void Reset()
+        {
+            OnReset?.Invoke();
+        }
+
+        public override bool Validate(out string outLog)
+        {
+            if (_data == null || _recieverRequest == null)
+            {
+                outLog = $"{PREFIX} {Data.Key} :: Validation Failed";
+                if (_data == null)
+                    outLog += " :: Data is null";
+                if (_recieverRequest == null)
+                    outLog += " :: Request is null";
+                return false;
+            }
+
+            if (!InteractionSystem<TData, TType>.Instance.Registry.IsRegistered(this))
+            {
+                outLog = $"{PREFIX} {Data.Key} :: Not Registered";
+                return false;
+            }
+
+            outLog = $"{PREFIX} {Data.Key} :: Validation Passed";
+            return true;
+        }
+
+        public override string Print()
+        {
+            return $"{Data.ID} :: {Data.Key}";
         }
         #endregion
-
-
-        public abstract class InternalStateMachine : FiniteStateMachine<TStateEnum>
-        {
-            Interactable _interactable;
-
-            public InternalStateMachine(Interactable interactable)
-                : base()
-            {
-                _interactable = interactable;
-            }
-        }
-
-        [Serializable]
-        public abstract class InternalData
-        {
-            public abstract string Name { get; }
-            public abstract string Key { get; }
-            public abstract string Layer { get; }
-        }
-
-        public abstract class InternalData<TInteractable> : InternalData
-            where TInteractable : Interactable
-        {
-            protected TInteractable interactable;
-
-            public InternalData(TInteractable interactable)
-            {
-                this.interactable = interactable;
-                LoadData(interactable);
-            }
-
-            public abstract void LoadData(TInteractable interactable);
-        }
     }
 }

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Darklight.Collection;
+using Darklight.Collections;
 using NUnit.Framework;
 using UnityEngine;
 

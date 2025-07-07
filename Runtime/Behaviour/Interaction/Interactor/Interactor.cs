@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Behaviour;
-using Darklight.Collection;
+using Darklight.Collections;
 using Darklight.Editor;
 using NaughtyAttributes;
 using UnityEngine;
@@ -83,7 +83,7 @@ namespace Darklight.Behaviour
                     continue;
 
                 // Calculate the distance to the interactable.
-                float distance = Vector3.Distance(interactable.Position, position);
+                float distance = Vector3.Distance(interactable.transform.position, position);
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
