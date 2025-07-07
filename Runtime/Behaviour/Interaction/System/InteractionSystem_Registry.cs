@@ -28,27 +28,27 @@ namespace Darklight.Behaviour
             )
             {
                 result = false;
-                if (ContainsKey(interactable.Data.ID))
+                if (ContainsKey(interactable.ID))
                 {
                     // If the interactable is in the library and the same reference, return true
-                    if (this[interactable.Data.ID] == interactable)
+                    if (this[interactable.ID] == interactable)
                     {
                         Debug.Log(
-                            $"{Prefix} Interactable {interactable.Data.ID} already registered",
+                            $"{Prefix} Interactable {interactable.ID} already registered",
                             interactable
                         );
                         result = true;
                     }
-                    else if (this[interactable.Data.ID] == null)
+                    else if (this[interactable.ID] == null)
                     {
                         Debug.LogWarning(
                             $"{Prefix} Overwriting null value of Interactable {interactable.Print()}",
                             interactable
                         );
-                        this[interactable.Data.ID] = interactable;
+                        this[interactable.ID] = interactable;
                         result = true;
                     }
-                    else if (this[interactable.Data.ID] != null)
+                    else if (this[interactable.ID] != null)
                     {
                         if (overwrite)
                         {
@@ -56,7 +56,7 @@ namespace Darklight.Behaviour
                                 $"{Prefix} Overwriting non-null value of Interactable {interactable.Print()}",
                                 interactable
                             );
-                            this[interactable.Data.ID] = interactable;
+                            this[interactable.ID] = interactable;
                             result = true;
                         }
                         else
@@ -71,7 +71,7 @@ namespace Darklight.Behaviour
                 }
                 else
                 {
-                    Add(interactable.Data.ID, interactable);
+                    Add(interactable.ID, interactable);
                     Debug.Log(
                         $"{Prefix} Adding {interactable.Print()} to the Registry",
                         interactable
@@ -87,7 +87,7 @@ namespace Darklight.Behaviour
 
             public bool IsRegistered(Interactable interactable)
             {
-                return ContainsKey(interactable.Data.ID);
+                return ContainsKey(interactable.ID);
             }
 
             public void TryGetInteractable<T>(out T interactable)

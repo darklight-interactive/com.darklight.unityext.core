@@ -47,6 +47,7 @@ namespace Darklight.Behaviour
         protected const string DEFAULT_KEY = "DefaultKey";
         protected const string DEFAULT_LAYER = "Default";
 
+        public virtual int ID => GetInstanceID();
         public abstract InteractableData Data { get; }
         public abstract Collider Collider { get; }
         public abstract Action OnAcceptTarget { get; set; }
@@ -202,7 +203,7 @@ namespace Darklight.Behaviour
 
         public override string Print()
         {
-            return $"{Data.ID} :: {Data.Key}";
+            return $"{ID} :: {Data.Key}";
         }
         #endregion
     }
