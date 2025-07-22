@@ -78,11 +78,6 @@ namespace Darklight.Behaviour
                     );
                     result = true;
                 }
-
-                if (result)
-                {
-                    Factory.GenerateInteractableRecievers(interactable);
-                }
             }
 
             public bool IsRegistered(Interactable interactable)

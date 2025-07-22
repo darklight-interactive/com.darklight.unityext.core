@@ -9,19 +9,13 @@ namespace Darklight.Behaviour
         where TData : InteractableData
         where TType : System.Enum
     {
-        [SerializeField, ReadOnly]
-        Interactable<TData, TType> _interactable;
-
-        [SerializeField]
-        TType _interactionType;
-
+        protected Interactable<TData, TType> _interactable;
         public Interactable<TData, TType> Interactable => _interactable;
-        public TType InteractionType => _interactionType;
+        public abstract TType InteractionType { get; }
 
         public virtual void Initialize(Interactable<TData, TType> interactable)
         {
             _interactable = interactable;
-
             _interactable.OnAcceptTarget += OnAcceptTarget;
             _interactable.OnAcceptInteraction += OnAcceptInteraction;
             _interactable.OnReset += OnReset;

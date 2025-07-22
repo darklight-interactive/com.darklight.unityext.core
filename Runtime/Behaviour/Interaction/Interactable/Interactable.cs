@@ -103,35 +103,48 @@ namespace Darklight.Behaviour
         ]
         private TData _data;
 
-        [SerializeField]
-        private List<TType> _recieverRequest;
-
-        [SerializeField]
-        private CollectionDictionary<TType, InteractionReciever<TData, TType>> _activeRecievers;
-
+        [SerializeField, ReadOnly]
+        private CollectionDictionary<TType, InteractionReciever<TData, TType>> _recievers = new();
         public override InteractableData Data => _data;
-        public List<TType> RecieverRequest => _recieverRequest;
-        public CollectionDictionary<TType, InteractionReciever<TData, TType>> ActiveRecievers
+        public CollectionDictionary<TType, InteractionReciever<TData, TType>> Recievers
         {
-            get => _activeRecievers;
-            set => _activeRecievers = value;
+            get => _recievers;
+            set => _recievers = value;
         }
+
+        #region < PRIVATE_METHODS > ================================================================
+
+        /// <summary>
+        /// Initialize the recievers of the interactable. <br/>
+        /// This is called when the interactable is Initialized.
+        /// All receivers should be located either on the interactable or in a child of the interactable.
+        /// </summary>
+        private void InitializeRecievers()
+        {
+            _recievers.Clear();
+            var recievers = GetComponentsInChildren<InteractionReciever<TData, TType>>();
+            foreach (var reciever in recievers)
+            {
+                _recievers.Add(reciever.InteractionType, reciever);
+                reciever.Initialize(this);
+            }
+        }
+        #endregion
 
         #region [[ PUBLIC_METHODS ]] < > ================================== >>>>
         public override void Initialize()
         {
+            // Confirm Data is loaded
             if (_data == null)
             {
                 Debug.LogError($"{PREFIX} {Data.Key} :: Data is null", this);
                 return;
             }
 
-            if (_recieverRequest == null)
-            {
-                Debug.LogError($"{PREFIX} {Data.Key} :: Request is null", this);
-                return;
-            }
+            // Initialize the recievers
+            InitializeRecievers();
 
+            // Register the interactable with the InteractionSystem
             InteractionSystem<TData, TType>.Instance.Registry.TryRegisterInteractable(
                 this,
                 out bool result
@@ -142,6 +155,7 @@ namespace Darklight.Behaviour
                 return;
             }
 
+            // Validate the interactable
             if (!Validate(out string outLog))
             {
                 Debug.LogError(outLog, this);
@@ -181,13 +195,11 @@ namespace Darklight.Behaviour
 
         public override bool Validate(out string outLog)
         {
-            if (_data == null || _recieverRequest == null)
+            if (_data == null)
             {
                 outLog = $"{PREFIX} {Data.Key} :: Validation Failed";
                 if (_data == null)
                     outLog += " :: Data is null";
-                if (_recieverRequest == null)
-                    outLog += " :: Request is null";
                 return false;
             }
 

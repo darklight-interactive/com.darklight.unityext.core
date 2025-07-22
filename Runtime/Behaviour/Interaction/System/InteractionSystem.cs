@@ -49,7 +49,12 @@ namespace Darklight.Behaviour
 
             // Confirm Settings are loaded
             if (_settings == null)
-                _settings = Factory.CreateSettings();
+            {
+                Debug.LogError(
+                    "InteractionSystem Settings are null. Please create a new InteractionSystemSettings asset."
+                );
+                return;
+            }
 
             // Confirm Registry is loaded
             if (_registry == null)
