@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace Darklight.Behaviour
 {
-    public abstract partial class InteractionSystem<TData, TType>
-        where TData : InteractableData
+    public abstract partial class InteractionSystem<TType>
         where TType : System.Enum
     {
         [Serializable]
-        public class InteractionSystem_Registry
-            : CollectionDictionary<int, Interactable<TData, TType>>
+        public class InteractionSystem_Registry : CollectionDictionary<int, Interactable<TType>>
         {
             /// <summary>
             /// Attempt to register an interactable. <br/>
@@ -22,7 +20,7 @@ namespace Darklight.Behaviour
             /// <param name="overwrite"></param>
             /// <returns></returns>
             public void TryRegisterInteractable(
-                Interactable<TData, TType> interactable,
+                Interactable<TType> interactable,
                 out bool result,
                 bool overwrite = false
             )
@@ -86,7 +84,7 @@ namespace Darklight.Behaviour
             }
 
             public void TryGetInteractable<T>(out T interactable)
-                where T : Interactable<TData, TType>
+                where T : Interactable<TType>
             {
                 interactable = null;
                 foreach (T item in Values)

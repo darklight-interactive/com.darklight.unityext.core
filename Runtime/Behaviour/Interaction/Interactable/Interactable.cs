@@ -18,13 +18,12 @@ namespace Darklight.Behaviour
     /// </summary>
     public interface IInteractable
     {
-        InteractableData Data { get; }
+        int ID { get; }
         Collider Collider { get; }
         Action OnAcceptTarget { get; set; }
         Action OnAcceptInteraction { get; set; }
         Action OnReset { get; set; }
         void Initialize();
-        void Refresh();
         void Reset();
         bool AcceptTarget(IInteractor interactor, bool force = false);
         bool AcceptInteraction(IInteractor interactor, bool force = false);
@@ -40,15 +39,12 @@ namespace Darklight.Behaviour
     /// </summary>
     /// <typeparam name="TData"></typeparam>
     /// <typeparam name="TStateMachine"></typeparam>
+    [RequireComponent(typeof(Collider))]
     public abstract class Interactable : MonoBehaviour, IInteractable
     {
         protected const string PREFIX = "INTRCTBL";
-        protected const string DEFAULT_NAME = "DefaultName";
-        protected const string DEFAULT_KEY = "DefaultKey";
-        protected const string DEFAULT_LAYER = "Default";
 
         public virtual int ID => GetInstanceID();
-        public abstract InteractableData Data { get; }
         public abstract Collider Collider { get; }
         public abstract Action OnAcceptTarget { get; set; }
         public abstract Action OnAcceptInteraction { get; set; }
@@ -56,22 +52,13 @@ namespace Darklight.Behaviour
 
         protected virtual void Start() => Initialize();
 
-        protected virtual void Update() => Refresh();
-
         protected abstract void OnDrawGizmos();
 
         /// <summary>
-        /// Initialize the interactable within the scene by
-        /// storing scene specific references and data.
+        /// Initialize the interactable within the scene by storing scene specific references and data. <br/>
         /// This is called when the interactable is first created, typically in Start()
         /// </summary>
         public abstract void Initialize();
-
-        /// <summary>
-        /// Refresh the interactable to update its state. <br/>
-        /// This is called every frame, typically in Update()
-        /// </summary>
-        public abstract void Refresh();
 
         /// <summary>
         /// Reset the interactable to its default state & values
@@ -83,46 +70,102 @@ namespace Darklight.Behaviour
         /// </summary>
         /// <returns>True if the interactable is valid, false otherwise</returns>
         public abstract bool Validate(out string outLog);
+
+        /// <summary>
+        /// Validate and accept a target from an interactor
+        /// </summary>
+        /// <param name="interactor">The interactor that is targeting the interactable</param>
+        /// <param name="force">Whether to force the target to be accepted</param>
+        /// <returns>True if the target is accepted, false otherwise</returns>
         public abstract bool AcceptTarget(IInteractor interactor, bool force = false);
+
+        /// <summary>
+        /// Handle what the interactable does when it is targeted
+        /// </summary>
+        /// <param name="interactor">The interactor that is targeting the interactable</param>
+        protected abstract void HandleTarget(IInteractor interactor);
+
+        /// <summary>
+        /// Confirm that the target interaction has been handled
+        /// </summary>
+        /// <param name="interactor">The interactor that is targeting the interactable</param>
+        protected abstract void ConfirmTarget(IInteractor interactor);
+
+        /// <summary>
+        /// /// Accept an interaction from an interactor
+        /// </summary>
+        /// <param name="interactor">The interactor that is interacting with the interactable</param>
+        /// <param name="force">Whether to force the interaction to be accepted</param>
+        /// <returns>True if the interaction is accepted, false otherwise</returns>
         public abstract bool AcceptInteraction(IInteractor interactor, bool force = false);
+
+        /// <summary>
+        /// Handle what the interactable does when it is interacted with
+        /// </summary>
+        /// <param name="interactor">The interactor that is interacting with the interactable</param>
+        protected abstract void HandleInteraction(IInteractor interactor);
+
+        /// <summary>
+        /// Confirm that the interaction has been handled
+        /// </summary>
+        /// <param name="interactor">The interactor that is interacting with the interactable</param>
+        protected abstract void ConfirmInteraction(IInteractor interactor);
+
+        /// <summary>
+        /// Print the interactable to a string
+        /// </summary>
+        /// <returns>A string representation of the interactable</returns>
         public abstract string Print();
     }
 
     [Serializable]
-    public abstract class Interactable<TData, TType> : Interactable, IInteractable
-        where TData : InteractableData
+    public abstract class Interactable<TType> : Interactable, IInteractable
         where TType : System.Enum
     {
         [SerializeField]
-        [
-            Expandable,
-            CreateAsset(
-                "NewInteractableData",
-                "Assets/Resources/Darklight/Interaction/InteractableData"
-            )
-        ]
-        private TData _data;
+        Collider _collider;
 
         [SerializeField, ReadOnly]
-        private CollectionDictionary<TType, InteractionReciever<TData, TType>> _recievers = new();
-        public override InteractableData Data => _data;
-        public CollectionDictionary<TType, InteractionReciever<TData, TType>> Recievers
+        private CollectionDictionary<TType, InteractionReciever<TType>> _recievers = new();
+        public CollectionDictionary<TType, InteractionReciever<TType>> Recievers
         {
             get => _recievers;
-            set => _recievers = value;
+            protected set => _recievers = value;
         }
 
+        public override Collider Collider => _collider;
+
         #region < PRIVATE_METHODS > ================================================================
+
+        /// <summary>
+        /// Initialize the collider of the interactable. <br/>
+        /// This is called when the interactable is Initialized.
+        /// If the collider is not found, a box collider will be added.
+        /// </summary>
+        void InitializeCollider()
+        {
+            // If the collider is already set, return
+            if (_collider != null)
+                return;
+
+            // Get the collider component
+            _collider = GetComponent<Collider>();
+            if (_collider == null)
+            {
+                // If the collider is not found, add a box collider
+                _collider = gameObject.AddComponent<BoxCollider>();
+            }
+        }
 
         /// <summary>
         /// Initialize the recievers of the interactable. <br/>
         /// This is called when the interactable is Initialized.
         /// All receivers should be located either on the interactable or in a child of the interactable.
         /// </summary>
-        private void InitializeRecievers()
+        public virtual void InitializeRecievers()
         {
             _recievers.Clear();
-            var recievers = GetComponentsInChildren<InteractionReciever<TData, TType>>();
+            var recievers = GetComponentsInChildren<InteractionReciever<TType>>();
             foreach (var reciever in recievers)
             {
                 _recievers.Add(reciever.InteractionType, reciever);
@@ -134,24 +177,17 @@ namespace Darklight.Behaviour
         #region [[ PUBLIC_METHODS ]] < > ================================== >>>>
         public override void Initialize()
         {
-            // Confirm Data is loaded
-            if (_data == null)
-            {
-                Debug.LogError($"{PREFIX} {Data.Key} :: Data is null", this);
-                return;
-            }
-
-            // Initialize the recievers
+            InitializeCollider();
             InitializeRecievers();
 
             // Register the interactable with the InteractionSystem
-            InteractionSystem<TData, TType>.Instance.Registry.TryRegisterInteractable(
+            InteractionSystem<TType>.Instance.Registry.TryRegisterInteractable(
                 this,
                 out bool result
             );
             if (!result)
             {
-                Debug.LogError($"{PREFIX} {Data.Key} :: Failed to register", this);
+                Debug.LogError($"{PREFIX} Failed to register", this);
                 return;
             }
 
@@ -163,31 +199,6 @@ namespace Darklight.Behaviour
             }
         }
 
-        public override bool AcceptTarget(IInteractor interactor, bool force = false)
-        {
-            if (interactor == null)
-            {
-                Debug.LogError($"{PREFIX} {Data.Key} :: Interactor is null", this);
-                return false;
-            }
-
-            OnAcceptTarget?.Invoke();
-            return true;
-        }
-
-        public override bool AcceptInteraction(IInteractor interactor, bool force = false)
-        {
-            if (interactor == null)
-            {
-                Debug.LogError($"{PREFIX} {Data.Key} :: Interactor is null", this);
-                return false;
-            }
-
-            Debug.Log($"{PREFIX} {Data.Key} :: AcceptInteraction from {interactor}", this);
-            OnAcceptInteraction?.Invoke();
-            return true;
-        }
-
         public override void Reset()
         {
             OnReset?.Invoke();
@@ -195,27 +206,19 @@ namespace Darklight.Behaviour
 
         public override bool Validate(out string outLog)
         {
-            if (_data == null)
+            if (!InteractionSystem<TType>.Instance.Registry.IsRegistered(this))
             {
-                outLog = $"{PREFIX} {Data.Key} :: Validation Failed";
-                if (_data == null)
-                    outLog += " :: Data is null";
+                outLog = $"{PREFIX} Not Registered";
                 return false;
             }
 
-            if (!InteractionSystem<TData, TType>.Instance.Registry.IsRegistered(this))
-            {
-                outLog = $"{PREFIX} {Data.Key} :: Not Registered";
-                return false;
-            }
-
-            outLog = $"{PREFIX} {Data.Key} :: Validation Passed";
+            outLog = $"{PREFIX} Validation Passed";
             return true;
         }
 
         public override string Print()
         {
-            return $"{ID} :: {Data.Key}";
+            return $"{ID}";
         }
         #endregion
     }

@@ -12,10 +12,9 @@ using UnityEditor;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public abstract partial class InteractionSystem<TData, TType>
-        : MonoBehaviourSingleton<InteractionSystem<TData, TType>>,
+    public abstract partial class InteractionSystem<TType>
+        : MonoBehaviourSingleton<InteractionSystem<TType>>,
             IUnityEditorListener
-        where TData : InteractableData
         where TType : System.Enum
     {
         [SerializeField, Expandable]
@@ -59,11 +58,6 @@ namespace Darklight.Behaviour
             // Confirm Registry is loaded
             if (_registry == null)
                 _registry = new InteractionSystem_Registry();
-        }
-
-        public static void Invoke(IInteractionCommand command)
-        {
-            Invoker.ExecuteCommand(command);
         }
     }
 }

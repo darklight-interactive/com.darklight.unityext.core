@@ -5,15 +5,14 @@ using UnityEngine.Events;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public abstract class InteractionReciever<TData, TType> : MonoBehaviour
-        where TData : InteractableData
+    public abstract class InteractionReciever<TType> : MonoBehaviour
         where TType : System.Enum
     {
-        protected Interactable<TData, TType> _interactable;
-        public Interactable<TData, TType> Interactable => _interactable;
+        protected Interactable<TType> _interactable;
+        public Interactable<TType> Interactable => _interactable;
         public abstract TType InteractionType { get; }
 
-        public virtual void Initialize(Interactable<TData, TType> interactable)
+        public virtual void Initialize(Interactable<TType> interactable)
         {
             _interactable = interactable;
             _interactable.OnAcceptTarget += OnAcceptTarget;
