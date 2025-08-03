@@ -19,7 +19,7 @@ namespace Darklight.Behaviour
     }
 
     [ExecuteAlways]
-    public class Interactor : Sensor, IInteractor
+    public class Interactor : Sensor
     {
         [Header("Interactor")]
         [HorizontalLine(color: EColor.Gray)]
@@ -37,102 +37,36 @@ namespace Darklight.Behaviour
         public IEnumerable<Interactable> OverlapInteractables => _overlapInteractables.Keys;
         public Interactable TargetInteractable => _target;
 
-        #region < PRIVATE_METHODS > [[ UNITY_METHODS ]] ================================================================
         public override void Execute()
         {
             base.Execute();
             RefreshOverlapInteractables();
             RefreshTargetInteractable();
         }
-        #endregion
 
-        #region ======== <PUBLIC_METHODS> (( IInteractor )) ================================== >>>>
-        public void TryAddInteractable(Interactable interactable)
+        #region < PROTECTED_METHODS > [[ HANDLE_INTERACTABLES ]] ================================================================
+        protected void TryAddInteractable(Interactable interactable)
         {
             if (interactable == null || _overlapInteractables.ContainsKey(interactable))
                 return;
             _overlapInteractables.Add(interactable, interactable.name);
         }
 
-        public void RemoveInteractable(Interactable interactable)
+        protected void RemoveInteractable(Interactable interactable)
         {
             if (interactable == null || !_overlapInteractables.ContainsKey(interactable))
                 return;
             _overlapInteractables.Remove(interactable);
         }
 
-        public IEnumerable<Interactable> GetOverlapInteractables()
+        protected IEnumerable<Interactable> GetOverlapInteractables()
         {
             return GetCurrentColliders()
                 .Select(collider => collider.GetComponent<Interactable>())
                 .Where(interactable => interactable != null); // Filter out null values
         }
 
-        public Interactable GetClosestReadyInteractable(Vector3 position)
-        {
-            if (_overlapInteractables.Count == 0)
-                return null;
-            if (_overlapInteractables.Count == 1)
-                return _overlapInteractables.Keys.First();
-
-            Interactable closestInteractable = _overlapInteractables.Keys.First();
-            float closestDistance = float.MaxValue;
-            foreach (Interactable interactable in _overlapInteractables.Keys)
-            {
-                if (interactable == null)
-                    continue;
-
-                // Calculate the distance to the interactable.
-                float distance = Vector3.Distance(interactable.transform.position, position);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestInteractable = interactable;
-                }
-            }
-            return closestInteractable;
-        }
-
-        public bool TryAssignTarget(Interactable interactable)
-        {
-            if (interactable == null)
-                return false;
-            if (_target == interactable)
-                return false;
-            if (_lastTarget == interactable)
-                return false;
-
-            bool result = interactable.AcceptTarget(this);
-            if (result)
-            {
-                _lastTarget = _target;
-                _target = interactable;
-
-                if (_lastTarget != null)
-                    _lastTarget.Reset();
-            }
-            //Debug.Log($"[{name}] TryAssignTarget: {interactable.name} => {result}");
-            return result;
-        }
-
-        public void ClearTarget()
-        {
-            _lastTarget = _target;
-            _target = null;
-
-            _lastTarget.Reset();
-        }
-
-        public bool InteractWith(Interactable interactable, bool force = false)
-        {
-            if (interactable == null)
-                return false;
-            return interactable.AcceptInteraction(this, force);
-        }
-
-        public bool InteractWithTarget() => InteractWith(_target);
-
-        public void RefreshOverlapInteractables()
+        protected void RefreshOverlapInteractables()
         {
             // Update the interactables dictionary with the overlap interactables.
             IEnumerable<Interactable> overlapInteractables = GetOverlapInteractables();
@@ -180,12 +114,93 @@ namespace Darklight.Behaviour
             //Debug.Log($"[{name}] RefreshOverlapInteractables: {_overlapInteractables.Count}");
         }
 
-        public void RefreshTargetInteractable()
+        protected Interactable GetClosestReadyInteractable(Vector3 position)
+        {
+            if (_overlapInteractables.Count == 0)
+                return null;
+            if (_overlapInteractables.Count == 1)
+                return _overlapInteractables.Keys.First();
+
+            Interactable closestInteractable = _overlapInteractables.Keys.First();
+            float closestDistance = float.MaxValue;
+            foreach (Interactable interactable in _overlapInteractables.Keys)
+            {
+                if (interactable == null)
+                    continue;
+
+                // Calculate the distance to the interactable.
+                float distance = Vector3.Distance(interactable.transform.position, position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestInteractable = interactable;
+                }
+            }
+            return closestInteractable;
+        }
+
+        protected void RefreshTargetInteractable()
         {
             var closestInteractable = GetClosestReadyInteractable(transform.position);
             TryAssignTarget(closestInteractable);
         }
 
+        protected bool TryAssignTarget(Interactable interactable)
+        {
+            if (interactable == null)
+                return false;
+            if (_target == interactable)
+                return false;
+            if (_lastTarget == interactable)
+                return false;
+
+            bool result = interactable.AcceptTarget(this);
+            if (result)
+            {
+                _lastTarget = _target;
+                _target = interactable;
+
+                if (_lastTarget != null)
+                    _lastTarget.Reset();
+            }
+            //Debug.Log($"[{name}] TryAssignTarget: {interactable.name} => {result}");
+            return result;
+        }
+
+        protected void ClearTarget()
+        {
+            _lastTarget = _target;
+            _target = null;
+
+            //_lastTarget.Reset();
+        }
+
+        protected bool InteractWith(Interactable interactable, bool force = false)
+        {
+            if (interactable == null && interactable != _lastTarget)
+                return false;
+
+            return interactable.AcceptInteraction(this, force);
+        }
+
         #endregion
+
+        public bool TryInteractWithTarget()
+        {
+            return InteractWith(_target);
+        }
+
+        public virtual void TimedDisable()
+        {
+            Debug.Log($"[{name}] Disable");
+            IsDisabled = true;
+        }
+
+        public virtual void Enable()
+        {
+            Debug.Log($"[{name}] Reset");
+            ClearTarget();
+            IsDisabled = false;
+        }
     }
 }

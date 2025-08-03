@@ -46,7 +46,7 @@ namespace Darklight.Behaviour
         /// Disable the sensor for a duration
         /// </summary>
         /// <param name="duration">The duration to disable the sensor for</param>
-        void Disable(float duration);
+        void TimedDisable(float duration);
 
         /// <summary>
         /// Get the current colliders that the sensor is detecting

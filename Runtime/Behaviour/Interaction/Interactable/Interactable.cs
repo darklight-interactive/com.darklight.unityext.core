@@ -20,13 +20,15 @@ namespace Darklight.Behaviour
     {
         int ID { get; }
         Collider Collider { get; }
+        Interactor CurrentInteractor { get; }
         Action OnAcceptTarget { get; set; }
         Action OnAcceptInteraction { get; set; }
-        Action OnReset { get; set; }
+        Action OnCompleteInteraction { get; set; }
         void Initialize();
         void Reset();
-        bool AcceptTarget(IInteractor interactor, bool force = false);
-        bool AcceptInteraction(IInteractor interactor, bool force = false);
+        bool AcceptTarget(Interactor interactor, bool force = false);
+        bool AcceptInteraction(Interactor interactor, bool force = false);
+        void CompleteInteraction();
         bool Validate(out string outLog);
         string Print();
     }
@@ -46,9 +48,10 @@ namespace Darklight.Behaviour
 
         public virtual int ID => GetInstanceID();
         public abstract Collider Collider { get; }
+        public abstract Interactor CurrentInteractor { get; protected set; }
         public abstract Action OnAcceptTarget { get; set; }
         public abstract Action OnAcceptInteraction { get; set; }
-        public abstract Action OnReset { get; set; }
+        public abstract Action OnCompleteInteraction { get; set; }
 
         protected virtual void Start() => Initialize();
 
@@ -77,19 +80,13 @@ namespace Darklight.Behaviour
         /// <param name="interactor">The interactor that is targeting the interactable</param>
         /// <param name="force">Whether to force the target to be accepted</param>
         /// <returns>True if the target is accepted, false otherwise</returns>
-        public abstract bool AcceptTarget(IInteractor interactor, bool force = false);
+        public abstract bool AcceptTarget(Interactor interactor, bool force = false);
 
         /// <summary>
         /// Handle what the interactable does when it is targeted
         /// </summary>
         /// <param name="interactor">The interactor that is targeting the interactable</param>
-        protected abstract void HandleTarget(IInteractor interactor);
-
-        /// <summary>
-        /// Confirm that the target interaction has been handled
-        /// </summary>
-        /// <param name="interactor">The interactor that is targeting the interactable</param>
-        protected abstract void ConfirmTarget(IInteractor interactor);
+        protected abstract void HandleTarget(Interactor interactor);
 
         /// <summary>
         /// /// Accept an interaction from an interactor
@@ -97,19 +94,20 @@ namespace Darklight.Behaviour
         /// <param name="interactor">The interactor that is interacting with the interactable</param>
         /// <param name="force">Whether to force the interaction to be accepted</param>
         /// <returns>True if the interaction is accepted, false otherwise</returns>
-        public abstract bool AcceptInteraction(IInteractor interactor, bool force = false);
+        public abstract bool AcceptInteraction(Interactor interactor, bool force = false);
 
         /// <summary>
         /// Handle what the interactable does when it is interacted with
         /// </summary>
         /// <param name="interactor">The interactor that is interacting with the interactable</param>
-        protected abstract void HandleInteraction(IInteractor interactor);
+        protected abstract void HandleInteraction();
 
         /// <summary>
-        /// Confirm that the interaction has been handled
+        /// Complete the interaction with the interactor. <br/>
+        /// This is called when the interaction is complete & tells the interactor to reset.
         /// </summary>
         /// <param name="interactor">The interactor that is interacting with the interactable</param>
-        protected abstract void ConfirmInteraction(IInteractor interactor);
+        public abstract void CompleteInteraction();
 
         /// <summary>
         /// Print the interactable to a string
@@ -122,8 +120,8 @@ namespace Darklight.Behaviour
     public abstract class Interactable<TType> : Interactable, IInteractable
         where TType : System.Enum
     {
-        [SerializeField]
         Collider _collider;
+        Interactor _currentInteractor;
 
         [SerializeField, ReadOnly]
         private CollectionDictionary<TType, InteractionReciever<TType>> _recievers = new();
@@ -134,6 +132,11 @@ namespace Darklight.Behaviour
         }
 
         public override Collider Collider => _collider;
+        public override Interactor CurrentInteractor
+        {
+            get => _currentInteractor;
+            protected set => _currentInteractor = value;
+        }
 
         #region < PRIVATE_METHODS > ================================================================
 
@@ -197,11 +200,6 @@ namespace Darklight.Behaviour
                 Debug.LogError(outLog, this);
                 return;
             }
-        }
-
-        public override void Reset()
-        {
-            OnReset?.Invoke();
         }
 
         public override bool Validate(out string outLog)

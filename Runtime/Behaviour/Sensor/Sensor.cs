@@ -30,7 +30,7 @@ namespace Darklight.Behaviour
         public bool IsDisabled
         {
             get => _isDisabled;
-            private set => _isDisabled = value;
+            protected set => _isDisabled = value;
         }
         public bool IsColliding => _colliders.Any();
 
@@ -49,7 +49,7 @@ namespace Darklight.Behaviour
             _colliders = GetCurrentColliders().ToList();
         }
 
-        public virtual void Disable(float duration)
+        public virtual void TimedDisable(float duration)
         {
             if (IsDisabled)
                 return;
@@ -112,7 +112,7 @@ namespace Darklight.Behaviour
                 return;
 
             Color color = Color.gray;
-            if (IsColliding)
+            if (IsColliding && !IsDisabled)
                 color = Settings.DebugCollidingColor;
 
             if (Settings.IsBoxShape)

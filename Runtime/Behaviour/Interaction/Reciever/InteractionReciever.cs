@@ -17,7 +17,7 @@ namespace Darklight.Behaviour
             _interactable = interactable;
             _interactable.OnAcceptTarget += OnAcceptTarget;
             _interactable.OnAcceptInteraction += OnAcceptInteraction;
-            _interactable.OnReset += OnReset;
+            _interactable.OnCompleteInteraction += OnCompleteInteraction;
         }
 
         public virtual bool Validate()
@@ -31,12 +31,12 @@ namespace Darklight.Behaviour
             {
                 _interactable.OnAcceptTarget -= OnAcceptTarget;
                 _interactable.OnAcceptInteraction -= OnAcceptInteraction;
-                _interactable.OnReset -= OnReset;
+                _interactable.OnCompleteInteraction -= OnCompleteInteraction;
             }
         }
 
         public abstract void OnAcceptTarget();
         public abstract void OnAcceptInteraction();
-        public abstract void OnReset();
+        public abstract void OnCompleteInteraction();
     }
 }
