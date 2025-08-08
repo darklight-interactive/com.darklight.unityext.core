@@ -114,7 +114,12 @@ namespace Darklight.Editor
             string defaultPath = attr?.defaultPath ?? "Assets";
 
             if (!defaultPath.StartsWith("Assets/"))
-                defaultPath = "Assets/" + defaultPath.TrimStart('/');
+            {
+                if (defaultPath.StartsWith("Resources/"))
+                    defaultPath = defaultPath.Replace("Resources/", "Assets/Resources/");
+                else
+                    defaultPath = "Assets/Resources/" + defaultPath.TrimStart('/');
+            }
 
             List<string> createdFolders = EnsureFolderExists(defaultPath);
 

@@ -19,7 +19,7 @@ namespace Darklight.Behaviour
         [Header("Dimensions")]
         [SerializeField]
         [Tooltip("The shape of the sensor")]
-        SensorShape _shape = SensorShape.BOX;
+        Sensor.Shape _shape = Sensor.Shape.BOX;
 
         [SerializeField, HideIf("IsSphereShape")]
         [Tooltip("The dimensions of the sensor's box")]
@@ -31,8 +31,11 @@ namespace Darklight.Behaviour
         float _sphereRadius = 0.2f;
 
         [SerializeField]
-        [Tooltip("Layer mask for ground detection")]
+        [Tooltip("Layer mask for detection")]
         LayerMask _layerMask;
+
+        [SerializeField]
+        float _timerInterval = 1f;
 
         [Header("Debug")]
         [SerializeField]
@@ -44,13 +47,14 @@ namespace Darklight.Behaviour
         Color _collidingColor = Color.green;
 
         public Vector3 OffsetPosition => _offsetPosition;
-        public SensorShape Shape => _shape;
+        public Sensor.Shape Shape => _shape;
         public Vector3 BoxDimensions => _boxDimensions;
         public Vector3 BoxHalfExtents => _boxDimensions / 2;
         public float SphereRadius => _sphereRadius;
-        public bool IsBoxShape => _shape == SensorShape.BOX;
-        public bool IsSphereShape => _shape == SensorShape.SPHERE;
+        public bool IsBoxShape => _shape == Sensor.Shape.BOX;
+        public bool IsSphereShape => _shape == Sensor.Shape.SPHERE;
         public LayerMask LayerMask => _layerMask;
+        public float TimerInterval => _timerInterval;
         public bool ShowDebugGizmos => _showDebugGizmos;
         public Color DebugCollidingColor => _collidingColor;
 

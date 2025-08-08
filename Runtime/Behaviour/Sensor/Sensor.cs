@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Editor;
+using ImprovedTimers;
 using NaughtyAttributes;
 using UnityEngine;
+using UnityUtils;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -11,7 +14,7 @@ using UnityEditor;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public class Sensor : MonoBehaviour, ISensor
+    public class Sensor : MonoBehaviour
     {
         [SerializeField, Expandable, Required]
         [CreateAsset("NewSensorSettings", "Assets/Resources/Darklight/Behaviour/Sensor")]
@@ -24,9 +27,21 @@ namespace Darklight.Behaviour
         [SerializeField, ReadOnly]
         List<Collider> _colliders = new List<Collider>();
 
+        [SerializeField, ReadOnly]
+        GameObject _target;
+
+        [SerializeField, ReadOnly]
+        Vector3 _targetLastKnownPosition;
+
+        CountdownTimer _timer;
+
         public SensorSettings Settings => _settings;
         public Vector3 Position => transform.position + Settings.OffsetPosition;
         public IEnumerable<Collider> Colliders => _colliders;
+        public GameObject Target => _target;
+        public Vector3 TargetPosition => _target ? _target.transform.position : Vector3.zero;
+        public bool IsTargetInRange => TargetPosition != Vector3.zero;
+
         public bool IsDisabled
         {
             get => _isDisabled;
@@ -34,19 +49,104 @@ namespace Darklight.Behaviour
         }
         public bool IsColliding => _colliders.Any();
 
+        public event Action OnTargetChanged = delegate { };
+
         #region < PRIVATE_METHODS > [[ UNITY METHODS ]] ================================================================
+        void Start() => Initialize();
+
         void Update() => Execute();
 
         void OnDrawGizmos() => DrawGizmos();
+
+        void OnDrawGizmosSelected() => DrawGizmosSelected();
         #endregion
 
-        #region < PUBLIC_METHODS > [[ HANDLERS ]] ================================================================
-        public virtual void Execute()
+        GameObject GetTarget()
+        {
+            if (_colliders.Count == 0)
+                return null;
+            return _colliders.First().gameObject;
+        }
+
+        void UpdateTargetPosition(GameObject target = null)
+        {
+            this._target = target;
+
+            // If the target is in range and the target position has changed, or the target position is not zero,
+            // then invoke the OnTargetChanged event
+            if (
+                IsTargetInRange
+                && (
+                    _targetLastKnownPosition != TargetPosition
+                    || _targetLastKnownPosition != Vector3.zero
+                )
+            )
+            {
+                _targetLastKnownPosition = TargetPosition;
+                OnTargetChanged?.Invoke();
+            }
+        }
+
+        void UpdateColliders()
+        {
+            _colliders.Clear();
+            if (Settings == null)
+                return;
+
+            if (Settings.IsBoxShape)
+            {
+                _colliders.AddRange(
+                    Physics.OverlapBox(
+                        Position,
+                        Settings.BoxHalfExtents,
+                        Quaternion.identity,
+                        Settings.LayerMask
+                    )
+                );
+            }
+            else if (Settings.IsSphereShape)
+            {
+                _colliders.AddRange(
+                    Physics.OverlapSphere(Position, Settings.SphereRadius, Settings.LayerMask)
+                );
+            }
+        }
+
+        IEnumerator DisableRoutine(float duration)
+        {
+            IsDisabled = true;
+            yield return new WaitForSeconds(duration);
+            IsDisabled = false;
+        }
+
+        #region < PROTECTED_METHODS > [[ HANDLERS ]] ================================================================
+        protected virtual void Initialize()
+        {
+            _timer = new CountdownTimer(Settings.TimerInterval);
+
+            // When the timer stops, update the target position and start the timer again
+            _timer.OnTimerStop += () =>
+            {
+                var newTarget = GetTarget();
+                if (newTarget != _target)
+                {
+                    _target = newTarget;
+                    OnTargetChanged?.Invoke();
+                }
+
+                UpdateTargetPosition(newTarget);
+                _timer.Start();
+            };
+            _timer.Start();
+        }
+
+        protected virtual void Execute()
         {
             if (IsDisabled)
                 return;
 
-            _colliders = GetCurrentColliders().ToList();
+            UpdateColliders();
+            _timer?.Tick();
         }
 
         public virtual void TimedDisable(float duration)
@@ -56,53 +156,6 @@ namespace Darklight.Behaviour
 
             StartCoroutine(DisableRoutine(duration));
         }
-        #endregion
-
-
-        #region < PUBLIC_METHODS > [[ GETTERS ]] ================================================================
-        public void TryGetClosestCollider(out Collider closestCollider)
-        {
-            closestCollider = _colliders
-                .OrderBy(c => Vector3.Distance(Position, c.transform.position))
-                .FirstOrDefault();
-        }
-
-        public IEnumerable<Collider> GetCurrentColliders()
-        {
-            Collider[] colliders = new Collider[0];
-            if (Settings == null)
-                return colliders;
-
-            if (Settings.IsBoxShape)
-            {
-                colliders = Physics.OverlapBox(
-                    Position,
-                    Settings.BoxHalfExtents,
-                    Quaternion.identity,
-                    Settings.LayerMask
-                );
-            }
-            else if (Settings.IsSphereShape)
-            {
-                colliders = Physics.OverlapSphere(
-                    Position,
-                    Settings.SphereRadius,
-                    Settings.LayerMask
-                );
-            }
-
-            return colliders;
-        }
-        #endregion
-
-        #region < PRIVATE_METHODS > [[ COROUTINES ]] ================================================================
-        IEnumerator DisableRoutine(float duration)
-        {
-            IsDisabled = true;
-            yield return new WaitForSeconds(duration);
-            IsDisabled = false;
-        }
-
         #endregion
 
 #if UNITY_EDITOR
@@ -121,6 +174,19 @@ namespace Darklight.Behaviour
                 DrawOverlapSphere(color);
         }
 
+        public virtual void DrawGizmosSelected()
+        {
+            if (Settings == null || !Settings.ShowDebugGizmos)
+                return;
+
+            if (_target != null)
+            {
+                Handles.color = Settings.DebugCollidingColor;
+                Handles.DrawLine(Position, _targetLastKnownPosition);
+                Handles.DrawSolidDisc(_targetLastKnownPosition, Vector3.up, 0.1f);
+            }
+        }
+
         protected virtual void DrawOverlapBox(Color gizmoColor)
         {
             Handles.color = gizmoColor;
@@ -132,5 +198,11 @@ namespace Darklight.Behaviour
             CustomGizmos.DrawWireSphere(Position, Settings.SphereRadius, gizmoColor);
         }
 #endif
+
+        public enum Shape
+        {
+            BOX,
+            SPHERE
+        }
     }
 }

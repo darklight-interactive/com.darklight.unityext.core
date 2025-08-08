@@ -37,7 +37,7 @@ namespace Darklight.Behaviour
         public IEnumerable<Interactable> OverlapInteractables => _overlapInteractables.Keys;
         public Interactable TargetInteractable => _target;
 
-        public override void Execute()
+        protected override void Execute()
         {
             base.Execute();
             RefreshOverlapInteractables();
@@ -61,7 +61,7 @@ namespace Darklight.Behaviour
 
         protected IEnumerable<Interactable> GetOverlapInteractables()
         {
-            return GetCurrentColliders()
+            return Colliders
                 .Select(collider => collider.GetComponent<Interactable>())
                 .Where(interactable => interactable != null); // Filter out null values
         }
