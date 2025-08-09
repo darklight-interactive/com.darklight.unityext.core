@@ -1,5 +1,5 @@
 /* ======================================================================= ]]
- * Copyright (c) 2024 Darklight Interactive. All rights reserved.
+ * Copyright (c) 2025 Darklight Interactive. All rights reserved.
  * Licensed under the Darklight Interactive Software License Agreement.
  * See LICENSE.md file in the project root for full license information.
  * ------------------------------------------------------------------ >>
@@ -39,19 +39,19 @@ namespace Darklight.Behaviour
     /// </summary>
     /// <typeparam name="TEnum">The enum type defining possible states</typeparam>
     [Serializable]
-    public class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
+    public abstract partial class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
         where TEnum : Enum
     {
-        private readonly Dictionary<TEnum, FiniteState<TEnum>> _possibleFiniteStates;
+        private readonly Dictionary<TEnum, FiniteState> _possibleFiniteStates;
 
-        private FiniteState<TEnum> _previousState;
+        private FiniteState _previousState;
 
         [SerializeField]
-        FiniteState<TEnum> _currentFiniteState;
+        FiniteState _currentFiniteState;
 
         // Properties
-        public FiniteState<TEnum> PreviousFiniteState => _previousState;
-        public FiniteState<TEnum> CurrentFiniteState => _currentFiniteState;
+        public FiniteState PreviousFiniteState => _previousState;
+        public FiniteState CurrentFiniteState => _currentFiniteState;
 
         // Events
         public event Action OnStep;
@@ -61,24 +61,24 @@ namespace Darklight.Behaviour
         public FiniteStateMachine()
             : base()
         {
-            _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
+            _possibleFiniteStates = new Dictionary<TEnum, FiniteState>();
             GenerateDefaultStates();
         }
 
         public FiniteStateMachine(TEnum initialState)
             : base(initialState)
         {
-            _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>();
+            _possibleFiniteStates = new Dictionary<TEnum, FiniteState>();
             GenerateDefaultStates();
         }
 
         public FiniteStateMachine(
-            IReadOnlyDictionary<TEnum, FiniteState<TEnum>> possibleStates,
+            IReadOnlyDictionary<TEnum, FiniteState> possibleStates,
             TEnum initialState
         )
             : base(initialState)
         {
-            _possibleFiniteStates = new Dictionary<TEnum, FiniteState<TEnum>>(possibleStates);
+            _possibleFiniteStates = new Dictionary<TEnum, FiniteState>(possibleStates);
         }
 
         #endregion
@@ -91,7 +91,7 @@ namespace Darklight.Behaviour
             _possibleFiniteStates.Clear();
             foreach (TEnum state in GetAllStateEnums())
             {
-                AddState(new FiniteState<TEnum>(state));
+                AddState(new DefaultFiniteState(state));
             }
         }
 
@@ -99,7 +99,7 @@ namespace Darklight.Behaviour
         /// Overrides the finite states with a new set of states
         /// </summary>
         /// <param name="states">The new states to use</param>
-        protected void OverrideFiniteStates(IReadOnlyDictionary<TEnum, FiniteState<TEnum>> states)
+        protected void OverrideFiniteStates(IReadOnlyDictionary<TEnum, FiniteState> states)
         {
             _possibleFiniteStates.Clear();
             foreach (var state in states)
@@ -114,7 +114,7 @@ namespace Darklight.Behaviour
         /// <param name="finiteState">The state to add/update</param>
         /// <param name="overwrite">Whether to overwrite existing state if present</param>
         /// <returns>True if state was added/updated successfully</returns>
-        public bool AddState(FiniteState<TEnum> finiteState, bool overwrite = true)
+        public bool AddState(FiniteState finiteState, bool overwrite = true)
         {
             if (finiteState == null)
             {

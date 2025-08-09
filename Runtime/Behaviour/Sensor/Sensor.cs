@@ -28,7 +28,7 @@ namespace Darklight.Behaviour
         List<Collider> _colliders = new List<Collider>();
 
         [SerializeField, ReadOnly]
-        GameObject _target;
+        GameObject _targetObject;
 
         [SerializeField, ReadOnly]
         Vector3 _targetLastKnownPosition;
@@ -38,8 +38,9 @@ namespace Darklight.Behaviour
         public SensorSettings Settings => _settings;
         public Vector3 Position => transform.position + Settings.OffsetPosition;
         public IEnumerable<Collider> Colliders => _colliders;
-        public GameObject Target => _target;
-        public Vector3 TargetPosition => _target ? _target.transform.position : Vector3.zero;
+        public GameObject Target => _targetObject;
+        public Vector3 TargetPosition =>
+            _targetObject ? _targetObject.transform.position : Vector3.zero;
         public bool IsTargetInRange => TargetPosition != Vector3.zero;
 
         public bool IsDisabled
@@ -70,7 +71,7 @@ namespace Darklight.Behaviour
 
         void UpdateTargetPosition(GameObject target = null)
         {
-            this._target = target;
+            this._targetObject = target;
 
             // If the target is in range and the target position has changed, or the target position is not zero,
             // then invoke the OnTargetChanged event
@@ -122,16 +123,18 @@ namespace Darklight.Behaviour
         #region < PROTECTED_METHODS > [[ HANDLERS ]] ================================================================
         protected virtual void Initialize()
         {
+            if (Settings == null)
+                return;
+
             _timer = new CountdownTimer(Settings.TimerInterval);
 
             // When the timer stops, update the target position and start the timer again
             _timer.OnTimerStop += () =>
             {
                 var newTarget = GetTarget();
-                if (newTarget != _target)
+                if (newTarget != _targetObject)
                 {
-                    _target = newTarget;
-                    OnTargetChanged?.Invoke();
+                    _targetObject = newTarget;
                 }
 
                 UpdateTargetPosition(newTarget);
@@ -179,7 +182,7 @@ namespace Darklight.Behaviour
             if (Settings == null || !Settings.ShowDebugGizmos)
                 return;
 
-            if (_target != null)
+            if (_targetObject != null)
             {
                 Handles.color = Settings.DebugCollidingColor;
                 Handles.DrawLine(Position, _targetLastKnownPosition);

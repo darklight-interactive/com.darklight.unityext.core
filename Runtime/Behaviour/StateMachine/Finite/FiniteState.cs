@@ -16,11 +16,11 @@
  * Discord: skysfalling
  * ======================================================================= ]]
  * DESCRIPTION:
-    This script defines a finite state machine (FSM) framework.
-    It provides an abstract base class for creating FSMs and an interface for defining states.
-    The FSM stores a dictionary of possible states, where each state is represented by an enum key
-    and an instance of the corresponding state class as the value.
-    The FSM allows transitioning between states and executing the current state's logic.
+ * This script defines a finite state machine (FSM) framework.
+ * It provides an abstract base class for creating FSMs and an interface for defining states.
+ * The FSM stores a dictionary of possible states, where each state is represented by an enum key
+ * and an instance of the corresponding state class as the value.
+ * The FSM allows transitioning between states and executing the current state's logic.
  * ------------------------------------------------------------------ >>
  * MAJOR AUTHORS:
  * Sky Casey
@@ -34,118 +34,112 @@ using UnityEngine;
 
 namespace Darklight.Behaviour
 {
-    /// <summary>
-    /// Abstract base class for finite states within a state machine.
-    /// </summary>
-    /// <typeparam name="TEnum">The enum type defining possible states</typeparam>
-    [Serializable]
-    public class FiniteState<TEnum> : StateBase<TEnum>
+    public partial class FiniteStateMachine<TEnum>
         where TEnum : Enum
     {
-        [Header("Timing")]
-        [SerializeField, ShowOnly]
-        float _stateStartTime;
-
-        [SerializeField, ShowOnly]
-        float _stateElapsedTime;
-
         /// <summary>
-        /// Indicates if this is the first frame of state execution
+        /// Abstract base class for finite states within a state machine.
         /// </summary>
-        protected bool IsFirstFrame { get; private set; }
-
-        /// <summary>
-        /// /// Time in seconds since this state was entered
-        /// </summary>
-        public float ElapsedTime => _stateElapsedTime;
-
-        /// <summary>
-        /// Time when this state was entered
-        /// </summary>
-        public float StartTime => _stateStartTime;
-
-        /// <summary>
-        /// Creates a new instance of a finite state
-        /// </summary>
-        /// <param name="finiteStateMachine">The parent state machine</param>
-        /// <param name="stateType">The enum value representing this state</param>
-        public FiniteState(TEnum stateType)
-            : base(stateType) { }
-
-        /// <summary>
-        /// Called when the state is entered
-        /// </summary>
-        public override void Enter()
+        /// <typeparam name="TEnum">The enum type defining possible states</typeparam>
+        [Serializable]
+        public abstract class FiniteState : StateBase<TEnum>
         {
-            _stateStartTime = Time.time;
-            _stateElapsedTime = 0f;
-            IsFirstFrame = true;
-            OnEnter();
-        }
+            [Header("Timing")]
+            [SerializeField, ShowOnly]
+            float _stateStartTime;
 
-        /// <summary>
-        /// Called every frame while the state is active
-        /// </summary>
-        public override void Execute()
-        {
-            _stateElapsedTime = Time.time - _stateStartTime;
+            [SerializeField, ShowOnly]
+            float _stateElapsedTime;
 
-            if (IsFirstFrame)
+            /// <summary>
+            /// Indicates if this is the first frame of state execution
+            /// </summary>
+            protected bool IsFirstFrame { get; private set; }
+
+            /// <summary>
+            /// Time in seconds since this state was entered
+            /// </summary>
+            public float ElapsedTime => _stateElapsedTime;
+
+            /// <summary>
+            /// Time when this state was entered
+            /// </summary>
+            public float StartTime => _stateStartTime;
+
+            /// <summary>
+            /// Creates a new instance of a finite state
+            /// </summary>
+            /// <param name="finiteStateMachine">The parent state machine</param>
+            /// <param name="stateType">The enum value representing this state</param>
+            public FiniteState(TEnum stateType)
+                : base(stateType) { }
+
+            /// <summary>
+            /// Called when the state is entered
+            /// </summary>
+            public override sealed void Enter()
             {
-                OnFirstFrame();
-                IsFirstFrame = false;
+                _stateStartTime = Time.time;
+                _stateElapsedTime = 0f;
+                IsFirstFrame = true;
+                base.Enter();
             }
 
-            OnExecute();
+            /// <summary>
+            /// Called every frame while the state is active
+            /// </summary>
+            public override sealed void Execute()
+            {
+                _stateElapsedTime = Time.time - _stateStartTime;
+
+                if (IsFirstFrame)
+                {
+                    OnFirstFrame();
+                    IsFirstFrame = false;
+                }
+
+                base.Execute();
+            }
+
+            /// <summary>
+            /// Called when the state is exited
+            /// </summary>
+            public override sealed void Exit()
+            {
+                _stateElapsedTime = 0f;
+                base.Exit();
+            }
+
+            #region Utility Methods
+
+            /// <summary>
+            /// Checks if the state has been active for the specified duration
+            /// </summary>
+            /// <param name="duration">Duration in seconds</param>
+            protected bool HasElapsed(float duration) => _stateElapsedTime >= duration;
+
+            /// <summary>
+            /// Gets the normalized progress (0-1) of the state duration
+            /// </summary>
+            /// <param name="duration">Total expected duration</param>
+            protected float GetProgress(float duration) =>
+                Mathf.Clamp01(_stateElapsedTime / duration);
+
+            #endregion
         }
 
-        /// <summary>
-        /// Called when the state is exited
-        /// </summary>
-        public override void Exit()
+        public class DefaultFiniteState : FiniteState
         {
-            OnExit();
-            _stateElapsedTime = 0f;
+            public DefaultFiniteState(TEnum stateType)
+                : base(stateType) { }
+
+            protected override void OnEnter() { }
+
+            protected override void OnFirstFrame() { }
+
+            protected override void OnExecute() { }
+
+            protected override void OnExit() { }
         }
-
-        #region Virtual Methods
-
-        /// <summary>
-        /// Override to implement state entry logic
-        /// </summary>
-        protected virtual void OnEnter() { }
-
-        /// <summary>
-        /// Override to implement first frame logic
-        /// </summary>
-        protected virtual void OnFirstFrame() { }
-
-        /// <summary>
-        /// Override to implement state update logic
-        /// </summary>
-        protected virtual void OnExecute() { }
-
-        /// <summary>
-        /// Override to implement state exit logic
-        /// </summary>
-        protected virtual void OnExit() { }
-
-        #endregion
-
-        #region Utility Methods
-
-        /// <summary>
-        /// Checks if the state has been active for the specified duration
-        /// </summary>
-        /// <param name="duration">Duration in seconds</param>
-        protected bool HasElapsed(float duration) => _stateElapsedTime >= duration;
-
-        /// <summary>
-        /// Gets the normalized progress (0-1) of the state duration
-        /// </summary>
-        /// <param name="duration">Total expected duration</param>
-        protected float GetProgress(float duration) => Mathf.Clamp01(_stateElapsedTime / duration);
-
-        #endregion
     }
 }
