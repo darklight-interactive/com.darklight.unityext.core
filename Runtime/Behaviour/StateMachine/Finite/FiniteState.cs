@@ -15,13 +15,6 @@
  * Email: skysfalling22@gmail.com
  * Discord: skysfalling
  * ======================================================================= ]]
- * DESCRIPTION:
- * This script defines a finite state machine (FSM) framework.
- * It provides an abstract base class for creating FSMs and an interface for defining states.
- * The FSM stores a dictionary of possible states, where each state is represented by an enum key
- * and an instance of the corresponding state class as the value.
- * The FSM allows transitioning between states and executing the current state's logic.
- * ------------------------------------------------------------------ >>
  * MAJOR AUTHORS:
  * Sky Casey
  * Garrett Blake
@@ -42,7 +35,7 @@ namespace Darklight.Behaviour
         /// </summary>
         /// <typeparam name="TEnum">The enum type defining possible states</typeparam>
         [Serializable]
-        public abstract class FiniteState : StateBase<TEnum>
+        public class FiniteState : StateBase<TEnum>
         {
             [Header("Timing")]
             [SerializeField, ShowOnly]
@@ -109,6 +102,14 @@ namespace Darklight.Behaviour
                 _stateElapsedTime = 0f;
                 base.Exit();
             }
+
+            protected override void OnFirstFrame() { }
+
+            protected override void OnEnter() { }
+
+            protected override void OnExecute() { }
+
+            protected override void OnExit() { }
 
             #region Utility Methods
 

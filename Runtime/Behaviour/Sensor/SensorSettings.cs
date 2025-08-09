@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace Darklight.Behaviour
     )]
     public class SensorSettings : ScriptableObject
     {
+        [Header("Transform")]
         [SerializeField]
         [Tooltip("The offset position of the sensor")]
         Vector3 _offsetPosition = Vector3.zero;
@@ -30,21 +32,35 @@ namespace Darklight.Behaviour
         [Range(0.01f, 25f)]
         float _sphereRadius = 0.2f;
 
+        [Header("Detection")]
         [SerializeField]
         [Tooltip("Layer mask for detection")]
         LayerMask _layerMask;
 
+        [SerializeField, Tag]
+        [Tooltip("Tags to filter colliders by")]
+        List<string> tagFilter = new();
+
+        [Header("Timer")]
         [SerializeField]
         float _timerInterval = 1f;
 
         [Header("Debug")]
         [SerializeField]
         [Tooltip("Enable gizmo visualization in editor")]
-        bool _showDebugGizmos = true;
+        bool _showGizmos = true;
 
-        [SerializeField, NaughtyAttributes.ShowIf("_showDebugGizmos")]
+        [SerializeField, NaughtyAttributes.ShowIf("_showGizmos")]
+        [Tooltip("Color of the gizmo when the sensor is not colliding")]
+        Color _defaultColor = Color.grey;
+
+        [SerializeField, NaughtyAttributes.ShowIf("_showGizmos")]
         [Tooltip("Color of the gizmo when the sensor is colliding")]
         Color _collidingColor = Color.green;
+
+        [SerializeField, NaughtyAttributes.ShowIf("_showGizmos")]
+        [Tooltip("Color of the gizmo when the sensor is not colliding")]
+        Color _closestTargetColor = Color.red;
 
         public Vector3 OffsetPosition => _offsetPosition;
         public Sensor.Shape Shape => _shape;
@@ -54,9 +70,12 @@ namespace Darklight.Behaviour
         public bool IsBoxShape => _shape == Sensor.Shape.BOX;
         public bool IsSphereShape => _shape == Sensor.Shape.SPHERE;
         public LayerMask LayerMask => _layerMask;
+        public List<string> TagFilter => tagFilter;
         public float TimerInterval => _timerInterval;
-        public bool ShowDebugGizmos => _showDebugGizmos;
+        public bool ShowDebugGizmos => _showGizmos;
+        public Color DebugDefaultColor => _defaultColor;
         public Color DebugCollidingColor => _collidingColor;
+        public Color DebugClosestTargetColor => _closestTargetColor;
 
         /// <summary>
         /// Validates the settings to ensure they are within acceptable ranges.

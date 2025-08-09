@@ -27,21 +27,15 @@ namespace Darklight.Behaviour
         [SerializeField, ReadOnly]
         List<Collider> _colliders = new List<Collider>();
 
-        [SerializeField, ReadOnly]
-        GameObject _targetObject;
-
-        [SerializeField, ReadOnly]
-        Vector3 _targetLastKnownPosition;
-
         CountdownTimer _timer;
 
-        public SensorSettings Settings => _settings;
+        public SensorSettings Settings
+        {
+            get => _settings;
+            set => _settings = value;
+        }
         public Vector3 Position => transform.position + Settings.OffsetPosition;
         public IEnumerable<Collider> Colliders => _colliders;
-        public GameObject Target => _targetObject;
-        public Vector3 TargetPosition =>
-            _targetObject ? _targetObject.transform.position : Vector3.zero;
-        public bool IsTargetInRange => TargetPosition != Vector3.zero;
 
         public bool IsDisabled
         {
@@ -49,8 +43,6 @@ namespace Darklight.Behaviour
             protected set => _isDisabled = value;
         }
         public bool IsColliding => _colliders.Any();
-
-        public event Action OnTargetChanged = delegate { };
 
         #region < PRIVATE_METHODS > [[ UNITY METHODS ]] ================================================================
         void Start() => Initialize();
@@ -62,38 +54,13 @@ namespace Darklight.Behaviour
         void OnDrawGizmosSelected() => DrawGizmosSelected();
         #endregion
 
-        GameObject GetTarget()
-        {
-            if (_colliders.Count == 0)
-                return null;
-            return _colliders.First().gameObject;
-        }
-
-        void UpdateTargetPosition(GameObject target = null)
-        {
-            this._targetObject = target;
-
-            // If the target is in range and the target position has changed, or the target position is not zero,
-            // then invoke the OnTargetChanged event
-            if (
-                IsTargetInRange
-                && (
-                    _targetLastKnownPosition != TargetPosition
-                    || _targetLastKnownPosition != Vector3.zero
-                )
-            )
-            {
-                _targetLastKnownPosition = TargetPosition;
-                OnTargetChanged?.Invoke();
-            }
-        }
-
         void UpdateColliders()
         {
             _colliders.Clear();
             if (Settings == null)
                 return;
 
+            // << DETECT COLLIDERS IN LAYER MASK >>
             if (Settings.IsBoxShape)
             {
                 _colliders.AddRange(
@@ -110,6 +77,12 @@ namespace Darklight.Behaviour
                 _colliders.AddRange(
                     Physics.OverlapSphere(Position, Settings.SphereRadius, Settings.LayerMask)
                 );
+            }
+
+            // << FILTER COLLIDERS BY TARGET TAGS >>
+            if (Settings.TagFilter.Count > 0)
+            {
+                _colliders = _colliders.Where(c => Settings.TagFilter.Contains(c.tag)).ToList();
             }
         }
 
@@ -131,13 +104,7 @@ namespace Darklight.Behaviour
             // When the timer stops, update the target position and start the timer again
             _timer.OnTimerStop += () =>
             {
-                var newTarget = GetTarget();
-                if (newTarget != _targetObject)
-                {
-                    _targetObject = newTarget;
-                }
-
-                UpdateTargetPosition(newTarget);
+                UpdateColliders();
                 _timer.Start();
             };
             _timer.Start();
@@ -152,14 +119,38 @@ namespace Darklight.Behaviour
             _timer?.Tick();
         }
 
-        public virtual void TimedDisable(float duration)
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
+
+        public Collider GetClosest()
+        {
+            if (_colliders.Count == 0)
+                return null;
+
+            return _colliders.OrderBy(c => (c.transform.position - Position).sqrMagnitude).First();
+        }
+
+        public Collider GetClosestWithTag(string tag)
+        {
+            if (_colliders.Count == 0)
+                return null;
+
+            return _colliders
+                .Where(c => c.CompareTag(tag))
+                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
+                .First();
+        }
+        #endregion
+
+
+        public virtual void StartTimedDisable(float duration)
         {
             if (IsDisabled)
                 return;
 
             StartCoroutine(DisableRoutine(duration));
         }
-        #endregion
 
 #if UNITY_EDITOR
         public virtual void DrawGizmos()
@@ -167,7 +158,7 @@ namespace Darklight.Behaviour
             if (Settings == null || !Settings.ShowDebugGizmos)
                 return;
 
-            Color color = Color.gray;
+            Color color = Settings.DebugDefaultColor;
             if (IsColliding && !IsDisabled)
                 color = Settings.DebugCollidingColor;
 
@@ -182,23 +173,35 @@ namespace Darklight.Behaviour
             if (Settings == null || !Settings.ShowDebugGizmos)
                 return;
 
-            if (_targetObject != null)
+            var closest = GetClosest();
+            if (closest != null)
+                DrawLineToTarget(Settings.DebugClosestTargetColor, closest.gameObject);
+
+            foreach (var collider in _colliders)
             {
-                Handles.color = Settings.DebugCollidingColor;
-                Handles.DrawLine(Position, _targetLastKnownPosition);
-                Handles.DrawSolidDisc(_targetLastKnownPosition, Vector3.up, 0.1f);
+                if (collider == closest)
+                    continue;
+
+                DrawLineToTarget(Settings.DebugDefaultColor, collider.gameObject);
             }
         }
 
-        protected virtual void DrawOverlapBox(Color gizmoColor)
+        void DrawOverlapBox(Color gizmoColor)
         {
             Handles.color = gizmoColor;
             Handles.DrawWireCube(Position, Settings.BoxDimensions);
         }
 
-        protected virtual void DrawOverlapSphere(Color gizmoColor)
+        void DrawOverlapSphere(Color gizmoColor)
         {
             CustomGizmos.DrawWireSphere(Position, Settings.SphereRadius, gizmoColor);
+        }
+
+        void DrawLineToTarget(Color gizmoColor, GameObject target)
+        {
+            Handles.color = gizmoColor;
+            Handles.DrawLine(Position, target.transform.position);
+            Handles.DrawSolidDisc(target.transform.position, Vector3.up, 0.1f);
         }
 #endif
 

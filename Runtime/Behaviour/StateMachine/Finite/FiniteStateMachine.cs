@@ -39,7 +39,7 @@ namespace Darklight.Behaviour
     /// </summary>
     /// <typeparam name="TEnum">The enum type defining possible states</typeparam>
     [Serializable]
-    public abstract partial class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
+    public partial class FiniteStateMachine<TEnum> : StateMachineBase<TEnum>
         where TEnum : Enum
     {
         private readonly Dictionary<TEnum, FiniteState> _possibleFiniteStates;

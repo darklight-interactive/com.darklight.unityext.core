@@ -190,7 +190,7 @@ namespace Darklight.Behaviour
             return InteractWith(_target);
         }
 
-        public virtual void TimedDisable()
+        public virtual void StartTimedDisable()
         {
             Debug.Log($"[{name}] Disable");
             IsDisabled = true;
