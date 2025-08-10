@@ -4,6 +4,22 @@ using UnityEngine;
 
 namespace Darklight.Behaviour
 {
+    public partial class Sensor
+    {
+        public enum TargetingType
+        {
+            /// <summary>
+            /// Target the first collider found, until it is no longer detected
+            /// </summary>
+            FIRST,
+
+            /// <summary>
+            /// Target the closest collider found, until another collider is determined to be closer
+            /// </summary>
+            CLOSEST
+        }
+    }
+
     /// <summary>
     /// ScriptableObject containing all sensor-related settings for the survivor.
     /// </summary>
@@ -41,6 +57,10 @@ namespace Darklight.Behaviour
         [Tooltip("Tags to filter colliders by")]
         List<string> tagFilter = new();
 
+        [SerializeField]
+        [Tooltip("Targeting type for the sensor")]
+        Sensor.TargetingType _targetingType = Sensor.TargetingType.FIRST;
+
         [Header("Timer")]
         [SerializeField]
         float _timerInterval = 1f;
@@ -71,11 +91,12 @@ namespace Darklight.Behaviour
         public bool IsSphereShape => _shape == Sensor.Shape.SPHERE;
         public LayerMask LayerMask => _layerMask;
         public List<string> TagFilter => tagFilter;
+        public Sensor.TargetingType TargetingType => _targetingType;
         public float TimerInterval => _timerInterval;
         public bool ShowDebugGizmos => _showGizmos;
         public Color DebugDefaultColor => _defaultColor;
         public Color DebugCollidingColor => _collidingColor;
-        public Color DebugClosestTargetColor => _closestTargetColor;
+        public Color DebugTargetColor => _closestTargetColor;
 
         /// <summary>
         /// Validates the settings to ensure they are within acceptable ranges.

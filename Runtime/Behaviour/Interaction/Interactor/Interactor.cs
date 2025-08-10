@@ -27,7 +27,7 @@ namespace Darklight.Behaviour
         Interactable _lastTarget;
 
         [SerializeField, ShowOnly]
-        Interactable _target;
+        Interactable _targetInteractable;
 
         [SerializeField]
         CollectionDictionary<Interactable, string> _overlapInteractables =
@@ -35,7 +35,7 @@ namespace Darklight.Behaviour
 
         // ======== [[ PROPERTIES ]] ================================== >>>>
         public IEnumerable<Interactable> OverlapInteractables => _overlapInteractables.Keys;
-        public Interactable TargetInteractable => _target;
+        public Interactable TargetInteractable => _targetInteractable;
 
         protected override void Execute()
         {
@@ -61,7 +61,7 @@ namespace Darklight.Behaviour
 
         protected IEnumerable<Interactable> GetOverlapInteractables()
         {
-            return Colliders
+            return DetectedColliders
                 .Select(collider => collider.GetComponent<Interactable>())
                 .Where(interactable => interactable != null); // Filter out null values
         }
@@ -77,10 +77,13 @@ namespace Darklight.Behaviour
             }
 
             // Reset the target if it is no longer in the overlap interactables.
-            if (_target != null && !overlapInteractables.Any(i => i == _target))
+            if (
+                _targetInteractable != null
+                && !overlapInteractables.Any(i => i == _targetInteractable)
+            )
             {
-                _target.Reset();
-                _target = null;
+                _targetInteractable.Reset();
+                _targetInteractable = null;
             }
 
             // Reset the last target if it is no longer in the overlap interactables.
@@ -149,7 +152,7 @@ namespace Darklight.Behaviour
         {
             if (interactable == null)
                 return false;
-            if (_target == interactable)
+            if (_targetInteractable == interactable)
                 return false;
             if (_lastTarget == interactable)
                 return false;
@@ -157,8 +160,8 @@ namespace Darklight.Behaviour
             bool result = interactable.AcceptTarget(this);
             if (result)
             {
-                _lastTarget = _target;
-                _target = interactable;
+                _lastTarget = _targetInteractable;
+                _targetInteractable = interactable;
 
                 if (_lastTarget != null)
                     _lastTarget.Reset();
@@ -169,8 +172,8 @@ namespace Darklight.Behaviour
 
         protected void ClearTarget()
         {
-            _lastTarget = _target;
-            _target = null;
+            _lastTarget = _targetInteractable;
+            _targetInteractable = null;
 
             //_lastTarget.Reset();
         }
@@ -187,7 +190,7 @@ namespace Darklight.Behaviour
 
         public bool TryInteractWithTarget()
         {
-            return InteractWith(_target);
+            return InteractWith(_targetInteractable);
         }
 
         public virtual void StartTimedDisable()

@@ -14,15 +14,18 @@ using UnityEditor;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public class Sensor : MonoBehaviour
+    public partial class Sensor : MonoBehaviour
     {
-        [SerializeField, Expandable, Required]
+        [SerializeField, Expandable]
         [CreateAsset("NewSensorSettings", "Assets/Resources/Darklight/Behaviour/Sensor")]
         SensorSettings _settings;
 
         [HorizontalLine(color: EColor.Gray)]
         [SerializeField, ShowOnly]
         bool _isDisabled;
+
+        [SerializeField, ReadOnly]
+        Transform _target;
 
         [SerializeField, ReadOnly]
         List<Collider> _colliders = new List<Collider>();
@@ -34,8 +37,12 @@ namespace Darklight.Behaviour
             get => _settings;
             set => _settings = value;
         }
+
+        public string Key => _settings.name;
         public Vector3 Position => transform.position + Settings.OffsetPosition;
-        public IEnumerable<Collider> Colliders => _colliders;
+        public Transform Target => _target;
+        public IEnumerable<Collider> DetectedColliders => _colliders;
+        public IEnumerable<GameObject> DetectedObjects => _colliders.Select(c => c.gameObject);
 
         public bool IsDisabled
         {
@@ -86,6 +93,22 @@ namespace Darklight.Behaviour
             }
         }
 
+        void UpdateTarget()
+        {
+            if (Settings == null)
+                return;
+
+            if (Settings.TargetingType == TargetingType.FIRST)
+            {
+                _target = _colliders.First().transform;
+            }
+            else if (Settings.TargetingType == TargetingType.CLOSEST)
+            {
+                GetClosest(out Transform closest);
+                _target = closest;
+            }
+        }
+
         IEnumerator DisableRoutine(float duration)
         {
             IsDisabled = true;
@@ -105,6 +128,8 @@ namespace Darklight.Behaviour
             _timer.OnTimerStop += () =>
             {
                 UpdateColliders();
+                UpdateTarget();
+
                 _timer.Start();
             };
             _timer.Start();
@@ -115,7 +140,13 @@ namespace Darklight.Behaviour
             if (IsDisabled)
                 return;
 
-            UpdateColliders();
+            if (!Application.isPlaying)
+            {
+                UpdateColliders();
+                UpdateTarget();
+                return;
+            }
+
             _timer?.Tick();
         }
 
@@ -123,24 +154,35 @@ namespace Darklight.Behaviour
 
         #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
 
-        public Collider GetClosest()
+        public void GetClosest(out Transform closest)
         {
             if (_colliders.Count == 0)
-                return null;
+            {
+                closest = null;
+                return;
+            }
 
-            return _colliders.OrderBy(c => (c.transform.position - Position).sqrMagnitude).First();
+            closest = _colliders
+                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
+                .First()
+                .transform;
         }
 
-        public Collider GetClosestWithTag(string tag)
+        public void GetClosestWithTag(string tag, out Transform closest)
         {
             if (_colliders.Count == 0)
-                return null;
+            {
+                closest = null;
+                return;
+            }
 
-            return _colliders
+            closest = _colliders
                 .Where(c => c.CompareTag(tag))
                 .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
-                .First();
+                .First()
+                .transform;
         }
+
         #endregion
 
 
@@ -157,15 +199,6 @@ namespace Darklight.Behaviour
         {
             if (Settings == null || !Settings.ShowDebugGizmos)
                 return;
-
-            Color color = Settings.DebugDefaultColor;
-            if (IsColliding && !IsDisabled)
-                color = Settings.DebugCollidingColor;
-
-            if (Settings.IsBoxShape)
-                DrawOverlapBox(color);
-            else if (Settings.IsSphereShape)
-                DrawOverlapSphere(color);
         }
 
         public virtual void DrawGizmosSelected()
@@ -173,10 +206,19 @@ namespace Darklight.Behaviour
             if (Settings == null || !Settings.ShowDebugGizmos)
                 return;
 
-            var closest = GetClosest();
-            if (closest != null)
-                DrawLineToTarget(Settings.DebugClosestTargetColor, closest.gameObject);
+            Color collisionColor = Settings.DebugDefaultColor;
+            if (IsColliding && !IsDisabled)
+                collisionColor = Settings.DebugCollidingColor;
 
+            if (Settings.IsBoxShape)
+                DrawOverlapBox(collisionColor);
+            else if (Settings.IsSphereShape)
+                DrawOverlapSphere(collisionColor);
+
+            if (Target != null)
+                DrawLineToTarget(Settings.DebugTargetColor, Target.gameObject);
+
+            /*
             foreach (var collider in _colliders)
             {
                 if (collider == closest)
@@ -184,6 +226,7 @@ namespace Darklight.Behaviour
 
                 DrawLineToTarget(Settings.DebugDefaultColor, collider.gameObject);
             }
+            */
         }
 
         void DrawOverlapBox(Color gizmoColor)
