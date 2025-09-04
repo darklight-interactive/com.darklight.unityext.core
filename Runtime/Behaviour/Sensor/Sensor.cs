@@ -61,53 +61,10 @@ namespace Darklight.Behaviour
         void OnDrawGizmosSelected() => DrawGizmosSelected();
         #endregion
 
-        void UpdateColliders()
-        {
-            _colliders.Clear();
-            if (Settings == null)
-                return;
 
-            // << DETECT COLLIDERS IN LAYER MASK >>
-            if (Settings.IsBoxShape)
-            {
-                _colliders.AddRange(
-                    Physics.OverlapBox(
-                        Position,
-                        Settings.BoxHalfExtents,
-                        Quaternion.identity,
-                        Settings.LayerMask
-                    )
-                );
-            }
-            else if (Settings.IsSphereShape)
-            {
-                _colliders.AddRange(
-                    Physics.OverlapSphere(Position, Settings.SphereRadius, Settings.LayerMask)
-                );
-            }
+        #region [[ HANDLER METHODS ]] ================================================================
 
-            // << FILTER COLLIDERS BY TARGET TAGS >>
-            if (Settings.TagFilter.Count > 0)
-            {
-                _colliders = _colliders.Where(c => Settings.TagFilter.Contains(c.tag)).ToList();
-            }
-        }
 
-        void UpdateTarget()
-        {
-            if (Settings == null)
-                return;
-
-            if (Settings.TargetingType == TargetingType.FIRST)
-            {
-                _target = _colliders.First().transform;
-            }
-            else if (Settings.TargetingType == TargetingType.CLOSEST)
-            {
-                GetClosest(out Transform closest);
-                _target = closest;
-            }
-        }
 
         IEnumerator DisableRoutine(float duration)
         {
@@ -116,7 +73,6 @@ namespace Darklight.Behaviour
             IsDisabled = false;
         }
 
-        #region < PROTECTED_METHODS > [[ HANDLERS ]] ================================================================
         protected virtual void Initialize()
         {
             if (Settings == null)
@@ -150,49 +106,95 @@ namespace Darklight.Behaviour
             _timer?.Tick();
         }
 
-        #endregion
-
-        #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
-
-        public void GetClosest(out Transform closest)
+        protected virtual void UpdateColliders()
         {
-            if (_colliders.Count == 0)
+            _colliders.Clear();
+            if (Settings == null)
+                return;
+
+            // << DETECT COLLIDERS IN LAYER MASK >>
+            if (Settings.IsBoxShape)
             {
-                closest = null;
+                _colliders.AddRange(
+                    Physics.OverlapBox(
+                        Position,
+                        Settings.BoxHalfExtents,
+                        Quaternion.identity,
+                        Settings.LayerMask
+                    )
+                );
+            }
+            else if (Settings.IsSphereShape)
+            {
+                _colliders.AddRange(
+                    Physics.OverlapSphere(Position, Settings.SphereRadius, Settings.LayerMask)
+                );
+            }
+
+            // << FILTER COLLIDERS BY PRIORITY TAGS >>
+            Settings.PriorityTagComparator.GetCollidersWithHighestPriority(
+                _colliders,
+                out List<Collider> priorityColliders
+            );
+
+            // << OVERRIDE COLLIDERS WITH PRIORITY COLLIDERS >>
+            if (priorityColliders.Count > 0)
+                _colliders = priorityColliders;
+        }
+
+        protected virtual void UpdateTarget()
+        {
+            // << NULL CHECKS >>
+            if (_settings == null || _colliders == null || _colliders.Count == 0)
+            {
+                _target = null;
                 return;
             }
 
-            closest = _colliders
-                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
-                .First()
-                .transform;
-        }
-
-        public void GetClosestWithTag(string tag, out Transform closest)
-        {
-            if (_colliders.Count == 0)
+            // << SET TARGET BASED ON TARGETING TYPE >>
+            switch (Settings.TargetingType)
             {
-                closest = null;
-                return;
+                case TargetingType.FIRST:
+                    _target = _colliders.First().transform;
+                    break;
+                case TargetingType.CLOSEST:
+                    GetClosest(_colliders, out Transform closest);
+                    _target = closest;
+                    break;
             }
-
-            closest = _colliders
-                .Where(c => c.CompareTag(tag))
-                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
-                .First()
-                .transform;
         }
 
-        #endregion
-
-
-        public virtual void StartTimedDisable(float duration)
+        public void StartTimedDisable(float duration)
         {
             if (IsDisabled)
                 return;
 
             StartCoroutine(DisableRoutine(duration));
         }
+
+        public void Enable() => IsDisabled = false;
+
+        public void Disable() => IsDisabled = true;
+
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
+
+        public void GetClosest(List<Collider> colliders, out Transform closest)
+        {
+            if (colliders.Count == 0)
+            {
+                closest = null;
+                return;
+            }
+
+            closest = colliders
+                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
+                .First()
+                .transform;
+        }
+
+        #endregion
 
 #if UNITY_EDITOR
         public virtual void DrawGizmos()

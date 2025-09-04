@@ -16,12 +16,7 @@ namespace Darklight.Collections.Editor
         private const float INDENTATION = 10f;
         private CollectionReorderableList _list;
         private SerializedProperty _itemsProperty;
-
-        // Background styling
-        private static readonly Color BackgroundColor = new Color(0.15f, 0.15f, 0.25f, 0.8f);
-        private static readonly Color BorderColor = new Color(0.3f, 0.3f, 0.5f, 1f);
-        private const float BorderWidth = 1f;
-        private const float Padding = 4f;
+        private bool _isExpanded;
 
         protected override void OnGUI_Internal(
             Rect rect,
@@ -29,25 +24,7 @@ namespace Darklight.Collections.Editor
             GUIContent label
         )
         {
-            // Draw border
-            EditorGUI.DrawRect(rect, BorderColor);
-
-            // Draw background (inside border)
-            Rect backgroundRect = new Rect(
-                rect.x + BorderWidth,
-                rect.y + BorderWidth,
-                rect.width - BorderWidth * 2,
-                rect.height - BorderWidth * 2
-            );
-            EditorGUI.DrawRect(backgroundRect, BackgroundColor);
-
-            // Adjust content area for padding
-            Rect contentRect = new Rect(
-                rect.x + BorderWidth + Padding,
-                rect.y + BorderWidth + Padding,
-                rect.width - (BorderWidth + Padding) * 2,
-                rect.height - (BorderWidth + Padding) * 2
-            );
+            Rect contentRect = rect;
 
             if (_list == null)
             {
@@ -84,36 +61,40 @@ namespace Darklight.Collections.Editor
             float x = contentRect.x;
             float y = contentRect.y;
 
-            // << LABEL >>
-            Rect labelRect = new Rect(x, y, contentRect.width, EditorGUIUtility.singleLineHeight);
-            EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
+            // << FOLDOUT LABEL >>
+            Rect foldoutRect = new Rect(x, y, contentRect.width, EditorGUIUtility.singleLineHeight);
+            _isExpanded = EditorGUI.Foldout(foldoutRect, _isExpanded, label, true);
             y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
-            // << LIST >>
-            x += INDENTATION; // Indentation
-            if (_list != null)
+            // Only show content if expanded
+            if (_isExpanded)
             {
-                float listHeight = _list.GetHeight();
-                Rect listRect = new Rect(x, y, contentRect.width - INDENTATION, listHeight);
-                _list.DoList(listRect);
-                y += listHeight + EditorGUIUtility.standardVerticalSpacing;
-            }
+                // << LIST >>
+                x += INDENTATION; // Indentation
+                if (_list != null)
+                {
+                    float listHeight = _list.GetHeight();
+                    Rect listRect = new Rect(x, y, contentRect.width - INDENTATION, listHeight);
+                    _list.DoList(listRect);
+                    y += listHeight + EditorGUIUtility.standardVerticalSpacing;
+                }
 
-            // << PROPERTY FIELD >>
-            x += INDENTATION; // Secondary Indentation
-            float propertyFieldHeight = EditorGUI.GetPropertyHeight(property, true);
-            Rect propertyRect = new Rect(
-                x,
-                y,
-                contentRect.width - (INDENTATION * 2),
-                propertyFieldHeight
-            );
-            EditorGUI.PropertyField(
-                propertyRect,
-                property,
-                new GUIContent(property.displayName),
-                true
-            );
+                // << PROPERTY FIELD >>
+                x += INDENTATION; // Secondary Indentation
+                float propertyFieldHeight = EditorGUI.GetPropertyHeight(property, true);
+                Rect propertyRect = new Rect(
+                    x,
+                    y,
+                    contentRect.width - (INDENTATION * 2),
+                    propertyFieldHeight
+                );
+                EditorGUI.PropertyField(
+                    propertyRect,
+                    property,
+                    new GUIContent(property.displayName),
+                    true
+                );
+            }
         }
 
         protected override float GetPropertyHeight_Internal(
@@ -123,20 +104,21 @@ namespace Darklight.Collections.Editor
         {
             float height = 0f;
 
-            // Label
+            // Foldout Label
             height += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
-            // List
-            if (_list != null)
+            // Only include content height if expanded
+            if (_isExpanded)
             {
-                height += _list.GetHeight() + EditorGUIUtility.standardVerticalSpacing;
+                // List
+                if (_list != null)
+                {
+                    height += _list.GetHeight() + EditorGUIUtility.standardVerticalSpacing;
+                }
+
+                // Property Field
+                height += EditorGUI.GetPropertyHeight(property, true);
             }
-
-            // Property Field
-            height += EditorGUI.GetPropertyHeight(property, true);
-
-            // Add padding for border and background
-            height += (BorderWidth + Padding) * 2;
 
             return height;
         }

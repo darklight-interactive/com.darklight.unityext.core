@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NaughtyAttributes;
 using UnityEngine;
 
@@ -17,6 +18,82 @@ namespace Darklight.Behaviour
             /// Target the closest collider found, until another collider is determined to be closer
             /// </summary>
             CLOSEST
+        }
+
+        /// <summary>
+        /// A class that assigns a priority to a tag
+        /// </summary>
+        [System.Serializable]
+        public class PriorityTag
+        {
+            [SerializeField, Tag]
+            string _tag;
+
+            [SerializeField]
+            float _priority;
+
+            public string Tag => _tag;
+            public float Priority => _priority;
+        }
+
+        /// <summary>
+        /// A class that contains a list of priority tags and methods to compare them
+        /// </summary>
+        [System.Serializable]
+        public class PriorityTagComparator
+        {
+            [SerializeField]
+            List<PriorityTag> _priorityTags = new();
+
+            public List<PriorityTag> PriorityTags => _priorityTags;
+
+            /// <summary>
+            /// Get the highest priority tag from the list of colliders
+            /// </summary>
+            /// <param name="colliders">The list of colliders to check</param>
+            /// <param name="highestPriorityTag">The highest priority tag found</param>
+            public void GetHighestPriorityTag(
+                List<Collider> colliders,
+                out string highestPriorityTag
+            )
+            {
+                highestPriorityTag = string.Empty;
+                float highestPriority = 0;
+
+                // Iterate through each priority tag and check if any colliders have that tag
+                foreach (var priorityTag in PriorityTags)
+                {
+                    bool hasTag = colliders.Any(c => c.CompareTag(priorityTag.Tag));
+                    // If the collider has the tag and the priority is higher than the current highest priority, update the highest priority and tag
+                    if (hasTag && priorityTag.Priority > highestPriority)
+                    {
+                        highestPriority = priorityTag.Priority;
+                        highestPriorityTag = priorityTag.Tag;
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Get the colliders with the highest priority tag from the list of colliders
+            /// </summary>
+            /// <param name="colliders">The list of colliders to check</param>
+            /// <param name="collidersWithHighestPriority">The list of colliders with the highest priority tag</param>
+            public void GetCollidersWithHighestPriority(
+                List<Collider> colliders,
+                out List<Collider> collidersWithHighestPriority
+            )
+            {
+                collidersWithHighestPriority = new();
+                GetHighestPriorityTag(colliders, out string highestPriorityTag);
+
+                // If the highest priority tag is not empty, filter the colliders to only include those with the highest priority tag
+                if (!string.IsNullOrEmpty(highestPriorityTag))
+                {
+                    collidersWithHighestPriority = colliders
+                        .Where(c => c.CompareTag(highestPriorityTag))
+                        .ToList();
+                }
+            }
         }
     }
 
@@ -45,7 +122,7 @@ namespace Darklight.Behaviour
 
         [SerializeField, HideIf("IsBoxShape")]
         [Tooltip("Radius of the detection sphere")]
-        [Range(0.01f, 25f)]
+        [Range(0.01f, 100f)]
         float _sphereRadius = 0.2f;
 
         [Header("Detection")]
@@ -53,13 +130,13 @@ namespace Darklight.Behaviour
         [Tooltip("Layer mask for detection")]
         LayerMask _layerMask;
 
-        [SerializeField, Tag]
-        [Tooltip("Tags to filter colliders by")]
-        List<string> tagFilter = new();
-
         [SerializeField]
         [Tooltip("Targeting type for the sensor")]
         Sensor.TargetingType _targetingType = Sensor.TargetingType.FIRST;
+
+        [SerializeField]
+        [Tooltip("Targeting priorities for the sensor")]
+        Sensor.PriorityTagComparator _priorityTagComparator = new();
 
         [Header("Timer")]
         [SerializeField]
@@ -90,8 +167,8 @@ namespace Darklight.Behaviour
         public bool IsBoxShape => _shape == Sensor.Shape.BOX;
         public bool IsSphereShape => _shape == Sensor.Shape.SPHERE;
         public LayerMask LayerMask => _layerMask;
-        public List<string> TagFilter => tagFilter;
         public Sensor.TargetingType TargetingType => _targetingType;
+        public Sensor.PriorityTagComparator PriorityTagComparator => _priorityTagComparator;
         public float TimerInterval => _timerInterval;
         public bool ShowDebugGizmos => _showGizmos;
         public Color DebugDefaultColor => _defaultColor;

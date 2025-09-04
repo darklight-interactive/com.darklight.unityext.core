@@ -16,61 +16,74 @@ namespace Darklight.Editor
         {
             float baseHeight = EditorGUI.GetPropertyHeight(property, label, true);
 
-            // Check if we need to place button on next line
-            float availableWidth =
-                EditorGUIUtility.currentViewWidth - EditorGUIUtility.labelWidth - 20f; // Account for margins
-            bool buttonOnNextLine = availableWidth < MinButtonWidth;
+            // Only show button if property is null
+            if (property.objectReferenceValue == null)
+            {
+                // Check if we need to place button on next line
+                float availableWidth =
+                    EditorGUIUtility.currentViewWidth - EditorGUIUtility.labelWidth - 20f; // Account for margins
+                bool buttonOnNextLine = availableWidth < MinButtonWidth;
 
-            if (buttonOnNextLine)
-                return baseHeight + ButtonHeight + Padding;
-            else
-                return baseHeight;
+                if (buttonOnNextLine)
+                    return baseHeight + ButtonHeight + Padding;
+            }
+
+            return baseHeight;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
 
-            // Calculate available width for button placement decision
-            float availableWidth = position.width - EditorGUIUtility.labelWidth - 20f; // Account for margins
-            bool buttonOnNextLine = availableWidth < MinButtonWidth;
-
-            if (buttonOnNextLine)
+            // Only show button if property is null
+            if (property.objectReferenceValue == null)
             {
-                // Draw property and button on separate lines
-                Rect propertyRect = position;
-                propertyRect.height = EditorGUI.GetPropertyHeight(property, label, true);
-                EditorGUI.PropertyField(propertyRect, property, label, true);
+                // Calculate available width for button placement decision
+                float availableWidth = position.width - EditorGUIUtility.labelWidth - 20f; // Account for margins
+                bool buttonOnNextLine = availableWidth < MinButtonWidth;
 
-                // Draw the "Create" button on next line
-                Rect buttonRect = position;
-                buttonRect.y = position.y + propertyRect.height + Padding;
-                buttonRect.height = ButtonHeight;
-
-                if (GUI.Button(buttonRect, $"New {GetTypeName(property)}"))
+                if (buttonOnNextLine)
                 {
-                    CreateAndAssignAsset(property);
+                    // Draw property and button on separate lines
+                    Rect propertyRect = position;
+                    propertyRect.height = EditorGUI.GetPropertyHeight(property, label, true);
+                    EditorGUI.PropertyField(propertyRect, property, label, true);
+
+                    // Draw the "Create" button on next line
+                    Rect buttonRect = position;
+                    buttonRect.y = position.y + propertyRect.height + Padding;
+                    buttonRect.height = ButtonHeight;
+
+                    if (GUI.Button(buttonRect, $"New {GetTypeName(property)}"))
+                    {
+                        CreateAndAssignAsset(property);
+                    }
+                }
+                else
+                {
+                    // Draw property and button on same line
+                    Rect propertyRect = position;
+                    propertyRect.height = EditorGUI.GetPropertyHeight(property, label, true);
+                    propertyRect.width = position.width - MinButtonWidth - Padding;
+                    EditorGUI.PropertyField(propertyRect, property, label, true);
+
+                    // Draw the "Create" button on same line
+                    Rect buttonRect = position;
+                    buttonRect.x = propertyRect.xMax + Padding;
+                    buttonRect.y = position.y;
+                    buttonRect.width = MinButtonWidth;
+                    buttonRect.height = ButtonHeight;
+
+                    if (GUI.Button(buttonRect, "New"))
+                    {
+                        CreateAndAssignAsset(property);
+                    }
                 }
             }
             else
             {
-                // Draw property and button on same line
-                Rect propertyRect = position;
-                propertyRect.height = EditorGUI.GetPropertyHeight(property, label, true);
-                propertyRect.width = position.width - MinButtonWidth - Padding;
-                EditorGUI.PropertyField(propertyRect, property, label, true);
-
-                // Draw the "Create" button on same line
-                Rect buttonRect = position;
-                buttonRect.x = propertyRect.xMax + Padding;
-                buttonRect.y = position.y;
-                buttonRect.width = MinButtonWidth;
-                buttonRect.height = ButtonHeight;
-
-                if (GUI.Button(buttonRect, "New"))
-                {
-                    CreateAndAssignAsset(property);
-                }
+                // Property is not null, just draw the property field normally
+                EditorGUI.PropertyField(position, property, label, true);
             }
 
             EditorGUI.EndProperty();

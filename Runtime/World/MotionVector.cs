@@ -34,6 +34,7 @@ namespace Darklight.World
     [System.Serializable]
     public class MotionVector
     {
+        [SerializeField]
         Vector3 _vector = Vector3.zero;
 
         public MotionVector()
