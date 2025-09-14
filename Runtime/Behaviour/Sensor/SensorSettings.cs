@@ -29,7 +29,7 @@ namespace Darklight.Behaviour
             [SerializeField, Tag]
             string _tag;
 
-            [SerializeField]
+            [SerializeField, Range(0, 1)]
             float _priority;
 
             public string Tag => _tag;
@@ -58,7 +58,7 @@ namespace Darklight.Behaviour
             )
             {
                 highestPriorityTag = string.Empty;
-                float highestPriority = 0;
+                float highestPriority = -1;
 
                 // Iterate through each priority tag and check if any colliders have that tag
                 foreach (var priorityTag in PriorityTags)
@@ -106,11 +106,6 @@ namespace Darklight.Behaviour
     )]
     public class SensorSettings : ScriptableObject
     {
-        [Header("Transform")]
-        [SerializeField]
-        [Tooltip("The offset position of the sensor")]
-        Vector3 _offsetPosition = Vector3.zero;
-
         [Header("Dimensions")]
         [SerializeField]
         [Tooltip("The shape of the sensor")]
@@ -159,7 +154,6 @@ namespace Darklight.Behaviour
         [Tooltip("Color of the gizmo when the sensor is not colliding")]
         Color _closestTargetColor = Color.red;
 
-        public Vector3 OffsetPosition => _offsetPosition;
         public Sensor.Shape Shape => _shape;
         public Vector3 BoxDimensions => _boxDimensions;
         public Vector3 BoxHalfExtents => _boxDimensions / 2;

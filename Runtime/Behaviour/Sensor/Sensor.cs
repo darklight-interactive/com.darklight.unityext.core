@@ -30,6 +30,9 @@ namespace Darklight.Behaviour
         [SerializeField, ReadOnly]
         List<Collider> _colliders = new List<Collider>();
 
+        [SerializeField, ReadOnly]
+        List<Collider> _priorityColliders = new List<Collider>();
+
         CountdownTimer _timer;
 
         public SensorSettings Settings
@@ -39,10 +42,7 @@ namespace Darklight.Behaviour
         }
 
         public string Key => _settings.name;
-        public Vector3 Position => transform.position + Settings.OffsetPosition;
         public Transform Target => _target;
-        public IEnumerable<Collider> DetectedColliders => _colliders;
-        public IEnumerable<GameObject> DetectedObjects => _colliders.Select(c => c.gameObject);
 
         public bool IsDisabled
         {
@@ -117,7 +117,7 @@ namespace Darklight.Behaviour
             {
                 _colliders.AddRange(
                     Physics.OverlapBox(
-                        Position,
+                        transform.position,
                         Settings.BoxHalfExtents,
                         Quaternion.identity,
                         Settings.LayerMask
@@ -127,19 +127,23 @@ namespace Darklight.Behaviour
             else if (Settings.IsSphereShape)
             {
                 _colliders.AddRange(
-                    Physics.OverlapSphere(Position, Settings.SphereRadius, Settings.LayerMask)
+                    Physics.OverlapSphere(
+                        transform.position,
+                        Settings.SphereRadius,
+                        Settings.LayerMask
+                    )
                 );
             }
 
             // << FILTER COLLIDERS BY PRIORITY TAGS >>
             Settings.PriorityTagComparator.GetCollidersWithHighestPriority(
                 _colliders,
-                out List<Collider> priorityColliders
+                out _priorityColliders
             );
 
             // << OVERRIDE COLLIDERS WITH PRIORITY COLLIDERS >>
-            if (priorityColliders.Count > 0)
-                _colliders = priorityColliders;
+            if (Settings.PriorityTagComparator.PriorityTags.Count > 0)
+                _colliders = _priorityColliders;
         }
 
         protected virtual void UpdateTarget()
@@ -189,9 +193,19 @@ namespace Darklight.Behaviour
             }
 
             closest = colliders
-                .OrderBy(c => (c.transform.position - Position).sqrMagnitude)
+                .OrderBy(c => (c.transform.position - transform.position).sqrMagnitude)
                 .First()
                 .transform;
+        }
+
+        public void GetDetectedColliders(out List<Collider> colliders)
+        {
+            colliders = _colliders;
+        }
+
+        public void GetDetectedObjects(out List<GameObject> objects)
+        {
+            objects = _colliders.Select(c => c.gameObject).ToList();
         }
 
         #endregion
@@ -234,18 +248,18 @@ namespace Darklight.Behaviour
         void DrawOverlapBox(Color gizmoColor)
         {
             Handles.color = gizmoColor;
-            Handles.DrawWireCube(Position, Settings.BoxDimensions);
+            Handles.DrawWireCube(transform.position, Settings.BoxDimensions);
         }
 
         void DrawOverlapSphere(Color gizmoColor)
         {
-            CustomGizmos.DrawWireSphere(Position, Settings.SphereRadius, gizmoColor);
+            CustomGizmos.DrawWireSphere(transform.position, Settings.SphereRadius, gizmoColor);
         }
 
         void DrawLineToTarget(Color gizmoColor, GameObject target)
         {
             Handles.color = gizmoColor;
-            Handles.DrawLine(Position, target.transform.position);
+            Handles.DrawLine(transform.position, target.transform.position);
             Handles.DrawSolidDisc(target.transform.position, Vector3.up, 0.1f);
         }
 #endif
