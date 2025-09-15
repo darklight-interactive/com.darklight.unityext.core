@@ -469,15 +469,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b70ad9ccabc2b3419a09a89a5aeccaf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _config: {fileID: 11400000, guid: 56893d19c8750a049a0de32410d4aaf3, type: 2}
-  _defaultScanFilter: {fileID: 11400000, guid: e8c90007298e58245b135bd1d2ea3757, type: 2}
-  _defaultScanResult:
-    _target: {fileID: 1477470372}
-    _colliders:
-    - {fileID: 182159270}
-    - {fileID: 1477470372}
-    - {fileID: 1863598814}
   _isDisabled: 0
+  _config: {fileID: 11400000, guid: 56893d19c8750a049a0de32410d4aaf3, type: 2}
+  _detectors: []
   _showGizmos: 1
   _defaultColor: {r: 1, g: 1, b: 1, a: 1}
   _collidingColor: {r: 0, g: 1, b: 0, a: 1}

@@ -5,27 +5,27 @@ using UnityEngine;
 namespace Darklight.Behaviour.Sensor
 {
     [System.Serializable]
-    public class ScanResult
+    public class SensorDetectionResult
     {
         [SerializeField, ReadOnly]
         Collider _target;
 
         [SerializeField, ReadOnly]
-        List<Collider> _colliders;
+        Collider[] _colliders;
 
         public Collider Target => _target;
-        public List<Collider> Colliders => _colliders;
+        public Collider[] Colliders => _colliders;
 
         public bool HasTarget => _target != null;
-        public bool HasColliders => _colliders != null && _colliders.Count > 0;
+        public bool HasColliders => _colliders != null && _colliders.Length > 0;
 
-        public ScanResult()
+        public SensorDetectionResult()
         {
             _target = null;
-            _colliders = new List<Collider>();
+            _colliders = new Collider[0];
         }
 
-        public ScanResult(Collider target, List<Collider> colliders)
+        public SensorDetectionResult(Collider target, Collider[] colliders)
         {
             _target = target;
             _colliders = colliders;

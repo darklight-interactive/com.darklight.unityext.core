@@ -38,16 +38,16 @@ namespace Darklight.Behaviour.Sensor
         [Tooltip("The shape of the sensor")]
         Shape _shape = Shape.CIRCLE2D;
 
-        [SerializeField, ShowIf("Is2D")]
+        [SerializeField, ShowIf("Is2D"), AllowNesting]
         Swizzle_2D _swizzle_2D = Swizzle_2D.XY;
 
-        [SerializeField, ShowIf(EConditionOperator.And, "Is2D", "IsRect2D")]
+        [SerializeField, ShowIf(EConditionOperator.And, "Is2D", "IsRect2D"), AllowNesting]
         Vector2 _rectDimensions = new Vector2(1, 1);
 
-        [SerializeField, ShowIf(EConditionOperator.And, "Is3D", "IsBox3D")]
+        [SerializeField, ShowIf(EConditionOperator.And, "Is3D", "IsBox3D"), AllowNesting]
         Vector3 _boxDimensions = new Vector3(1, 1, 1);
 
-        [SerializeField, ShowIf(EConditionOperator.Or, "IsCircle2D", "IsSphere3D")]
+        [SerializeField, ShowIf(EConditionOperator.Or, "IsCircle2D", "IsSphere3D"), AllowNesting]
         [Range(0.01f, 100f)]
         float _radius = 0.2f;
 

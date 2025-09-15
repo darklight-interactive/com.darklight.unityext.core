@@ -24,12 +24,8 @@ namespace Darklight.Behaviour.Sensor
         [CreateAsset("NewSensorSettings", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorConfig")]
         SensorConfig _config;
 
-        [SerializeField, Expandable]
-        [CreateAsset("NewScanFilter", AssetUtility.BEHAVIOUR_FILEPATH + "/ScanFilter")]
-        ScanFilter _defaultScanFilter;
-
-        [SerializeField, ReadOnly]
-        ScanResult _defaultScanResult;
+        [SerializeField]
+        List<Detector> _detectors = new List<Detector>();
 
         [SerializeField, Foldout("Debug")]
         [Tooltip("Enable gizmo visualization in editor")]
@@ -61,9 +57,6 @@ namespace Darklight.Behaviour.Sensor
             protected set => _isDisabled = value;
         }
 
-        public ScanResult DefaultScanResult => _defaultScanResult;
-        public ScanFilter DefaultScanFilter => _defaultScanFilter;
-
         bool IsValid => _config != null;
 
         void Update()
@@ -71,9 +64,12 @@ namespace Darklight.Behaviour.Sensor
             if (!IsValid)
                 return;
 
-            if (!Application.isPlaying && _defaultScanFilter != null)
+            if (!Application.isPlaying && _detectors != null)
             {
-                ExecuteScan(_defaultScanFilter, out _defaultScanResult);
+                foreach (var detector in _detectors)
+                {
+                    detector.Execute(this);
+                }
             }
         }
 
@@ -88,11 +84,22 @@ namespace Darklight.Behaviour.Sensor
             IsDisabled = false;
         }
 
-        protected virtual bool ExecuteScan(ScanFilter filter, out ScanResult result)
+        void ApplyWhitelist(string[] whitelist, ref Collider[] colliders)
         {
-            result = new ScanResult();
+            if (whitelist.Length == 0)
+                return;
+
+            colliders = colliders.Where(c => whitelist.Contains(c.tag)).ToArray();
+        }
+
+        public virtual bool ExecuteScan(
+            SensorDetectionFilter filter,
+            out SensorDetectionResult result
+        )
+        {
+            result = new SensorDetectionResult();
             Collider target = null;
-            List<Collider> colliders = new List<Collider>();
+            Collider[] colliders = new Collider[0];
 
             // << NULL CHECKS >> ------------------------------------------------------------
             if (Config == null)
@@ -104,28 +111,28 @@ namespace Darklight.Behaviour.Sensor
             // << DETECT COLLIDERS IN LAYER MASK >> ------------------------------------------------------------
             if (Config.IsBoxShape)
             {
-                colliders.AddRange(
-                    Physics.OverlapBox(
-                        transform.position,
-                        Config.BoxHalfExtents,
-                        Quaternion.identity,
-                        filter.LayerMask
-                    )
+                colliders = Physics.OverlapBox(
+                    transform.position,
+                    Config.BoxHalfExtents,
+                    Quaternion.identity,
+                    filter.LayerMask
                 );
             }
             else if (Config.IsSphereShape)
             {
-                colliders.AddRange(
-                    Physics.OverlapSphere(transform.position, Config.SphereRadius, filter.LayerMask)
+                colliders = Physics.OverlapSphere(
+                    transform.position,
+                    Config.SphereRadius,
+                    filter.LayerMask
                 );
             }
 
             // << FILTER COLLIDERS BY PRIORITY TAGS >> ------------------------------------------------------------
-            if (filter.PriorityTagComparator.PriorityTags.Count > 0)
-                filter.PriorityTagComparator.FilterCollidersWithHighestPriority(ref colliders);
+            if (filter.WhitelistTags != null && filter.WhitelistTags.Length > 0)
+                ApplyWhitelist(filter.WhitelistTags, ref colliders);
 
             // << NULL CHECKS >> ------------------------------------------------------------
-            if (colliders == null || colliders.Count == 0)
+            if (colliders == null || colliders.Length == 0)
                 return false;
 
             // << SET TARGET BASED ON TARGETING TYPE >> ------------------------------------------------------------
@@ -140,7 +147,7 @@ namespace Darklight.Behaviour.Sensor
             }
 
             // << SET RESULT >> ------------------------------------------------------------
-            result = new ScanResult(target, colliders);
+            result = new SensorDetectionResult(target, colliders);
             return true;
         }
 
@@ -158,14 +165,19 @@ namespace Darklight.Behaviour.Sensor
 
         #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
 
-        public void GetScanResult(ScanFilter filter, out ScanResult result)
+        public void GetOrAddDetector(SensorDetectionFilter filter, out Detector detector)
         {
-            ExecuteScan(filter, out result);
+            detector = _detectors.FirstOrDefault(d => d.Filter == filter);
+            if (detector == null)
+            {
+                detector = new Detector(filter);
+                _detectors.Add(detector);
+            }
         }
 
-        public void GetClosest(List<Collider> colliders, out Collider closest)
+        public void GetClosest(Collider[] colliders, out Collider closest)
         {
-            if (colliders.Count == 0)
+            if (colliders.Length == 0)
             {
                 closest = null;
                 return;
@@ -175,6 +187,12 @@ namespace Darklight.Behaviour.Sensor
                 .OrderBy(c => (c.transform.position - transform.position).sqrMagnitude)
                 .First();
         }
+
+        #endregion
+
+        #region [[ SETTERS ]] ====================================================================
+
+
 
         #endregion
 
@@ -190,23 +208,55 @@ namespace Darklight.Behaviour.Sensor
             if (Config == null || !_showGizmos)
                 return;
 
+            // << DRAW DEFAULT >> ------------------------------------------------------------
+            if (_detectors.Count == 0 || _detectors[0].IsValid == false)
+            {
+                Config.DrawGizmos(_defaultColor, transform.position);
+                return;
+            }
+
             // << DRAW OUTLINE >> ------------------------------------------------------------
             Color outlineColor = _defaultColor;
-            if (DefaultScanResult.HasColliders)
+            if (_detectors[0].Result.HasColliders)
                 outlineColor = _collidingColor;
 
             Config.DrawGizmos(outlineColor, transform.position);
 
             // << DRAW LINE TO TARGET >> ------------------------------------------------------------
-            DrawLineToTarget(_closestTargetColor, DefaultScanResult.Target.transform);
+            if (_detectors[0].Result.HasTarget)
+                DrawLineToTarget(_closestTargetColor, _detectors[0].Result.Target.transform);
         }
 
         void DrawLineToTarget(Color gizmoColor, Transform target)
         {
-            Handles.color = gizmoColor;
             CustomGizmos.DrawLine(transform.position, target.position, gizmoColor);
             CustomGizmos.DrawSolidCircle(target.position, 0.1f, Vector3.up, gizmoColor);
         }
 #endif
+
+        [System.Serializable]
+        public class Detector
+        {
+            [SerializeField, Expandable, AllowNesting]
+            SensorDetectionFilter _filter;
+
+            [SerializeField, ReadOnly, AllowNesting]
+            SensorDetectionResult _result;
+
+            public bool IsValid => _filter != null;
+            public SensorDetectionFilter Filter => _filter;
+            public SensorDetectionResult Result => _result;
+
+            public Detector(SensorDetectionFilter filter)
+            {
+                _filter = filter;
+                _result = new SensorDetectionResult();
+            }
+
+            public void Execute(SensorBase sensor)
+            {
+                sensor.ExecuteScan(_filter, out _result);
+            }
+        }
     }
 }

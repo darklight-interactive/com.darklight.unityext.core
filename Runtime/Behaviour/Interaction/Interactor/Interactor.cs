@@ -16,19 +16,31 @@ namespace Darklight.Behaviour
     [ExecuteAlways]
     public class Interactor : SensorBase
     {
+        Detector _interactableDetector;
         Interactable _lastInteractable;
+
+        [SerializeField]
+        SensorDetectionFilter _interactableFilter;
 
         public Interactable TargetInteractable
         {
             get
             {
-                if (DefaultScanResult.Target == null)
+                if (_interactableDetector.Result.Target == null)
                     return null;
-                return DefaultScanResult.Target.GetComponent<Interactable>();
+                return _interactableDetector.Result.Target.GetComponent<Interactable>();
             }
         }
 
-        protected override bool ExecuteScan(ScanFilter filter, out ScanResult result)
+        void Start()
+        {
+            GetOrAddDetector(_interactableFilter, out _interactableDetector);
+        }
+
+        public override bool ExecuteScan(
+            SensorDetectionFilter filter,
+            out SensorDetectionResult result
+        )
         {
             base.ExecuteScan(filter, out result);
 
@@ -60,13 +72,14 @@ namespace Darklight.Behaviour
         public virtual void InteractWithTarget(out bool result)
         {
             result = false;
-            if (DefaultScanResult.Target == null)
+            if (_interactableDetector.Result.Target == null)
             {
                 //Debug.LogError($"[{name}] InteractWithTarget: Target is null");
                 return;
             }
 
-            Interactable interactable = DefaultScanResult.Target.GetComponent<Interactable>();
+            Interactable interactable =
+                _interactableDetector.Result.Target.GetComponent<Interactable>();
             if (interactable == null)
             {
                 //Debug.LogError($"[{name}] InteractWithTarget: Interactable is null");

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Darklight.Utility;
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace Darklight.Behaviour.Sensor
@@ -18,7 +19,7 @@ namespace Darklight.Behaviour.Sensor
     }
 
     [CreateAssetMenu(fileName = "NewScanFilter", menuName = "Darklight/Behaviour/ScanFilter")]
-    public class ScanFilter : ScriptableObject
+    public class SensorDetectionFilter : ScriptableObject
     {
         [SerializeField]
         [Tooltip("Layer mask for detection")]
@@ -28,12 +29,11 @@ namespace Darklight.Behaviour.Sensor
         [Tooltip("Targeting type for the sensor")]
         Sensor.TargetingType _targetingType = Sensor.TargetingType.FIRST;
 
-        [SerializeField]
-        [Tooltip("Targeting priorities for the sensor")]
-        PriorityTag.Comparator _priorityTagComparator = new();
+        [SerializeField, Tag]
+        string[] _whitelistTags;
 
         public LayerMask LayerMask => _layerMask;
         public Sensor.TargetingType TargetingType => _targetingType;
-        public PriorityTag.Comparator PriorityTagComparator => _priorityTagComparator;
+        public string[] WhitelistTags => _whitelistTags;
     }
 }
