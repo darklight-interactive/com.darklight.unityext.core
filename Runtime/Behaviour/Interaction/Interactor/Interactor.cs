@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Behaviour;
+using Darklight.Behaviour.Sensor;
 using Darklight.Collections;
 using Darklight.Editor;
 using NaughtyAttributes;
@@ -13,7 +14,7 @@ using UnityEditor;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public class Interactor : Sensor
+    public class Interactor : SensorBase
     {
         Interactable _lastInteractable;
 
@@ -21,23 +22,22 @@ namespace Darklight.Behaviour
         {
             get
             {
-                if (Target == null)
+                if (DefaultScanResult.Target == null)
                     return null;
-                return Target.GetComponent<Interactable>();
+                return DefaultScanResult.Target.GetComponent<Interactable>();
             }
         }
 
-        protected override void UpdateTarget()
+        protected override bool ExecuteScan(ScanFilter filter, out ScanResult result)
         {
-            base.UpdateTarget();
+            base.ExecuteScan(filter, out result);
 
             // If the target is an interactable, ask it to accept the interactor targeting it
-            if (TargetInteractable != null)
+            if (result.Target.GetComponent<Interactable>() != null)
             {
-                bool result = TargetInteractable.AcceptTarget(this);
-                if (result)
+                if (result.Target.GetComponent<Interactable>().AcceptTarget(this))
                 {
-                    _lastInteractable = TargetInteractable;
+                    _lastInteractable = result.Target.GetComponent<Interactable>();
                 }
             }
             else if (_lastInteractable != null)
@@ -45,6 +45,8 @@ namespace Darklight.Behaviour
                 _lastInteractable.Reset();
                 _lastInteractable = null;
             }
+
+            return true;
         }
 
         protected bool InteractWith(Interactable interactable, bool force = false)
@@ -58,13 +60,13 @@ namespace Darklight.Behaviour
         public virtual void InteractWithTarget(out bool result)
         {
             result = false;
-            if (Target == null)
+            if (DefaultScanResult.Target == null)
             {
                 //Debug.LogError($"[{name}] InteractWithTarget: Target is null");
                 return;
             }
 
-            Interactable interactable = Target.GetComponent<Interactable>();
+            Interactable interactable = DefaultScanResult.Target.GetComponent<Interactable>();
             if (interactable == null)
             {
                 //Debug.LogError($"[{name}] InteractWithTarget: Interactable is null");

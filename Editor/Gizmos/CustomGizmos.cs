@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.XR;
 
 namespace Darklight.Editor
 {
@@ -80,6 +79,70 @@ namespace Darklight.Editor
             }
 
             return vertices;
+        }
+
+        static void GenerateRectangleVertices(
+            Vector3 center,
+            Vector2 area,
+            Vector3 normal,
+            out Vector3[] vertices
+        )
+        {
+            vertices = GetRectangleVertices(center, area, normal);
+        }
+
+        static void GenerateRectangleVertices(
+            Vector3 center,
+            Vector2 area,
+            Quaternion rotation,
+            out Vector3[] vertices
+        )
+        {
+            vertices = GetRectangleVertices(center, area, rotation);
+        }
+
+        /// <summary>
+        /// Generates an array of points around a circle.
+        /// </summary>
+        /// <param name="center">The center of the circle.</param>
+        /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
+        /// <param name="normal">The normal of the circle.</param>
+        /// <param name="count">The number of points to generate. Must be greater than 2.</param>
+        /// <returns>An array of points around the circle.</returns>
+        static Vector3[] GenerateRadialVertices(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            int segments
+        )
+        {
+            // Validate the radius and segments
+            radius = Mathf.Max(radius, 0.001f);
+            segments = Mathf.Max(segments, 3);
+
+            List<Vector3> vertices = new List<Vector3>();
+
+            // Foreach step in the circle, calculate the points
+            float angleStep = 360.0f / segments;
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = i * angleStep;
+                Vector3 newPoint =
+                    center + Quaternion.AngleAxis(angle, normal) * Vector3.right * radius;
+                vertices.Add(newPoint);
+            }
+            return vertices.ToArray();
+        }
+
+        static void GenerateRadialVertices(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            int segments,
+            out Vector3[] vertices
+        )
+        {
+            vertices = GenerateRadialVertices(center, radius, normal, segments);
         }
 
         #region -- << LABELS >> ------------------------------------ >>
@@ -168,6 +231,58 @@ namespace Darklight.Editor
             {
                 onClick?.Invoke(); // Invoke the action if the button is clicked
             }
+        }
+        #endregion
+
+        #region -- << DRAW 2D RADIAL >> ------------------------------------ >>
+
+        /// <summary>
+        /// Draws a wire radial shape.
+        /// </summary>
+        /// <param name="center">The center of the shape.</param>
+        /// <param name="radius">The radius of the shape. Must be greater than 0.001f.</param>
+        /// <param name="normal">The normal of the shape.</param>
+        /// <param name="segments">The number of segments of the shape. Must be greater than 2.</param>
+        /// <param name="color">The color of the shape.</param>
+        public static void DrawWireRadialShape(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            int segments,
+            Color color
+        )
+        {
+            Vector3[] vertices = GenerateRadialVertices(center, radius, normal, segments);
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 start = vertices[i];
+                Vector3 end = vertices[(i + 1) % vertices.Length];
+                Handles.color = color;
+                Handles.DrawLine(start, end);
+            }
+        }
+
+        /// <summary>
+        /// Draws a solid radial shape.
+        /// </summary>
+        /// <param name="center">The center of the shape.</param>
+        /// <param name="radius">The radius of the shape. Must be greater than 0.001f.</param>
+        /// <param name="normal">The normal of the shape.</param>
+        /// <param name="segments">The number of segments of the shape. Must be greater than 2.</param>
+        /// <param name="color">The color of the shape.</param>
+        public static void DrawSolidRadialShape(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            int segments,
+            Color color
+        )
+        {
+            Vector3[] vertices = GenerateRadialVertices(center, radius, normal, segments);
+
+            Handles.color = color;
+            Handles.DrawAAConvexPolygon(vertices);
         }
         #endregion
 
@@ -560,6 +675,54 @@ namespace Darklight.Editor
             // Add wireframe outline for better visibility
             DrawWireCube(position, size, rotation, wireColor);
         }
+        #endregion
+
+        #region -- << DRAW 2D CIRCLE >> ------------------------------------ >>
+
+        /// <summary>
+        /// Draws a wire circle.
+        /// </summary>
+        /// <param name="center">The center of the circle.</param>
+        /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
+        /// <param name="normal">The normal of the circle.</param>
+        /// <param name="color">The color of the circle.</param>
+        /// <param name="segments">The number of segments of the circle.
+        ///     Must be greater than 6. Default is 32.</param>
+        public static void DrawWireCircle(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            Color color,
+            int segments = 16
+        )
+        {
+            segments = Mathf.Max(segments, 6);
+
+            DrawWireRadialShape(center, radius, normal, segments, color);
+        }
+
+        /// <summary>
+        /// Draws a wire circle.
+        /// </summary>
+        /// <param name="center">The center of the circle.</param>
+        /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
+        /// <param name="normal">The normal of the circle.</param>
+        /// <param name="color">The color of the circle.</param>
+        /// <param name="segments">The number of segments of the circle.
+        ///     Must be greater than 6. Default is 32.</param>
+        public static void DrawSolidCircle(
+            Vector3 center,
+            float radius,
+            Vector3 normal,
+            Color color,
+            int segments = 16
+        )
+        {
+            segments = Mathf.Max(segments, 6);
+
+            DrawSolidRadialShape(center, radius, normal, segments, color);
+        }
+
         #endregion
 
         #region -- << DRAW 3D SPHERE >> ------------------------------------ >>

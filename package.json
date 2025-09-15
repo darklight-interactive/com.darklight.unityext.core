@@ -4,14 +4,14 @@
   "displayName": "Darklight Core Library",
   "description": "The Core Unity Extension Library for Darklight Interactive Studios.",
   "unity": "6000.0",
-  "dependencies": {
-    "com.dbrizov.naughtyattributes": "2.1.4"
-  },
   "author": {
     "name": "Sky Casey { skysfalling }",
     "email": "skysfalling22@gmail.com",
     "url": "https://www.skysfalling.online"
   },
   "changelogUrl": "https://github.com/darklight-interactive/com.darklight.unityext.core/blob/main/CHANGELOG.md",
-  "documentationUrl": "https://github.com/darklight-interactive/com.darklight.unityext.core"
+  "documentationUrl": "https://github.com/darklight-interactive/com.darklight.unityext.core",
+  "dependencies": {
+    "com.dbrizov.naughtyattributes": "2.1.4"
+  }
 }
