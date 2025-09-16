@@ -31,7 +31,7 @@ namespace Darklight.Editor
         /// <param name="area">The width and height of the rectangle.</param>
         /// <param name="normal">The normal normal the rectangle is facing.</param>
         /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
-        static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normal)
+        public static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normal)
         {
             Vector2 halfArea = area * 0.5f;
             Vector3[] vertices = new Vector3[4]
@@ -61,7 +61,11 @@ namespace Darklight.Editor
         /// <param name="area">The width and height of the rectangle.</param>
         /// <param name="rotation">The rotation applied to the rectangle.</param>
         /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
-        static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Quaternion rotation)
+        public static Vector3[] GetRectangleVertices(
+            Vector3 center,
+            Vector2 area,
+            Quaternion rotation
+        )
         {
             Vector2 halfArea = area * 0.5f;
             Vector3[] vertices = new Vector3[4]
@@ -81,7 +85,7 @@ namespace Darklight.Editor
             return vertices;
         }
 
-        static void GenerateRectangleVertices(
+        public static void GenerateRectangleVertices(
             Vector3 center,
             Vector2 area,
             Vector3 normal,
@@ -91,7 +95,7 @@ namespace Darklight.Editor
             vertices = GetRectangleVertices(center, area, normal);
         }
 
-        static void GenerateRectangleVertices(
+        public static void GenerateRectangleVertices(
             Vector3 center,
             Vector2 area,
             Quaternion rotation,
@@ -109,7 +113,7 @@ namespace Darklight.Editor
         /// <param name="normal">The normal of the circle.</param>
         /// <param name="count">The number of points to generate. Must be greater than 2.</param>
         /// <returns>An array of points around the circle.</returns>
-        static Vector3[] GenerateRadialVertices(
+        public static Vector3[] GenerateRadialVertices(
             Vector3 center,
             float radius,
             Vector3 normal,
@@ -134,7 +138,7 @@ namespace Darklight.Editor
             return vertices.ToArray();
         }
 
-        static void GenerateRadialVertices(
+        public static void GenerateRadialVertices(
             Vector3 center,
             float radius,
             Vector3 normal,
@@ -197,6 +201,21 @@ namespace Darklight.Editor
 
             Handles.DrawAAPolyLine(thickness, new Vector3[] { start, end });
         }
+
+        public static void DrawLineWithLabel(
+            Vector3 start,
+            Vector3 end,
+            Color color,
+            string label,
+            float thickness = 0f
+        )
+        {
+            DrawLine(start, end, color, thickness);
+
+            // Draw label at the middle of the line
+            Vector3 middle = (start + end) / 2;
+            Handles.Label(middle, label);
+        }
         #endregion << DRAW LINE >> ------------------------------------ >>
 
         #region -- << DRAW BUTTON >> ------------------------------------------------- >>
@@ -231,6 +250,14 @@ namespace Darklight.Editor
             {
                 onClick?.Invoke(); // Invoke the action if the button is clicked
             }
+        }
+        #endregion
+
+        #region -- << DRAW POLYGON >> ------------------------------------ >>
+        public static void DrawPolygon(Vector3[] vertices, Color color, float opacity = 1f)
+        {
+            Handles.color = new Color(color.r, color.g, color.b, opacity);
+            Handles.DrawAAConvexPolygon(vertices);
         }
         #endregion
 

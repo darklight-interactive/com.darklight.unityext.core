@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 182159272}
   - component: {fileID: 182159271}
   - component: {fileID: 182159270}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cube
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -471,7 +471,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _isDisabled: 0
   _config: {fileID: 11400000, guid: 56893d19c8750a049a0de32410d4aaf3, type: 2}
-  _detectors: []
+  _detectors:
+  - _filter: {fileID: 11400000, guid: e8c90007298e58245b135bd1d2ea3757, type: 2}
+    _result:
+      _target: {fileID: 1477470372}
+      _colliders:
+      - {fileID: 182159270}
+      - {fileID: 1477470372}
+      - {fileID: 1863598814}
   _showGizmos: 1
   _defaultColor: {r: 1, g: 1, b: 1, a: 1}
   _collidingColor: {r: 0, g: 1, b: 0, a: 1}
@@ -580,7 +587,7 @@ GameObject:
   - component: {fileID: 1477470374}
   - component: {fileID: 1477470373}
   - component: {fileID: 1477470372}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cube (1)
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -796,7 +803,7 @@ GameObject:
   - component: {fileID: 1863598816}
   - component: {fileID: 1863598815}
   - component: {fileID: 1863598814}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cube (2)
   m_TagString: Enemy
   m_Icon: {fileID: 0}

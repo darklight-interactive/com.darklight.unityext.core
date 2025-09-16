@@ -28,8 +28,12 @@ namespace Darklight.Behaviour.Sensor
         List<Detector> _detectors = new List<Detector>();
 
         [SerializeField, Foldout("Debug")]
-        [Tooltip("Enable gizmo visualization in editor")]
-        bool _showGizmos = true;
+        [Tooltip("Enable outline visualization in editor")]
+        bool _showOutline = true;
+
+        [SerializeField, Foldout("Debug")]
+        [Tooltip("Enable debug visualization in editor")]
+        bool _showDebug = false;
 
         [SerializeField, Foldout("Debug")]
         [Tooltip("Color of the gizmo when the sensor is not colliding")]
@@ -92,6 +96,107 @@ namespace Darklight.Behaviour.Sensor
             colliders = colliders.Where(c => whitelist.Contains(c.tag)).ToArray();
         }
 
+        #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
+
+        /// <summary>
+        /// Determines if a point is inside a polygon using the ray casting algorithm.
+        /// </summary>
+        /// <param name="point">The point to test</param>
+        /// <param name="polygonVertices">Array of polygon vertices in order</param>
+        /// <returns>True if the point is inside the polygon, false otherwise</returns>
+        bool IsPointInPolygon(Vector3 point, Vector3[] polygonVertices)
+        {
+            bool inside = false;
+            int j = polygonVertices.Length - 1;
+
+            for (int i = 0; i < polygonVertices.Length; i++)
+            {
+                Vector3 vertexI = polygonVertices[i];
+                Vector3 vertexJ = polygonVertices[j];
+
+                // Check if ray from point intersects with edge from vertexI to vertexJ
+                if (
+                    ((vertexI.z > point.z) != (vertexJ.z > point.z))
+                    && (
+                        point.x
+                        < (vertexJ.x - vertexI.x) * (point.z - vertexI.z) / (vertexJ.z - vertexI.z)
+                            + vertexI.x
+                    )
+                )
+                {
+                    inside = !inside;
+                }
+
+                j = i;
+            }
+
+            return inside;
+        }
+
+        /// <summary>
+        /// Determines if a collider is inside the detection sector using the ray casting algorithm.
+        /// </summary>
+        /// <param name="collider">The collider to test</param>
+        /// <param name="transform">The transform of the sensor</param>
+        /// <param name="filter">The sensor detection filter containing sector information</param>
+        /// <returns>True if the collider is inside the detection sector, false otherwise</returns>
+        bool IsColliderInDetectionSector(
+            Collider collider,
+            Transform transform,
+            SensorDetectionFilter filter
+        )
+        {
+            Config.GetDetectionSectorPoints(
+                transform,
+                filter,
+                out Vector3 initEdgePoint,
+                out Vector3 terminalEdgePoint,
+                out Dictionary<float, Vector3> detectionSectorPoints
+            );
+
+            // Convert dictionary to array for easier processing
+            Vector3[] polygonVertices = detectionSectorPoints.Values.ToArray();
+
+            // Need at least 3 points to form a polygon
+            if (polygonVertices.Length < 3)
+                return false;
+
+            // (( INIT EDGE RAYCAST )) ------------------------------------------------------------
+            RaycastHit initEdgeHit;
+            Physics.Raycast(
+                transform.position,
+                initEdgePoint - transform.position,
+                out initEdgeHit,
+                Vector3.Distance(transform.position, initEdgePoint),
+                filter.LayerMask
+            );
+            if (initEdgeHit.collider == collider)
+                return true;
+
+            // (( TERMINAL EDGE RAYCAST )) ------------------------------------------------------------
+            RaycastHit terminalEdgeHit;
+            Physics.Raycast(
+                transform.position,
+                terminalEdgePoint - transform.position,
+                out terminalEdgeHit,
+                Vector3.Distance(transform.position, terminalEdgePoint),
+                filter.LayerMask
+            );
+            if (terminalEdgeHit.collider == collider)
+                return true;
+
+            // (( POSITION CHECK )) ------------------------------------------------------------
+            if (IsPointInPolygon(collider.transform.position, polygonVertices))
+                return true;
+
+            // Collider is not in the detection sector
+            return false;
+        }
+
+        #endregion
+
+
+
         public virtual bool ExecuteScan(
             SensorDetectionFilter filter,
             out SensorDetectionResult result
@@ -113,8 +218,8 @@ namespace Darklight.Behaviour.Sensor
             {
                 colliders = Physics.OverlapBox(
                     transform.position,
-                    Config.BoxHalfExtents,
-                    Quaternion.identity,
+                    Config.RectHalfExtents,
+                    transform.rotation,
                     filter.LayerMask
                 );
             }
@@ -134,6 +239,11 @@ namespace Darklight.Behaviour.Sensor
             // << NULL CHECKS >> ------------------------------------------------------------
             if (colliders == null || colliders.Length == 0)
                 return false;
+
+            // << FILTER COLLIDERS BY DETECTION SECTOR >> ------------------------------------------------------------
+            colliders = colliders
+                .Where(c => IsColliderInDetectionSector(c, transform, filter))
+                .ToArray();
 
             // << SET TARGET BASED ON TARGETING TYPE >> ------------------------------------------------------------
             switch (filter.TargetingType)
@@ -190,28 +300,22 @@ namespace Darklight.Behaviour.Sensor
 
         #endregion
 
-        #region [[ SETTERS ]] ====================================================================
-
-
-
-        #endregion
-
 #if UNITY_EDITOR
         public virtual void DrawGizmos()
         {
-            if (Config == null || !_showGizmos)
+            if (Config == null || !_showOutline)
                 return;
         }
 
         public virtual void DrawGizmosSelected()
         {
-            if (Config == null || !_showGizmos)
+            if (Config == null || !_showOutline)
                 return;
 
             // << DRAW DEFAULT >> ------------------------------------------------------------
             if (_detectors.Count == 0 || _detectors[0].IsValid == false)
             {
-                Config.DrawGizmos(_defaultColor, transform.position);
+                Config.DrawGizmos(_defaultColor, this);
                 return;
             }
 
@@ -220,7 +324,7 @@ namespace Darklight.Behaviour.Sensor
             if (_detectors[0].Result.HasColliders)
                 outlineColor = _collidingColor;
 
-            Config.DrawGizmos(outlineColor, transform.position);
+            Config.DrawGizmos(outlineColor, this, _detectors[0].Filter, _showDebug);
 
             // << DRAW LINE TO TARGET >> ------------------------------------------------------------
             if (_detectors[0].Result.HasTarget)
