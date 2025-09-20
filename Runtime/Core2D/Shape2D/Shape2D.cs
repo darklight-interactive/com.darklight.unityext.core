@@ -112,12 +112,18 @@ namespace Darklight.Core2D
                 CustomGizmos.DrawSolidRadialShape(
                     _center,
                     _radius,
-                    _normal,
+                    Quaternion.FromToRotation(Vector3.up, _normal),
                     _segments,
                     _gizmoColor
                 );
             else
-                CustomGizmos.DrawWireRadialShape(_center, _radius, _normal, _segments, _gizmoColor);
+                CustomGizmos.DrawWireRadialShape(
+                    _center,
+                    _radius,
+                    Quaternion.FromToRotation(Vector3.up, _normal),
+                    _segments,
+                    _gizmoColor
+                );
         }
 #endif
 

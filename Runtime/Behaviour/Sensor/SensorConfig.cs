@@ -19,6 +19,37 @@ namespace Darklight.Behaviour.Sensor
         SPHERE3D
     }
 
+    public struct EdgePoint
+    {
+        float _angle;
+        Vector3 _position;
+        public float Angle
+        {
+            get => _angle;
+            set
+            {
+                if (value < 0f)
+                    _angle = 360f + value;
+                if (value > 360f)
+                    _angle = value - 360f;
+                else
+                    _angle = value;
+            }
+        }
+
+        public Vector3 Position
+        {
+            get => _position;
+            set => _position = value;
+        }
+
+        public EdgePoint(float angle, Vector3 position)
+        {
+            _angle = angle;
+            _position = position;
+        }
+    }
+
     /// <summary>
     /// ScriptableObject containing all sensor-related settings for the survivor.
     /// </summary>
@@ -69,7 +100,7 @@ namespace Darklight.Behaviour.Sensor
         /// <summary>
         /// Calculates the edge point for a 3D box in the given direction.
         /// </summary>
-        Vector3 GetBoxEdgePoint(
+        EdgePoint GetBoxEdgePoint(
             Vector3 dimensions,
             float angle,
             Vector3 position,
@@ -88,19 +119,19 @@ namespace Darklight.Behaviour.Sensor
             );
 
             Vector3 localEdgePoint = localDirection * t;
-            return position + rotation * localEdgePoint;
+            return new EdgePoint(angle, position + rotation * localEdgePoint);
         }
 
         /// <summary>
         /// Calculates the edge point for a 3D sphere in the given direction.
         /// </summary>
-        Vector3 GetSphereEdgePoint(float angle, Vector3 position)
+        EdgePoint GetSphereEdgePoint(float angle, Vector3 position)
         {
             Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
-            return position + direction.normalized * _radius;
+            return new EdgePoint(angle, position + direction.normalized * _radius);
         }
 
-        Vector3 GetEdgePoint(float angle, Vector3 position, Quaternion rotation)
+        EdgePoint GetEdgePoint(float angle, Vector3 position, Quaternion rotation)
         {
             if (IsRect)
             {
@@ -111,7 +142,7 @@ namespace Darklight.Behaviour.Sensor
                 return GetSphereEdgePoint(angle, position);
             }
 
-            return position;
+            return new EdgePoint(angle, position);
         }
 
         float GetEdgePointAngle(Transform transform, Vector3 edgePoint)
@@ -128,22 +159,22 @@ namespace Darklight.Behaviour.Sensor
             return angle < 0 ? angle + 360f : angle;
         }
 
-        void CalculateShapePoints(Transform transform, out Dictionary<float, Vector3> shapePoints)
+        void CalculateShapePoints(Transform transform, out List<EdgePoint> shapePoints)
         {
-            shapePoints = new Dictionary<float, Vector3>();
+            shapePoints = new List<EdgePoint>();
 
             // << CALCULATE SHAPE POINTS >>
             if (IsRect)
             {
-                CustomGizmos.GenerateRectangleVertices(
+                Vector3[] vertices = CustomGizmos.GenerateRectangleVertices(
                     transform.position,
                     new Vector2(_rectDimensions.x, _rectDimensions.z),
                     transform.rotation,
-                    out Vector3[] vertices
+                    4
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(GetEdgePointAngle(transform, vertex), vertex);
+                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
                 }
             }
             else if (IsCircle)
@@ -151,213 +182,29 @@ namespace Darklight.Behaviour.Sensor
                 CustomGizmos.GenerateRadialVertices(
                     transform.position,
                     _radius,
-                    Vector3.up,
+                    transform.rotation,
                     16,
                     out Vector3[] vertices
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(GetEdgePointAngle(transform, vertex), vertex);
+                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
                 }
             }
 
             // Sort the shape points by angle
-            shapePoints = shapePoints
-                .OrderBy(point => point.Key)
-                .ToDictionary(point => point.Key, point => point.Value);
+            shapePoints = shapePoints.OrderBy(point => point.Angle).ToList();
         }
         #endregion
 
-        public void GetDetectionSectorPoints(
-            Transform transform,
+
+        void CalculateSectorAngles(
             SensorDetectionFilter filter,
-            out Vector3 initEdgePoint,
-            out Vector3 terminalEdgePoint,
-            out Dictionary<float, Vector3> detectionSectorPoints
+            out float minorSectorAngle,
+            out float majorSectorAngle
         )
         {
-            CalculateShapePoints(transform, out Dictionary<float, Vector3> shapePoints);
-            detectionSectorPoints = new Dictionary<float, Vector3>();
-
-            Vector2 detectionSector = filter.DetectionSector;
-            float initialAngle = detectionSector.x;
-            float terminalAngle = detectionSector.y;
-
-            initEdgePoint = GetEdgePoint(initialAngle, transform.position, transform.rotation);
-            terminalEdgePoint = GetEdgePoint(terminalAngle, transform.position, transform.rotation);
-
-            /// << SHAPE POINTS IN DETECTION SECTOR >>
-            if (initialAngle == terminalAngle)
-                return;
-
-            // Determine which sector to use based on the sector type
-            Dictionary<float, Vector3> sectorPoints = GetSectorPoints(
-                shapePoints,
-                initialAngle,
-                terminalAngle,
-                filter.SectorType
-            );
-
-            foreach (var point in sectorPoints)
-            {
-                if (detectionSectorPoints.ContainsKey(point.Key))
-                    continue;
-                detectionSectorPoints.Add(point.Key, point.Value);
-            }
-
-            detectionSectorPoints = detectionSectorPoints
-                .OrderBy(point => point.Key)
-                .ToDictionary(point => point.Key, point => point.Value);
-        }
-
-        /// <summary>
-        /// Gets the appropriate sector points based on the sector type.
-        /// </summary>
-        /// <param name="shapePoints">All available shape points</param>
-        /// <param name="initialAngle">The initial angle of the detection sector</param>
-        /// <param name="terminalAngle">The terminal angle of the detection sector</param>
-        /// <param name="sectorType">The type of sector to calculate</param>
-        /// <returns>Dictionary of angle-vector pairs for the selected sector</returns>
-        private Dictionary<float, Vector3> GetSectorPoints(
-            Dictionary<float, Vector3> shapePoints,
-            float initialAngle,
-            float terminalAngle,
-            SectorType sectorType
-        )
-        {
-            Dictionary<float, Vector3> sectorPoints = new Dictionary<float, Vector3>();
-
-            switch (sectorType)
-            {
-                case SectorType.FULL:
-                    // Include all points
-                    sectorPoints = shapePoints;
-                    break;
-
-                case SectorType.SMALL_ANGLE:
-                    // Prefer the sector with the smaller angle difference
-                    sectorPoints = GetSmallerSectorPoints(shapePoints, initialAngle, terminalAngle);
-                    break;
-
-                case SectorType.LARGE_ANGLE:
-                    // Prefer the sector with the larger angle difference
-                    sectorPoints = GetLargerSectorPoints(shapePoints, initialAngle, terminalAngle);
-                    break;
-            }
-
-            return sectorPoints;
-        }
-
-        /// <summary>
-        /// Checks if a point angle is within the specified sector.
-        /// </summary>
-        /// <param name="pointAngle">The angle of the point to check</param>
-        /// <param name="initialAngle">The initial angle of the sector</param>
-        /// <param name="terminalAngle">The terminal angle of the sector</param>
-        /// <returns>True if the point is within the sector</returns>
-        private bool IsPointInSector(float pointAngle, float initialAngle, float terminalAngle)
-        {
-            if (initialAngle < terminalAngle)
-            {
-                return pointAngle >= initialAngle && pointAngle <= terminalAngle;
-            }
-            else
-            {
-                return pointAngle <= initialAngle && pointAngle >= terminalAngle;
-            }
-        }
-
-        /// <summary>
-        /// Gets points from the smaller sector (the one with smaller angle difference).
-        /// </summary>
-        /// <param name="shapePoints">All available shape points</param>
-        /// <param name="initialAngle">The initial angle of the detection sector</param>
-        /// <param name="terminalAngle">The terminal angle of the detection sector</param>
-        /// <returns>Dictionary of angle-vector pairs for the smaller sector</returns>
-        private Dictionary<float, Vector3> GetSmallerSectorPoints(
-            Dictionary<float, Vector3> shapePoints,
-            float initialAngle,
-            float terminalAngle
-        )
-        {
-            Dictionary<float, Vector3> sectorPoints = new Dictionary<float, Vector3>();
-
-            // Calculate the angle difference for the primary sector
-            float minorSectorAngle = CalculateSectorAngle(initialAngle, terminalAngle);
-
-            // Calculate the angle difference for the complementary sector
-            float majorSectorAngle = 360f - minorSectorAngle;
-
-            // Determine which sector is smaller
-            bool usePrimarySector = minorSectorAngle <= majorSectorAngle;
-
-            foreach (var point in shapePoints)
-            {
-                bool inPrimarySector = IsPointInSector(point.Key, initialAngle, terminalAngle);
-                bool inComplementarySector = !inPrimarySector;
-
-                if (
-                    (usePrimarySector && inPrimarySector)
-                    || (!usePrimarySector && inComplementarySector)
-                )
-                {
-                    sectorPoints.Add(point.Key, point.Value);
-                }
-            }
-
-            return sectorPoints;
-        }
-
-        /// <summary>
-        /// Gets points from the larger sector (the one with larger angle difference).
-        /// </summary>
-        /// <param name="shapePoints">All available shape points</param>
-        /// <param name="initialAngle">The initial angle of the detection sector</param>
-        /// <param name="terminalAngle">The terminal angle of the detection sector</param>
-        /// <returns>Dictionary of angle-vector pairs for the larger sector</returns>
-        private Dictionary<float, Vector3> GetLargerSectorPoints(
-            Dictionary<float, Vector3> shapePoints,
-            float initialAngle,
-            float terminalAngle
-        )
-        {
-            Dictionary<float, Vector3> sectorPoints = new Dictionary<float, Vector3>();
-
-            // Calculate the angle difference for the primary sector
-            float primarySectorAngle = CalculateSectorAngle(initialAngle, terminalAngle);
-
-            // Calculate the angle difference for the complementary sector
-            float complementarySectorAngle = 360f - primarySectorAngle;
-
-            // Determine which sector is larger
-            bool usePrimarySector = primarySectorAngle >= complementarySectorAngle;
-
-            foreach (var point in shapePoints)
-            {
-                bool inPrimarySector = IsPointInSector(point.Key, initialAngle, terminalAngle);
-                bool inComplementarySector = !inPrimarySector;
-
-                if (
-                    (usePrimarySector && inPrimarySector)
-                    || (!usePrimarySector && inComplementarySector)
-                )
-                {
-                    sectorPoints.Add(point.Key, point.Value);
-                }
-            }
-
-            return sectorPoints;
-        }
-
-        /// <summary>
-        /// Calculates the angle difference between two angles, handling wraparound.
-        /// </summary>
-        /// <param name="initialAngle">The initial angle</param>
-        /// <param name="terminalAngle">The terminal angle</param>
-        /// <returns>The angle difference in degrees</returns>
-        private float CalculateSectorAngle(float initialAngle, float terminalAngle)
-        {
-            float angleDifference = Mathf.Abs(terminalAngle - initialAngle);
+            float angleDifference = Mathf.Abs(filter.TerminalAngle - filter.InitialAngle);
 
             // Handle wraparound case where the sector crosses 0/360 degrees
             if (angleDifference > 180f)
@@ -365,7 +212,92 @@ namespace Darklight.Behaviour.Sensor
                 angleDifference = 360f - angleDifference;
             }
 
-            return angleDifference;
+            minorSectorAngle = angleDifference;
+            majorSectorAngle = 360f - angleDifference;
+        }
+
+        bool IsPointInMinorSector(EdgePoint point, float initialAngle, float terminalAngle)
+        {
+            float difference = Mathf.Abs(initialAngle - terminalAngle);
+            // If the difference is greater than 180 degrees, then the sector is wrapped around
+            if (difference > 180f)
+            {
+                return point.Angle < initialAngle || point.Angle > terminalAngle;
+            }
+
+            if (initialAngle < terminalAngle)
+            {
+                // << MINOR SECTOR POINTS >>
+                // These points are the ones inbetween the initial and terminal points
+                return point.Angle >= initialAngle && point.Angle <= terminalAngle;
+            }
+            else
+            {
+                // << MAJOR SECTOR POINTS >>
+                // These points are the ones outside the initial and terminal points
+                return point.Angle <= initialAngle && point.Angle >= terminalAngle;
+            }
+        }
+
+        public void CalculateSensorPoints(
+            Transform transform,
+            SensorDetectionFilter filter,
+            out EdgePoint initialEdgePoint,
+            out EdgePoint terminalEdgePoint,
+            out List<EdgePoint> shapePoints,
+            out List<EdgePoint> sectorPoints
+        )
+        {
+            CalculateShapePoints(transform, out shapePoints);
+
+            // << GET THE INITIAL AND TERMINAL ANGLES >>
+            float initialAngle = filter.InitialAngle;
+            float terminalAngle = filter.TerminalAngle;
+
+            // If the initial angle is greater than the terminal angle, swap them
+            if (initialAngle > terminalAngle)
+            {
+                initialAngle = filter.TerminalAngle;
+                terminalAngle = filter.InitialAngle;
+            }
+
+            // Get the initial and terminal edge points
+            initialEdgePoint = GetEdgePoint(initialAngle, transform.position, transform.rotation);
+            terminalEdgePoint = GetEdgePoint(terminalAngle, transform.position, transform.rotation);
+
+            // << CALCULATE THE MINOR AND MAJOR SECTOR POINTS >>
+            List<EdgePoint> minorSectorPoints = new List<EdgePoint>();
+            List<EdgePoint> majorSectorPoints = new List<EdgePoint>();
+
+            // Add the shape points to the minor or major sector points
+            for (int i = 0; i < shapePoints.Count; i++)
+            {
+                EdgePoint currentPoint = shapePoints[i];
+                if (IsPointInMinorSector(currentPoint, initialAngle, terminalAngle))
+                {
+                    minorSectorPoints.Add(currentPoint);
+                }
+                else
+                {
+                    majorSectorPoints.Add(currentPoint);
+                }
+            }
+
+            // Filter the sector points based on the sector type
+            sectorPoints = new List<EdgePoint>();
+            if (filter.SectorType == SectorType.FULL)
+            {
+                sectorPoints.AddRange(minorSectorPoints);
+                sectorPoints.AddRange(majorSectorPoints);
+            }
+            else if (filter.SectorType == SectorType.SMALL_ANGLE)
+            {
+                sectorPoints.AddRange(minorSectorPoints);
+            }
+            else if (filter.SectorType == SectorType.LARGE_ANGLE)
+            {
+                sectorPoints.AddRange(majorSectorPoints);
+            }
         }
 
         /// <summary>
@@ -405,150 +337,13 @@ namespace Darklight.Behaviour.Sensor
                 CustomGizmos.DrawWireCircle(
                     sensor.transform.position,
                     _radius,
-                    Vector3.up,
+                    sensor.transform.rotation,
                     gizmoColor
                 );
             }
             else if (_shape == Shape.SPHERE3D)
             {
                 CustomGizmos.DrawWireSphere(sensor.transform.position, _radius, gizmoColor);
-            }
-            // Draw forward direction line
-            DrawDetectionSector(gizmoColor, sensor, filter, showDebug);
-        }
-
-        /// <summary>
-        /// Draws lines from the center to the edge of the sensor shape for the detection sector angles.
-        /// </summary>
-        /// <param name="gizmoColor">The color for the lines</param>
-        /// <param name="position">The center position of the sensor</param>
-        /// <param name="rotation">The rotation of the sensor transform</param>
-        /// <param name="filter">The sensor detection filter containing angle information</param>
-        void DrawDetectionSector(
-            Color gizmoColor,
-            SensorBase sensor,
-            SensorDetectionFilter filter = null,
-            bool showDebug = false
-        )
-        {
-            Vector3 position = sensor.transform.position;
-            Quaternion rotation = sensor.transform.rotation;
-
-            // Calculate edge points
-            GetDetectionSectorPoints(
-                sensor.transform,
-                filter,
-                out Vector3 initEdgePoint,
-                out Vector3 terminalEdgePoint,
-                out Dictionary<float, Vector3> detectionSectorPoints
-            );
-
-            // Draw debug points
-            if (showDebug)
-            {
-                // Draw detection sector points
-                foreach (var point in detectionSectorPoints)
-                {
-                    CustomGizmos.DrawSolidCircle(point.Value, 0.025f, Vector3.up, gizmoColor);
-                    CustomGizmos.DrawLabel(
-                        point.Key.ToString() + "°",
-                        point.Value,
-                        CustomGUIStyles.CenteredStyle
-                    );
-                }
-
-                // Draw line for initial angle
-                CustomGizmos.DrawLineWithLabel(
-                    position,
-                    initEdgePoint,
-                    gizmoColor,
-                    filter.DetectionSector.x.ToString() + "°"
-                );
-
-                // Draw line for terminal angle
-                CustomGizmos.DrawLineWithLabel(
-                    position,
-                    terminalEdgePoint,
-                    gizmoColor,
-                    filter.DetectionSector.y.ToString() + "°"
-                );
-            }
-
-            // Draw the detection sector polygon
-
-            if (filter.SectorType == SectorType.FULL)
-            {
-                CustomGizmos.DrawPolygon(detectionSectorPoints.Values.ToArray(), gizmoColor, 0.2f);
-            }
-            else if (filter.SectorType == SectorType.SMALL_ANGLE)
-            {
-                // Add the center point to the vertices
-                List<Vector3> vertices = new List<Vector3>
-                {
-                    sensor.transform.position,
-                    initEdgePoint
-                };
-                vertices.AddRange(detectionSectorPoints.Values);
-                vertices.AddRange(new Vector3[] { terminalEdgePoint, sensor.transform.position }); // Add the center point to the end of the array to close the polygon
-                CustomGizmos.DrawPolygon(vertices.ToArray(), gizmoColor, 0.2f);
-            }
-            else if (filter.SectorType == SectorType.LARGE_ANGLE)
-            {
-                // Add the edge points to the vertices
-                detectionSectorPoints.Add(filter.DetectionSector.x, initEdgePoint);
-                detectionSectorPoints.Add(filter.DetectionSector.y, terminalEdgePoint);
-                detectionSectorPoints = detectionSectorPoints
-                    .OrderBy(point => point.Key)
-                    .ToDictionary(point => point.Key, point => point.Value);
-
-                // Get the index of the initial and terminal points
-                int initialIndex = detectionSectorPoints
-                    .Keys.ToList()
-                    .IndexOf(filter.DetectionSector.x);
-                int terminalIndex = detectionSectorPoints
-                    .Keys.ToList()
-                    .IndexOf(filter.DetectionSector.y);
-
-                // Convert the dictionary to a list
-                List<Vector3> vertices = detectionSectorPoints.Values.ToList();
-
-                // Add the center point inbetween the initial and terminal points to close the polygon
-                if (initialIndex < terminalIndex)
-                {
-                    vertices.Insert(initialIndex + 1, sensor.transform.position);
-                }
-                else
-                {
-                    vertices.Insert(terminalIndex + 1, sensor.transform.position);
-                }
-
-                // Rotate vertices so that the vertex with the larger index becomes the first element
-                int largerIndex = Mathf.Max(initialIndex, terminalIndex);
-                if (largerIndex > 0)
-                {
-                    // Rotate the list: move elements from largerIndex to the end to the beginning
-                    List<Vector3> rotatedVertices = new List<Vector3>();
-                    rotatedVertices.AddRange(
-                        vertices.GetRange(largerIndex, vertices.Count - largerIndex)
-                    );
-                    rotatedVertices.AddRange(vertices.GetRange(0, largerIndex));
-                    vertices = rotatedVertices;
-                }
-
-                vertices.Add(vertices[0]);
-
-                // Draw the polygon
-                CustomGizmos.DrawPolygon(vertices.ToArray(), gizmoColor, 0.2f);
-
-                // Debug the vertices
-                for (int i = 0; i < vertices.Count; i++)
-                {
-                    CustomGizmos.DrawLabel(
-                        i.ToString(),
-                        vertices[i] + Vector3.up * 0.1f,
-                        CustomGUIStyles.CenteredStyle
-                    );
-                }
             }
         }
     }

@@ -40,10 +40,10 @@ namespace Darklight.Behaviour.Sensor
         [SerializeField]
         SectorType _sectorType = SectorType.FULL;
 
-        [SerializeField, Range(-360f, 360f)]
+        [SerializeField, Range(0f, 360f)]
         float _initialAngle = 0f;
 
-        [SerializeField, Range(-360f, 360f)]
+        [SerializeField, Range(0f, 360f)]
         float _terminalAngle = 360f;
 
         [SerializeField, Tag]
@@ -52,23 +52,8 @@ namespace Darklight.Behaviour.Sensor
         public LayerMask LayerMask => _layerMask;
         public Sensor.TargetingType TargetingType => _targetingType;
         public SectorType SectorType => _sectorType;
-        public Vector2 DetectionSector
-        {
-            get
-            {
-                float out_initialAngle = _initialAngle;
-                float out_terminalAngle = _terminalAngle;
-                if (_initialAngle < 0f)
-                {
-                    out_initialAngle = 360f + _initialAngle;
-                }
-                if (_terminalAngle < 0f)
-                {
-                    out_terminalAngle = 360f + _terminalAngle;
-                }
-                return new Vector2(out_initialAngle, out_terminalAngle);
-            }
-        }
+        public float InitialAngle => _initialAngle < 0f ? 360f + _initialAngle : _initialAngle;
+        public float TerminalAngle => _terminalAngle < 0f ? 360f + _terminalAngle : _terminalAngle;
         public string[] WhitelistTags => _whitelistTags;
     }
 }

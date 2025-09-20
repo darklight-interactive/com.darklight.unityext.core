@@ -21,36 +21,111 @@ namespace Darklight.Editor
 
         // Buffer for sphere circle points (33 points for 32 segments + 1 closing point)
         private static readonly Vector3[] s_CirclePoints = new Vector3[33];
-
-        // == [ IF UNITY EDITOR ] ================================================================================================================
 #if UNITY_EDITOR
+
+        /// <summary>
+        /// Generates the base vertices for a rectangle in local space.
+        /// </summary>
+        /// <param name="area">The width and height of the rectangle.</param>
+        /// <param name="subdivisions">The number of subdivisions along each axis. 0 means no subdivisions (4 vertices).</param>
+        /// <returns>An array of Vector3 representing the vertices of the rectangle in local space.</returns>
+        static Vector3[] GenerateBaseRectangleVertices(Vector2 area, int subdivisions = 0)
+        {
+            Vector2 halfArea = area * 0.5f;
+
+            if (subdivisions <= 0)
+            {
+                // No subdivisions - return the 4 corner vertices
+                return new Vector3[4]
+                {
+                    new Vector3(-halfArea.x, 0, -halfArea.y),
+                    new Vector3(halfArea.x, 0, -halfArea.y),
+                    new Vector3(halfArea.x, 0, halfArea.y),
+                    new Vector3(-halfArea.x, 0, halfArea.y)
+                };
+            }
+            else
+            {
+                // Generate edge-subdivided vertices
+                // Total vertices = 4 corners + subdivisions on each of 4 edges
+                // Each edge has (subdivisions - 1) additional vertices between corners
+                int totalVertices = 4 + (subdivisions - 1) * 4;
+                Vector3[] vertices = new Vector3[totalVertices];
+
+                // Calculate step sizes for each edge
+                float xStep = area.x / subdivisions;
+                float zStep = area.y / subdivisions;
+
+                int vertexIndex = 0;
+
+                // Bottom edge (left to right)
+                for (int i = 0; i <= subdivisions; i++)
+                {
+                    float xPos = -halfArea.x + (i * xStep);
+                    vertices[vertexIndex++] = new Vector3(xPos, 0, -halfArea.y);
+                }
+
+                // Right edge (bottom to top, skip bottom corner)
+                for (int i = 1; i <= subdivisions; i++)
+                {
+                    float zPos = -halfArea.y + (i * zStep);
+                    vertices[vertexIndex++] = new Vector3(halfArea.x, 0, zPos);
+                }
+
+                // Top edge (right to left, skip right corner)
+                for (int i = subdivisions - 1; i >= 0; i--)
+                {
+                    float xPos = -halfArea.x + (i * xStep);
+                    vertices[vertexIndex++] = new Vector3(xPos, 0, halfArea.y);
+                }
+
+                // Left edge (top to bottom, skip top and bottom corners)
+                for (int i = subdivisions - 1; i > 0; i--)
+                {
+                    float zPos = -halfArea.y + (i * zStep);
+                    vertices[vertexIndex++] = new Vector3(-halfArea.x, 0, zPos);
+                }
+
+                return vertices;
+            }
+        }
+
+        /// <summary>
+        /// Applies transformation to an array of vertices.
+        /// </summary>
+        /// <param name="vertices">The vertices to transform.</param>
+        /// <param name="rotation">The rotation to apply.</param>
+        /// <param name="center">The center position to translate to.</param>
+        private static void TransformVertices(
+            Vector3[] vertices,
+            Quaternion rotation,
+            Vector3 center
+        )
+        {
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = rotation * vertices[i] + center;
+            }
+        }
+
         /// <summary>
         /// Calculates the vertices of a rectangle given its center, size, and normal.
         /// </summary>
         /// <param name="center">The center position of the rectangle.</param>
         /// <param name="area">The width and height of the rectangle.</param>
         /// <param name="normal">The normal normal the rectangle is facing.</param>
+        /// <param name="subdivisions">The number of subdivisions along each axis. 0 means no subdivisions (4 vertices).</param>
         /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
-        public static Vector3[] GetRectangleVertices(Vector3 center, Vector2 area, Vector3 normal)
+        public static Vector3[] GenerateRectangleVertices(
+            Vector3 center,
+            Vector2 area,
+            Vector3 normal,
+            int subdivisions = 0
+        )
         {
-            Vector2 halfArea = area * 0.5f;
-            Vector3[] vertices = new Vector3[4]
-            {
-                new Vector3(-halfArea.x, 0, -halfArea.y),
-                new Vector3(halfArea.x, 0, -halfArea.y),
-                new Vector3(halfArea.x, 0, halfArea.y),
-                new Vector3(-halfArea.x, 0, halfArea.y)
-            };
-
-            // Calculate the rotation from the up normal to the normal normal
+            Vector3[] vertices = GenerateBaseRectangleVertices(area, subdivisions);
             Quaternion rotation = Quaternion.FromToRotation(Vector3.up, normal);
-
-            // Apply rotation to each vertex
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                vertices[i] = rotation * vertices[i] + center;
-            }
-
+            TransformVertices(vertices, rotation, center);
             return vertices;
         }
 
@@ -60,49 +135,18 @@ namespace Darklight.Editor
         /// <param name="center">The center position of the rectangle.</param>
         /// <param name="area">The width and height of the rectangle.</param>
         /// <param name="rotation">The rotation applied to the rectangle.</param>
+        /// <param name="subdivisions">The number of subdivisions along each axis. 0 means no subdivisions (4 vertices).</param>
         /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
-        public static Vector3[] GetRectangleVertices(
-            Vector3 center,
-            Vector2 area,
-            Quaternion rotation
-        )
-        {
-            Vector2 halfArea = area * 0.5f;
-            Vector3[] vertices = new Vector3[4]
-            {
-                new Vector3(-halfArea.x, 0, -halfArea.y),
-                new Vector3(halfArea.x, 0, -halfArea.y),
-                new Vector3(halfArea.x, 0, halfArea.y),
-                new Vector3(-halfArea.x, 0, halfArea.y)
-            };
-
-            // Apply the specified rotation to each vertex
-            for (int i = 0; i < vertices.Length; i++)
-            {
-                vertices[i] = rotation * vertices[i] + center;
-            }
-
-            return vertices;
-        }
-
-        public static void GenerateRectangleVertices(
-            Vector3 center,
-            Vector2 area,
-            Vector3 normal,
-            out Vector3[] vertices
-        )
-        {
-            vertices = GetRectangleVertices(center, area, normal);
-        }
-
-        public static void GenerateRectangleVertices(
+        public static Vector3[] GenerateRectangleVertices(
             Vector3 center,
             Vector2 area,
             Quaternion rotation,
-            out Vector3[] vertices
+            int subdivisions = 0
         )
         {
-            vertices = GetRectangleVertices(center, area, rotation);
+            Vector3[] vertices = GenerateBaseRectangleVertices(area, subdivisions);
+            TransformVertices(vertices, rotation, center);
+            return vertices;
         }
 
         /// <summary>
@@ -110,13 +154,13 @@ namespace Darklight.Editor
         /// </summary>
         /// <param name="center">The center of the circle.</param>
         /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
-        /// <param name="normal">The normal of the circle.</param>
-        /// <param name="count">The number of points to generate. Must be greater than 2.</param>
+        /// <param name="rotation">The rotation applied to the circle.</param>
+        /// <param name="segments">The number of points to generate. Must be greater than 2.</param>
         /// <returns>An array of points around the circle.</returns>
         public static Vector3[] GenerateRadialVertices(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             int segments
         )
         {
@@ -132,21 +176,30 @@ namespace Darklight.Editor
             {
                 float angle = i * angleStep;
                 Vector3 newPoint =
-                    center + Quaternion.AngleAxis(angle, normal) * Vector3.right * radius;
+                    center
+                    + rotation * Quaternion.AngleAxis(angle, Vector3.up) * Vector3.right * radius;
                 vertices.Add(newPoint);
             }
             return vertices.ToArray();
         }
 
+        /// <summary>
+        /// Generates an array of points around a circle and outputs them to the provided array.
+        /// </summary>
+        /// <param name="center">The center of the circle.</param>
+        /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
+        /// <param name="rotation">The rotation applied to the circle.</param>
+        /// <param name="segments">The number of points to generate. Must be greater than 2.</param>
+        /// <param name="vertices">The output array of points around the circle.</param>
         public static void GenerateRadialVertices(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             int segments,
             out Vector3[] vertices
         )
         {
-            vertices = GenerateRadialVertices(center, radius, normal, segments);
+            vertices = GenerateRadialVertices(center, radius, rotation, segments);
         }
 
         #region -- << LABELS >> ------------------------------------ >>
@@ -274,12 +327,12 @@ namespace Darklight.Editor
         public static void DrawWireRadialShape(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             int segments,
             Color color
         )
         {
-            Vector3[] vertices = GenerateRadialVertices(center, radius, normal, segments);
+            Vector3[] vertices = GenerateRadialVertices(center, radius, rotation, segments);
 
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -301,12 +354,12 @@ namespace Darklight.Editor
         public static void DrawSolidRadialShape(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             int segments,
             Color color
         )
         {
-            Vector3[] vertices = GenerateRadialVertices(center, radius, normal, segments);
+            Vector3[] vertices = GenerateRadialVertices(center, radius, rotation, segments);
 
             Handles.color = color;
             Handles.DrawAAConvexPolygon(vertices);
@@ -379,7 +432,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, area, normal),
+                GenerateRectangleVertices(position, area, normal),
                 Color.clear,
                 color
             );
@@ -401,7 +454,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, area, rotation),
+                GenerateRectangleVertices(position, area, rotation),
                 Color.clear,
                 color
             );
@@ -423,7 +476,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, area, normal),
+                GenerateRectangleVertices(position, area, normal),
                 color,
                 Color.clear
             );
@@ -445,7 +498,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, area, rotation),
+                GenerateRectangleVertices(position, area, rotation),
                 color,
                 Color.clear
             );
@@ -462,7 +515,7 @@ namespace Darklight.Editor
         {
             Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, size * Vector2.one, normal),
+                GenerateRectangleVertices(position, size * Vector2.one, normal),
                 Color.clear,
                 color
             );
@@ -484,7 +537,7 @@ namespace Darklight.Editor
         {
             Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, size * Vector2.one, rotation),
+                GenerateRectangleVertices(position, size * Vector2.one, rotation),
                 Color.clear,
                 color
             );
@@ -506,7 +559,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, size * Vector2.one, normal),
+                GenerateRectangleVertices(position, size * Vector2.one, normal),
                 color,
                 Color.clear
             );
@@ -528,7 +581,7 @@ namespace Darklight.Editor
         {
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
-                GetRectangleVertices(position, size * Vector2.one, rotation),
+                GenerateRectangleVertices(position, size * Vector2.one, rotation),
                 color,
                 Color.clear
             );
@@ -718,14 +771,14 @@ namespace Darklight.Editor
         public static void DrawWireCircle(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             Color color,
             int segments = 16
         )
         {
             segments = Mathf.Max(segments, 6);
 
-            DrawWireRadialShape(center, radius, normal, segments, color);
+            DrawWireRadialShape(center, radius, rotation, segments, color);
         }
 
         /// <summary>
@@ -740,14 +793,14 @@ namespace Darklight.Editor
         public static void DrawSolidCircle(
             Vector3 center,
             float radius,
-            Vector3 normal,
+            Quaternion rotation,
             Color color,
             int segments = 16
         )
         {
             segments = Mathf.Max(segments, 6);
 
-            DrawSolidRadialShape(center, radius, normal, segments, color);
+            DrawSolidRadialShape(center, radius, rotation, segments, color);
         }
 
         #endregion
