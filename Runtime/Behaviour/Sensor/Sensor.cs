@@ -11,10 +11,10 @@ using UnityUtils;
 using UnityEditor;
 #endif
 
-namespace Darklight.Behaviour.Sensor
+namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public partial class SensorBase : MonoBehaviour
+    public partial class Sensor : MonoBehaviour
     {
         Dictionary<EdgePoint, bool> _raycastHits = new Dictionary<EdgePoint, bool>();
 
@@ -24,7 +24,7 @@ namespace Darklight.Behaviour.Sensor
         [HorizontalLine(color: EColor.Gray)]
         [SerializeField, Expandable]
         [CreateAsset("NewSensorSettings", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorConfig")]
-        SensorConfig _config;
+        Config _config;
 
         [SerializeField]
         List<Detector> _detectors = new List<Detector>();
@@ -48,12 +48,6 @@ namespace Darklight.Behaviour.Sensor
         [SerializeField, Foldout("Debug")]
         [Tooltip("Color of the gizmo when the sensor is not colliding")]
         Color _closestTargetColor = Color.red;
-
-        public SensorConfig Config
-        {
-            get => _config;
-            set => _config = value;
-        }
 
         public string Key => _config.name;
 
@@ -101,10 +95,10 @@ namespace Darklight.Behaviour.Sensor
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
 
 
-        bool DetectCollidersInSector(SensorDetectionFilter filter, out Collider[] out_colliders)
+        bool DetectCollidersInSector(DetectionFilter filter, out Collider[] out_colliders)
         {
             List<Collider> colliders = new List<Collider>();
-            Config.CalculateSensorPoints(
+            _config.CalculateSensorPoints(
                 transform,
                 filter,
                 out EdgePoint initialEdgePoint,
@@ -146,42 +140,42 @@ namespace Darklight.Behaviour.Sensor
             out_colliders = colliders.ToArray();
             return out_colliders.Length > 0;
         }
-
         #endregion
 
-
-
-        public virtual bool ExecuteScan(
-            SensorDetectionFilter filter,
-            out SensorDetectionResult result
-        )
+        /// <summary>
+        /// Executes the scan for the sensor based on the
+        /// </summary>
+        /// <param name="filter"> The filter to use for the scan </param>
+        /// <param name="result"> The result of the scan </param>
+        /// <returns> True if the scan was successful, false otherwise </returns>
+        public virtual bool ExecuteScan(DetectionFilter filter, out DetectionResult result)
         {
-            result = new SensorDetectionResult();
+            result = new DetectionResult();
             Collider target = null;
             Collider[] colliders = new Collider[0];
 
             // << NULL CHECKS >> ------------------------------------------------------------
-            if (Config == null)
+            if (_config == null)
                 return false;
 
             if (filter == null)
                 return false;
 
             // << DETECT COLLIDERS IN LAYER MASK >> ------------------------------------------------------------
-            if (Config.IsBoxShape)
+            if (_config.IsBoxShape)
             {
                 colliders = Physics.OverlapBox(
                     transform.position,
-                    Config.RectHalfExtents,
+                    _config.RectHalfExtents,
                     transform.rotation,
                     filter.LayerMask
                 );
             }
-            else if (Config.IsSphereShape)
+            else if (_config.IsSphereShape)
             {
                 colliders = Physics.OverlapSphere(
                     transform.position,
-                    Config.SphereRadius,
+                    _config.SphereRadius,
                     filter.LayerMask
                 );
             }
@@ -190,12 +184,12 @@ namespace Darklight.Behaviour.Sensor
             if (filter.WhitelistTags != null && filter.WhitelistTags.Length > 0)
                 ApplyWhitelist(filter.WhitelistTags, ref colliders);
 
+            // << FILTER COLLIDERS BY DETECTION SECTOR >> ------------------------------------------------------------
+            DetectCollidersInSector(filter, out colliders);
+
             // << NULL CHECKS >> ------------------------------------------------------------
             if (colliders == null || colliders.Length == 0)
                 return false;
-
-            // << FILTER COLLIDERS BY DETECTION SECTOR >> ------------------------------------------------------------
-            DetectCollidersInSector(filter, out colliders);
 
             // << SET TARGET BASED ON TARGETING TYPE >> ------------------------------------------------------------
             switch (filter.TargetingType)
@@ -209,7 +203,7 @@ namespace Darklight.Behaviour.Sensor
             }
 
             // << SET RESULT >> ------------------------------------------------------------
-            result = new SensorDetectionResult(target, colliders);
+            result = new DetectionResult(target, colliders);
             return true;
         }
 
@@ -226,8 +220,7 @@ namespace Darklight.Behaviour.Sensor
         public void Disable() => IsDisabled = true;
 
         #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
-
-        public void GetOrAddDetector(SensorDetectionFilter filter, out Detector detector)
+        public void GetOrAddDetector(DetectionFilter filter, out Detector detector)
         {
             detector = _detectors.FirstOrDefault(d => d.Filter == filter);
             if (detector == null)
@@ -252,22 +245,23 @@ namespace Darklight.Behaviour.Sensor
 
         #endregion
 
+        #region < PRIVATE_METHODS > [[ GIZMOS ]] ====================================================================
 #if UNITY_EDITOR
-        public virtual void DrawGizmos()
+        protected virtual void DrawGizmos()
         {
-            if (Config == null || !_showOutline)
+            if (_config == null || !_showOutline)
                 return;
         }
 
-        public virtual void DrawGizmosSelected()
+        protected virtual void DrawGizmosSelected()
         {
-            if (Config == null || !_showOutline)
+            if (_config == null || !_showOutline)
                 return;
 
             // << DRAW DEFAULT >> ------------------------------------------------------------
             if (_detectors.Count == 0 || _detectors[0].IsValid == false)
             {
-                Config.DrawGizmos(_defaultColor, this);
+                _config.DrawOutlineGizmos(transform, _defaultColor);
                 return;
             }
 
@@ -276,14 +270,14 @@ namespace Darklight.Behaviour.Sensor
             if (_detectors[0].Result.HasColliders)
                 outlineColor = _collidingColor;
 
-            Config.DrawGizmos(outlineColor, this, _detectors[0].Filter, _showDebug);
+            _config.DrawOutlineGizmos(transform, outlineColor);
 
             // << DRAW LINE TO TARGET >> ------------------------------------------------------------
             if (_detectors[0].Result.HasTarget)
                 DrawLineToTarget(_closestTargetColor, _detectors[0].Result.Target.transform);
 
             // << DRAW DETECTION SECTOR >> ------------------------------------------------------------
-            DrawDetectionSector(this, _detectors[0].Filter, _showDebug);
+            DrawDetectionSector(transform, _detectors[0], _showDebug);
         }
 
         void DrawLineToTarget(Color gizmoColor, Transform target)
@@ -299,59 +293,117 @@ namespace Darklight.Behaviour.Sensor
         /// <param name="position">The center position of the sensor</param>
         /// <param name="rotation">The rotation of the sensor transform</param>
         /// <param name="filter">The sensor detection filter containing angle information</param>
-        void DrawDetectionSector(
-            SensorBase sensor,
-            SensorDetectionFilter filter = null,
-            bool showDebug = false
-        )
+        void DrawDetectionSector(Transform transform, Detector detector, bool showDebug = false)
         {
-            Vector3 position = sensor.transform.position;
-            Quaternion rotation = sensor.transform.rotation;
+            Vector3 position = transform.position;
+            Quaternion rotation = transform.rotation;
+            DetectionFilter filter = detector.Filter;
 
-            // Draw debug points
+            Color gizmoColor = _defaultColor;
+            if (detector.Result.HasColliders)
+                gizmoColor = _collidingColor;
+
+            // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
+            if (!filter.IsFullSectorType)
+                DrawSectorPolygon(filter, _raycastHits.Keys.ToList(), gizmoColor);
+
+            // << DRAW SECTOR RAYCASTS >> ------------------------------------------------------------
             if (showDebug)
+                DrawSectorRaycasts(transform, _raycastHits.Keys.ToList());
+        }
+
+        void DrawSectorPolygon(DetectionFilter filter, List<EdgePoint> edgePoints, Color color)
+        {
+            // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
+            edgePoints = edgePoints.OrderBy(k => k.Angle).ToList();
+
+            // Check if any of the edge points are more than the initial angle and less than the terminal angle
+            // If not, then we need to seperate the edge points into two lists, one for the smaller angle and one for the larger angle
+            if (
+                edgePoints.Any(k =>
+                    IsAngleInBetween(k.Angle, filter.InitialAngle, filter.TerminalAngle)
+                )
+            )
             {
-                // Draw sector points
-                foreach (var point in sensor._raycastHits.Keys)
-                {
-                    Color gizmoColor = sensor._raycastHits[point] ? _collidingColor : _defaultColor;
-
-                    CustomGizmos.DrawSolidCircle(point.Position, 0.025f, rotation, gizmoColor);
-                    CustomGizmos.DrawLabel(
-                        point.Angle.ToString() + "°",
-                        point.Position + Vector3.up * 0.1f,
-                        CustomGUIStyles.CenteredStyle
-                    );
-
-                    CustomGizmos.DrawLine(position, point.Position, gizmoColor);
-                }
+                //Debug.Log("Edge points are in between the initial and terminal angles");
             }
+            else
+            {
+                // Add 360 to all values less than the smaller angle
+                float smallerAngle = Mathf.Min(filter.InitialAngle, filter.TerminalAngle);
+
+                // Sort the edge points by angle
+                List<EdgePoint> smallerAngleEdgePoints = new List<EdgePoint>();
+                List<EdgePoint> largerAngleEdgePoints = new List<EdgePoint>();
+                foreach (var point in edgePoints)
+                {
+                    if (point.Angle <= smallerAngle)
+                        smallerAngleEdgePoints.Add(point);
+                    else
+                        largerAngleEdgePoints.Add(point);
+                }
+
+                // Resort the edge points by angle
+                smallerAngleEdgePoints = smallerAngleEdgePoints.OrderBy(k => k.Angle).ToList();
+                largerAngleEdgePoints = largerAngleEdgePoints.OrderBy(k => k.Angle).ToList();
+
+                // Add them together, larger angle first
+                edgePoints = new List<EdgePoint>();
+                edgePoints.AddRange(largerAngleEdgePoints);
+                edgePoints.AddRange(smallerAngleEdgePoints);
+            }
+
+            // Add the center point
+            edgePoints.Add(new EdgePoint(-1, transform.position));
+
+            // Draw the polygon
+            CustomGizmos.DrawPolygon(edgePoints.Select(k => k.Position).ToArray(), color, 0.2f);
+
+            //DebugEdgePoints(edgePoints);
+        }
+
+        void DrawSectorRaycasts(Transform transform, List<EdgePoint> edgePoints)
+        {
+            // Draw sector points
+            foreach (var point in edgePoints)
+            {
+                Color raycastGizmoColor = _raycastHits[point] ? _collidingColor : _defaultColor;
+                CustomGizmos.DrawSolidCircle(
+                    point.Position,
+                    0.025f,
+                    transform.rotation,
+                    raycastGizmoColor
+                );
+                CustomGizmos.DrawLabel(
+                    point.Angle.ToString() + "°",
+                    point.Position + Vector3.up * 0.1f,
+                    CustomGUIStyles.CenteredStyle
+                );
+
+                CustomGizmos.DrawLine(transform.position, point.Position, raycastGizmoColor);
+            }
+        }
+
+        bool IsAngleInBetween(float angle, float initialAngle, float terminalAngle)
+        {
+            if (initialAngle < angle && angle < terminalAngle)
+                return true;
+            else if (initialAngle > angle && angle > terminalAngle)
+                return true;
+            else
+                return false;
+        }
+
+        void DebugEdgePoints(List<EdgePoint> edgePoints)
+        {
+            string debugString = "";
+            foreach (var point in edgePoints)
+            {
+                debugString += point.Angle.ToString() + "°, ";
+            }
+            Debug.Log(debugString);
         }
 #endif
-
-        [System.Serializable]
-        public class Detector
-        {
-            [SerializeField, Expandable, AllowNesting]
-            SensorDetectionFilter _filter;
-
-            [SerializeField, ReadOnly, AllowNesting]
-            SensorDetectionResult _result;
-
-            public bool IsValid => _filter != null;
-            public SensorDetectionFilter Filter => _filter;
-            public SensorDetectionResult Result => _result;
-
-            public Detector(SensorDetectionFilter filter)
-            {
-                _filter = filter;
-                _result = new SensorDetectionResult();
-            }
-
-            public void Execute(SensorBase sensor)
-            {
-                sensor.ExecuteScan(_filter, out _result);
-            }
-        }
+        #endregion
     }
 }

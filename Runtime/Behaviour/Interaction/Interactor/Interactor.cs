@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Behaviour;
-using Darklight.Behaviour.Sensor;
+using Darklight.Behaviour;
 using Darklight.Collections;
 using Darklight.Editor;
 using NaughtyAttributes;
@@ -14,13 +14,13 @@ using UnityEditor;
 namespace Darklight.Behaviour
 {
     [ExecuteAlways]
-    public class Interactor : SensorBase
+    public class Interactor : Sensor
     {
         Detector _interactableDetector;
         Interactable _lastInteractable;
 
         [SerializeField]
-        SensorDetectionFilter _interactableFilter;
+        DetectionFilter _interactableFilter;
 
         public Interactable TargetInteractable
         {
@@ -37,10 +37,7 @@ namespace Darklight.Behaviour
             GetOrAddDetector(_interactableFilter, out _interactableDetector);
         }
 
-        public override bool ExecuteScan(
-            SensorDetectionFilter filter,
-            out SensorDetectionResult result
-        )
+        public override bool ExecuteScan(DetectionFilter filter, out DetectionResult result)
         {
             base.ExecuteScan(filter, out result);
 
