@@ -18,7 +18,7 @@ namespace Darklight.Behaviour
                 sensors = obj.GetComponentsInChildren<Sensor>(true);
             }
 
-            public static void GetSensorByConfig(GameObject obj, Config config, out Sensor sensor)
+            public static void GetSensorByConfig(GameObject obj, SensorConfig config, out Sensor sensor)
             {
                 sensor = obj.GetComponentsInChildren<Sensor>(true)
                     .FirstOrDefault(s => s._config == config);
@@ -26,8 +26,8 @@ namespace Darklight.Behaviour
 
             public static Sensor GetOrAddSensor(
                 GameObject obj,
-                Config config,
-                List<DetectionFilter> filters = null
+                SensorConfig config,
+                List<SensorDetectionFilter> filters = null
             )
             {
                 // << CHECK IF SENSOR ALREADY EXISTS >>

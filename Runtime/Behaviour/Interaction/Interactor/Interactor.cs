@@ -20,7 +20,7 @@ namespace Darklight.Behaviour
         Interactable _lastInteractable;
 
         [SerializeField]
-        DetectionFilter _interactableFilter;
+        SensorDetectionFilter _interactableFilter;
 
         public Interactable TargetInteractable
         {
@@ -37,7 +37,7 @@ namespace Darklight.Behaviour
             GetOrAddDetector(_interactableFilter, out _interactableDetector);
         }
 
-        public override bool ExecuteScan(DetectionFilter filter, out DetectionResult result)
+        public override bool ExecuteScan(SensorDetectionFilter filter, out DetectionResult result)
         {
             base.ExecuteScan(filter, out result);
 

@@ -470,12 +470,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _isDisabled: 0
-  _config: {fileID: 11400000, guid: 56893d19c8750a049a0de32410d4aaf3, type: 2}
+  _config: {fileID: 11400000, guid: 95d19599c4cbf184b833ec123e55235b, type: 2}
   _detectors:
-  - _filter: {fileID: 11400000, guid: e8c90007298e58245b135bd1d2ea3757, type: 2}
+  - _filter: {fileID: 11400000, guid: 90eea354682767445b2c48db0ed6c24e, type: 2}
     _result:
-      _target: {fileID: 0}
-      _colliders: []
+      _target: {fileID: 182159270}
+      _colliders:
+      - {fileID: 182159270}
   _showOutline: 1
   _showDebug: 1
   _defaultColor: {r: 1, g: 1, b: 1, a: 1}

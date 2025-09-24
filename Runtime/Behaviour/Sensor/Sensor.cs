@@ -24,7 +24,7 @@ namespace Darklight.Behaviour
         [HorizontalLine(color: EColor.Gray)]
         [SerializeField, Expandable]
         [CreateAsset("NewSensorSettings", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorConfig")]
-        Config _config;
+        SensorConfig _config;
 
         [SerializeField]
         List<Detector> _detectors = new List<Detector>();
@@ -59,6 +59,7 @@ namespace Darklight.Behaviour
 
         bool IsValid => _config != null;
 
+        #region < PRIVATE_METHODS > [[ MONOBEHAVIOUR ]] ====================================================================
         void Update()
         {
             if (!IsValid)
@@ -76,7 +77,9 @@ namespace Darklight.Behaviour
         void OnDrawGizmos() => DrawGizmos();
 
         void OnDrawGizmosSelected() => DrawGizmosSelected();
+        #endregion
 
+        #region < PRIVATE_METHODS > [[ UTILITIES ]] ====================================================================
         IEnumerator DisableRoutine(float duration)
         {
             IsDisabled = true;
@@ -91,11 +94,16 @@ namespace Darklight.Behaviour
 
             colliders = colliders.Where(c => whitelist.Contains(c.tag)).ToArray();
         }
+        #endregion
+
+        #region < PRIVATE_METHODS > [[ CALCULATIONS ]] ====================================================================
+
+        #endregion
 
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
 
 
-        bool DetectCollidersInSector(DetectionFilter filter, out Collider[] out_colliders)
+        bool DetectCollidersInSector(SensorDetectionFilter filter, out Collider[] out_colliders)
         {
             List<Collider> colliders = new List<Collider>();
             _config.CalculateSensorPoints(
@@ -142,13 +150,14 @@ namespace Darklight.Behaviour
         }
         #endregion
 
+        #region < PUBLIC_METHODS > [[ SCAN ]] ====================================================================
         /// <summary>
         /// Executes the scan for the sensor based on the
         /// </summary>
         /// <param name="filter"> The filter to use for the scan </param>
         /// <param name="result"> The result of the scan </param>
         /// <returns> True if the scan was successful, false otherwise </returns>
-        public virtual bool ExecuteScan(DetectionFilter filter, out DetectionResult result)
+        public virtual bool ExecuteScan(SensorDetectionFilter filter, out DetectionResult result)
         {
             result = new DetectionResult();
             Collider target = null;
@@ -206,21 +215,10 @@ namespace Darklight.Behaviour
             result = new DetectionResult(target, colliders);
             return true;
         }
-
-        public void StartTimedDisable(float duration)
-        {
-            if (IsDisabled)
-                return;
-
-            StartCoroutine(DisableRoutine(duration));
-        }
-
-        public void Enable() => IsDisabled = false;
-
-        public void Disable() => IsDisabled = true;
+        #endregion
 
         #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
-        public void GetOrAddDetector(DetectionFilter filter, out Detector detector)
+        public void GetOrAddDetector(SensorDetectionFilter filter, out Detector detector)
         {
             detector = _detectors.FirstOrDefault(d => d.Filter == filter);
             if (detector == null)
@@ -242,6 +240,21 @@ namespace Darklight.Behaviour
                 .OrderBy(c => (c.transform.position - transform.position).sqrMagnitude)
                 .First();
         }
+
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ SETTERS ]] ====================================================================
+        public void StartTimedDisable(float duration)
+        {
+            if (IsDisabled)
+                return;
+
+            StartCoroutine(DisableRoutine(duration));
+        }
+
+        public void Enable() => IsDisabled = false;
+
+        public void Disable() => IsDisabled = true;
 
         #endregion
 
@@ -297,7 +310,7 @@ namespace Darklight.Behaviour
         {
             Vector3 position = transform.position;
             Quaternion rotation = transform.rotation;
-            DetectionFilter filter = detector.Filter;
+            SensorDetectionFilter filter = detector.Filter;
 
             Color gizmoColor = _defaultColor;
             if (detector.Result.HasColliders)
@@ -312,7 +325,7 @@ namespace Darklight.Behaviour
                 DrawSectorRaycasts(transform, _raycastHits.Keys.ToList());
         }
 
-        void DrawSectorPolygon(DetectionFilter filter, List<EdgePoint> edgePoints, Color color)
+        void DrawSectorPolygon(SensorDetectionFilter filter, List<EdgePoint> edgePoints, Color color)
         {
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
             edgePoints = edgePoints.OrderBy(k => k.Angle).ToList();
@@ -404,6 +417,69 @@ namespace Darklight.Behaviour
             Debug.Log(debugString);
         }
 #endif
+        #endregion
+
+        #region < PUBLIC_ENUMS > ====================================================================
+
+        public enum Shape
+        {
+            RECT2D,
+            BOX3D,
+            CIRCLE2D,
+            SPHERE3D
+        }
+
+        public enum TargetingType
+        {
+            /// <summary>
+            /// Target the first collider found, until it is no longer detected
+            /// </summary>
+            FIRST,
+
+            /// <summary>
+            /// Target the closest collider found, until another collider is determined to be closer
+            /// </summary>
+            CLOSEST
+        }
+
+        public enum SectorType
+        {
+            FULL,
+            SMALL_ANGLE,
+            LARGE_ANGLE
+        }
+
+        public struct EdgePoint
+        {
+            float _angle;
+            Vector3 _position;
+            public float Angle
+            {
+                get => _angle;
+                set
+                {
+                    if (value < 0f)
+                        _angle = 360f + value;
+                    if (value > 360f)
+                        _angle = value - 360f;
+                    else
+                        _angle = value;
+                }
+            }
+
+            public Vector3 Position
+            {
+                get => _position;
+                set => _position = value;
+            }
+
+            public EdgePoint(float angle, Vector3 position)
+            {
+                _angle = angle;
+                _position = position;
+            }
+        }
+
         #endregion
     }
 }
