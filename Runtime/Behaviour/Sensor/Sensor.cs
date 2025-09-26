@@ -325,7 +325,11 @@ namespace Darklight.Behaviour
                 DrawSectorRaycasts(transform, _raycastHits.Keys.ToList());
         }
 
-        void DrawSectorPolygon(SensorDetectionFilter filter, List<EdgePoint> edgePoints, Color color)
+        void DrawSectorPolygon(
+            SensorDetectionFilter filter,
+            List<EdgePoint> edgePoints,
+            Color color
+        )
         {
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
             edgePoints = edgePoints.OrderBy(k => k.Angle).ToList();

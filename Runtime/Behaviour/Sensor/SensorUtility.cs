@@ -18,7 +18,11 @@ namespace Darklight.Behaviour
                 sensors = obj.GetComponentsInChildren<Sensor>(true);
             }
 
-            public static void GetSensorByConfig(GameObject obj, SensorConfig config, out Sensor sensor)
+            public static void GetSensorByConfig(
+                GameObject obj,
+                SensorConfig config,
+                out Sensor sensor
+            )
             {
                 sensor = obj.GetComponentsInChildren<Sensor>(true)
                     .FirstOrDefault(s => s._config == config);
@@ -30,26 +34,45 @@ namespace Darklight.Behaviour
                 List<SensorDetectionFilter> filters = null
             )
             {
+                Sensor out_sensor = null;
+
                 // << CHECK IF SENSOR ALREADY EXISTS >>
                 GetSensorByConfig(obj, config, out Sensor existingSensor);
                 if (existingSensor != null)
                 {
-                    return existingSensor;
+                    out_sensor = existingSensor;
+                }
+                else
+                {
+                    // << CHECK IF AN UNUSED SENSOR EXISTS >>
+                    GetAllSensorsOnObject(obj, out Sensor[] sensors);
+                    foreach (Sensor s in sensors)
+                    {
+                        if (s._config == null)
+                        {
+                            s._config = config;
+                            out_sensor = s;
+                            break;
+                        }
+                    }
                 }
 
-                // << ADD SENSOR >>
-                Sensor sensor = obj.AddComponent<Sensor>();
-                sensor._config = config;
+                // << ADD SENSOR IF NOT FOUND >>
+                if (out_sensor == null)
+                {
+                    out_sensor = obj.AddComponent<Sensor>();
+                    out_sensor._config = config;
+                }
 
                 // << ADD FILTERS >>
                 if (filters != null)
                 {
                     foreach (var filter in filters)
                     {
-                        sensor.GetOrAddDetector(filter, out var detector);
+                        out_sensor.GetOrAddDetector(filter, out var detector);
                     }
                 }
-                return sensor;
+                return out_sensor;
             }
         }
     }

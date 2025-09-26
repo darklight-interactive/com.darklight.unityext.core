@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Editor;
-using Darklight.Utility;
 using NaughtyAttributes;
 using UnityEngine;
-
 using static Darklight.Behaviour.Sensor;
 
 namespace Darklight.Behaviour
@@ -13,10 +11,7 @@ namespace Darklight.Behaviour
     /// <summary>
     /// ScriptableObject containing all sensor-related settings for the survivor.
     /// </summary>
-    [CreateAssetMenu(
-        fileName = "NewSensorSettings",
-        menuName = "Darklight/Behaviour/SensorSettings"
-    )]
+    [CreateAssetMenu(fileName = "NewSensorConfig", menuName = "Darklight/Behaviour/SensorConfig")]
     public class SensorConfig : ScriptableObject
     {
         [SerializeField]
@@ -143,9 +138,7 @@ namespace Darklight.Behaviour
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(
-                        new EdgePoint(GetEdgePointAngle(transform, vertex), vertex)
-                    );
+                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
                 }
             }
             else if (IsCircle)
@@ -159,9 +152,7 @@ namespace Darklight.Behaviour
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(
-                        new EdgePoint(GetEdgePointAngle(transform, vertex), vertex)
-                    );
+                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
                 }
             }
 
@@ -296,5 +287,4 @@ namespace Darklight.Behaviour
             }
         }
     }
-
 }
