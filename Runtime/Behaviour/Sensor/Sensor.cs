@@ -49,6 +49,8 @@ namespace Darklight.Behaviour
         [Tooltip("Color of the gizmo when the sensor is not colliding")]
         Color _closestTargetColor = Color.red;
 
+        bool isValid => _config != null;
+
         public string Key => _config.name;
 
         public bool IsDisabled
@@ -57,12 +59,10 @@ namespace Darklight.Behaviour
             protected set => _isDisabled = value;
         }
 
-        bool IsValid => _config != null;
-
         #region < PRIVATE_METHODS > [[ MONOBEHAVIOUR ]] ====================================================================
         void Update()
         {
-            if (!IsValid)
+            if (!isValid)
                 return;
 
             if (!Application.isPlaying && _detectors != null)
@@ -94,10 +94,6 @@ namespace Darklight.Behaviour
 
             colliders = colliders.Where(c => whitelist.Contains(c.tag)).ToArray();
         }
-        #endregion
-
-        #region < PRIVATE_METHODS > [[ CALCULATIONS ]] ====================================================================
-
         #endregion
 
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
@@ -194,7 +190,11 @@ namespace Darklight.Behaviour
                 ApplyWhitelist(filter.WhitelistTags, ref colliders);
 
             // << FILTER COLLIDERS BY DETECTION SECTOR >> ------------------------------------------------------------
-            DetectCollidersInSector(filter, out colliders);
+            if (filter.SectorType != SectorType.FULL)
+                DetectCollidersInSector(filter, out colliders);
+            
+            // << REMOVE COLLIDER ON OBJECT >> ------------------------------------------------------------
+            colliders = colliders.Where(c => c.gameObject != gameObject).ToArray();
 
             // << NULL CHECKS >> ------------------------------------------------------------
             if (colliders == null || colliders.Length == 0)
