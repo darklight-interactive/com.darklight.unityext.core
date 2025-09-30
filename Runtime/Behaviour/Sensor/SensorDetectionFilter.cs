@@ -1,12 +1,13 @@
-using UnityEngine;
 using NaughtyAttributes;
-
+using UnityEngine;
 using static Darklight.Behaviour.Sensor;
 
 namespace Darklight.Behaviour
 {
-
-    [CreateAssetMenu(fileName = "NewScanFilter", menuName = "Darklight/Behaviour/ScanFilter")]
+    [CreateAssetMenu(
+        fileName = "NewDetectionFilter",
+        menuName = "Darklight/Behaviour/SensorDetectionFilter"
+    )]
     public class SensorDetectionFilter : ScriptableObject
     {
         [SerializeField]
@@ -37,8 +38,12 @@ namespace Darklight.Behaviour
         public SectorType SectorType => _sectorType;
         public bool IsFullSectorType => _sectorType == SectorType.FULL;
         public float InitialAngle => _initialAngle < 0f ? 360f + _initialAngle : _initialAngle;
-        public float TerminalAngle =>
-            _terminalAngle < 0f ? 360f + _terminalAngle : _terminalAngle;
+        public float TerminalAngle => _terminalAngle < 0f ? 360f + _terminalAngle : _terminalAngle;
         public string[] WhitelistTags => _whitelistTags;
+
+        public string GetDebugInfo()
+        {
+            return $"Name: {name}, Layer Mask: {_layerMask.ToString()}, Targeting Type: {_targetingType}, Sector Type: {_sectorType}, Initial Angle: {_initialAngle}, Terminal Angle: {_terminalAngle}, Whitelist Tags: {_whitelistTags}";
+        }
     }
 }

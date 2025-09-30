@@ -16,8 +16,6 @@ namespace Darklight.Behaviour
     [ExecuteAlways]
     public partial class Sensor : MonoBehaviour
     {
-        Dictionary<EdgePoint, bool> _raycastHits = new Dictionary<EdgePoint, bool>();
-
         [SerializeField, ShowOnly]
         bool _isDisabled;
 
@@ -65,7 +63,7 @@ namespace Darklight.Behaviour
             if (!isValid)
                 return;
 
-            if (!Application.isPlaying && _detectors != null)
+            if (_detectors != null)
             {
                 foreach (var detector in _detectors)
                 {
@@ -94,55 +92,93 @@ namespace Darklight.Behaviour
 
             colliders = colliders.Where(c => whitelist.Contains(c.tag)).ToArray();
         }
+
         #endregion
 
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
-
-
-        bool DetectCollidersInSector(SensorDetectionFilter filter, out Collider[] out_colliders)
+        bool DetectCollidersInConfigShape(
+            SensorDetectionFilter filter,
+            out Collider[] out_colliders
+        )
         {
-            List<Collider> colliders = new List<Collider>();
-            _config.CalculateSensorPoints(
+            out_colliders = new Collider[0];
+
+            // << DETECT COLLIDERS IN LAYER MASK >> ------------------------------------------------------------
+            if (_config.IsBoxShape)
+            {
+                out_colliders = Physics.OverlapBox(
+                    transform.position,
+                    _config.RectHalfExtents,
+                    transform.rotation,
+                    filter.LayerMask
+                );
+            }
+            else if (_config.IsSphereShape)
+            {
+                out_colliders = Physics.OverlapSphere(
+                    transform.position,
+                    _config.SphereRadius,
+                    filter.LayerMask
+                );
+            }
+
+            return out_colliders.Length > 0;
+        }
+
+        bool DetectCollidersInSector(SensorDetectionFilter filter, ref Collider[] colliders)
+        {
+            List<Collider> initColliders = new List<Collider>(colliders);
+            List<Collider> sectorColliders = new List<Collider>();
+
+            _config.CalculateSectorAngleEdgePoints(
                 transform,
                 filter,
                 out EdgePoint initialEdgePoint,
-                out EdgePoint terminalEdgePoint,
-                out List<EdgePoint> shapePoints,
-                out List<EdgePoint> sectorPoints
+                out EdgePoint terminalEdgePoint
             );
 
-            // << ADD THE INITIAL AND TERMINAL EDGE POINTS >>
-            sectorPoints.Add(initialEdgePoint);
-            sectorPoints.Add(terminalEdgePoint);
-
-            // (( RAYCAST TO EACH SECTOR POINT )) ------------------------------------------------------------
-            _raycastHits.Clear();
-            foreach (EdgePoint sectorPoint in sectorPoints)
+            foreach (Collider collider in initColliders)
             {
-                RaycastHit sectorHit;
-                Physics.Raycast(
-                    transform.position,
-                    sectorPoint.Position - transform.position,
-                    out sectorHit,
-                    Vector3.Distance(transform.position, sectorPoint.Position),
-                    filter.LayerMask
-                );
-
-                // (( Add the collider to the list if it is not already in the list ))
-                if (sectorHit.collider != null)
-                {
-                    if (!colliders.Contains(sectorHit.collider))
-                        colliders.Add(sectorHit.collider);
-                    _raycastHits[sectorPoint] = true;
-                }
-                else
-                {
-                    _raycastHits[sectorPoint] = false;
-                }
+                if (_config.IsPositionAngleInSector(transform, collider.transform.position, filter))
+                    sectorColliders.Add(collider);
             }
 
-            out_colliders = colliders.ToArray();
-            return out_colliders.Length > 0;
+            // (( RAYCAST TO THE INITIAL EDGE POINT )) ------------------------------------------------------------
+            RaycastHit initialEdgeHit;
+            Physics.Raycast(
+                transform.position,
+                initialEdgePoint.Position - transform.position,
+                out initialEdgeHit,
+                Vector3.Distance(transform.position, initialEdgePoint.Position),
+                filter.LayerMask
+            );
+
+            // If the initial edge point is hit, add the collider to the sector colliders
+            if (
+                initialEdgeHit.collider != null
+                && !sectorColliders.Contains(initialEdgeHit.collider)
+            )
+                sectorColliders.Add(initialEdgeHit.collider);
+
+            // (( RAYCAST TO THE TERMINAL EDGE POINT )) ------------------------------------------------------------
+            RaycastHit terminalEdgeHit;
+            Physics.Raycast(
+                transform.position,
+                terminalEdgePoint.Position - transform.position,
+                out terminalEdgeHit,
+                Vector3.Distance(transform.position, terminalEdgePoint.Position),
+                filter.LayerMask
+            );
+
+            // If the terminal edge point is hit, add the collider to the sector colliders
+            if (
+                terminalEdgeHit.collider != null
+                && !sectorColliders.Contains(terminalEdgeHit.collider)
+            )
+                sectorColliders.Add(terminalEdgeHit.collider);
+
+            colliders = sectorColliders.ToArray();
+            return colliders.Length > 0;
         }
         #endregion
 
@@ -153,52 +189,62 @@ namespace Darklight.Behaviour
         /// <param name="filter"> The filter to use for the scan </param>
         /// <param name="result"> The result of the scan </param>
         /// <returns> True if the scan was successful, false otherwise </returns>
-        public virtual bool ExecuteScan(SensorDetectionFilter filter, out DetectionResult result)
+        public virtual bool ExecuteScan(
+            SensorDetectionFilter filter,
+            out DetectionResult result,
+            out string debugInfo
+        )
         {
+            debugInfo = "";
             result = new DetectionResult();
             Collider target = null;
             Collider[] colliders = new Collider[0];
 
             // << NULL CHECKS >> ------------------------------------------------------------
             if (_config == null)
+            {
+                debugInfo = "Config is null";
                 return false;
+            }
 
             if (filter == null)
+            {
+                debugInfo = "Filter is null";
                 return false;
-
-            // << DETECT COLLIDERS IN LAYER MASK >> ------------------------------------------------------------
-            if (_config.IsBoxShape)
-            {
-                colliders = Physics.OverlapBox(
-                    transform.position,
-                    _config.RectHalfExtents,
-                    transform.rotation,
-                    filter.LayerMask
-                );
             }
-            else if (_config.IsSphereShape)
+
+            // << DETECT COLLIDERS IN CONFIG SHAPE >> ------------------------------------------------------------
+            if (DetectCollidersInConfigShape(filter, out colliders))
+                debugInfo += $"\nDetected Colliders in Config Shape: {colliders.Length}";
+            else
             {
-                colliders = Physics.OverlapSphere(
-                    transform.position,
-                    _config.SphereRadius,
-                    filter.LayerMask
-                );
+                debugInfo += $"\nNo Colliders detected in Config Shape";
+                return false;
             }
 
             // << FILTER COLLIDERS BY PRIORITY TAGS >> ------------------------------------------------------------
             if (filter.WhitelistTags != null && filter.WhitelistTags.Length > 0)
                 ApplyWhitelist(filter.WhitelistTags, ref colliders);
 
+            debugInfo += $"\nFiltered Result by Whitelist Tags: {colliders.Length}";
+
             // << FILTER COLLIDERS BY DETECTION SECTOR >> ------------------------------------------------------------
             if (filter.SectorType != SectorType.FULL)
-                DetectCollidersInSector(filter, out colliders);
-            
+                DetectCollidersInSector(filter, ref colliders);
+
+            debugInfo += $"\nFiltered Result by Detection Sector: {colliders.Length}";
+
             // << REMOVE COLLIDER ON OBJECT >> ------------------------------------------------------------
             colliders = colliders.Where(c => c.gameObject != gameObject).ToArray();
 
+            debugInfo += $"\nFiltered Result by GameObject: {colliders.Length}";
+
             // << NULL CHECKS >> ------------------------------------------------------------
             if (colliders == null || colliders.Length == 0)
+            {
+                debugInfo += $"\nNo Colliders found";
                 return false;
+            }
 
             // << SET TARGET BASED ON TARGETING TYPE >> ------------------------------------------------------------
             switch (filter.TargetingType)
@@ -318,31 +364,44 @@ namespace Darklight.Behaviour
 
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
             if (!filter.IsFullSectorType)
-                DrawSectorPolygon(filter, _raycastHits.Keys.ToList(), gizmoColor);
+            {
+                DrawSectorPolygon(filter, gizmoColor);
+            }
 
             // << DRAW SECTOR RAYCASTS >> ------------------------------------------------------------
             if (showDebug)
-                DrawSectorRaycasts(transform, _raycastHits.Keys.ToList());
+            {
+                _config.CalculateSectorAngleEdgePoints(
+                    transform,
+                    filter,
+                    out EdgePoint initialEdgePoint,
+                    out EdgePoint terminalEdgePoint
+                );
+                DrawSectorEdgePointRay(transform, initialEdgePoint, gizmoColor);
+                DrawSectorEdgePointRay(transform, terminalEdgePoint, gizmoColor);
+            }
         }
 
-        void DrawSectorPolygon(
-            SensorDetectionFilter filter,
-            List<EdgePoint> edgePoints,
-            Color color
-        )
+        void DrawSectorPolygon(SensorDetectionFilter filter, Color color)
         {
+            _config.CalculateSectorEdgePoints(
+                transform,
+                filter,
+                out List<EdgePoint> sectorEdgePoints
+            );
+
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
-            edgePoints = edgePoints.OrderBy(k => k.Angle).ToList();
+            sectorEdgePoints = sectorEdgePoints.OrderBy(k => k.Angle).ToList();
 
             // Check if any of the edge points are more than the initial angle and less than the terminal angle
             // If not, then we need to seperate the edge points into two lists, one for the smaller angle and one for the larger angle
             if (
-                edgePoints.Any(k =>
+                sectorEdgePoints.Any(k =>
                     IsAngleInBetween(k.Angle, filter.InitialAngle, filter.TerminalAngle)
                 )
             )
             {
-                //Debug.Log("Edge points are in between the initial and terminal angles");
+                //Debug.Log("All Edge points are in between the initial and terminal angles");
             }
             else
             {
@@ -352,7 +411,7 @@ namespace Darklight.Behaviour
                 // Sort the edge points by angle
                 List<EdgePoint> smallerAngleEdgePoints = new List<EdgePoint>();
                 List<EdgePoint> largerAngleEdgePoints = new List<EdgePoint>();
-                foreach (var point in edgePoints)
+                foreach (var point in sectorEdgePoints)
                 {
                     if (point.Angle <= smallerAngle)
                         smallerAngleEdgePoints.Add(point);
@@ -365,40 +424,34 @@ namespace Darklight.Behaviour
                 largerAngleEdgePoints = largerAngleEdgePoints.OrderBy(k => k.Angle).ToList();
 
                 // Add them together, larger angle first
-                edgePoints = new List<EdgePoint>();
-                edgePoints.AddRange(largerAngleEdgePoints);
-                edgePoints.AddRange(smallerAngleEdgePoints);
+                sectorEdgePoints = new List<EdgePoint>();
+                sectorEdgePoints.AddRange(largerAngleEdgePoints);
+                sectorEdgePoints.AddRange(smallerAngleEdgePoints);
             }
 
             // Add the center point
-            edgePoints.Add(new EdgePoint(-1, transform.position));
+            sectorEdgePoints.Add(new EdgePoint(-1, transform.position));
 
             // Draw the polygon
-            CustomGizmos.DrawPolygon(edgePoints.Select(k => k.Position).ToArray(), color, 0.2f);
+            CustomGizmos.DrawPolygon(
+                sectorEdgePoints.Select(k => k.Position).ToArray(),
+                color,
+                0.2f
+            );
 
             //DebugEdgePoints(edgePoints);
         }
 
-        void DrawSectorRaycasts(Transform transform, List<EdgePoint> edgePoints)
+        void DrawSectorEdgePointRay(Transform transform, EdgePoint point, Color color)
         {
-            // Draw sector points
-            foreach (var point in edgePoints)
-            {
-                Color raycastGizmoColor = _raycastHits[point] ? _collidingColor : _defaultColor;
-                CustomGizmos.DrawSolidCircle(
-                    point.Position,
-                    0.025f,
-                    transform.rotation,
-                    raycastGizmoColor
-                );
-                CustomGizmos.DrawLabel(
-                    point.Angle.ToString() + "°",
-                    point.Position + Vector3.up * 0.1f,
-                    CustomGUIStyles.CenteredStyle
-                );
+            CustomGizmos.DrawSolidCircle(point.Position, 0.025f, transform.rotation, color);
+            CustomGizmos.DrawLabel(
+                point.Angle.ToString() + "°",
+                point.Position + Vector3.up * 0.1f,
+                CustomGUIStyles.CenteredStyle
+            );
 
-                CustomGizmos.DrawLine(transform.position, point.Position, raycastGizmoColor);
-            }
+            CustomGizmos.DrawLine(transform.position, point.Position, color);
         }
 
         bool IsAngleInBetween(float angle, float initialAngle, float terminalAngle)

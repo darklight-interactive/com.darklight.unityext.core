@@ -109,21 +109,97 @@ namespace Darklight.Behaviour
             return new EdgePoint(angle, Vector3.zero);
         }
 
-        float GetEdgePointAngle(Transform transform, Vector3 edgePoint)
+        float NormalizeAngle(float angle)
+        {
+            if (angle < 0)
+                return angle + 360f;
+            else if (angle > 360f)
+                return angle - 360f;
+            return angle;
+        }
+
+        /// <summary>
+        /// Determines if a given angle falls within the minor sector defined by initial and terminal angles.
+        /// The minor sector is the smaller arc between two angles on a circle (0-360 degrees).
+        /// </summary>
+        /// <param name="angle">The angle to check (0-360 degrees)</param>
+        /// <param name="initialAngle">The starting angle of the sector (0-360 degrees)</param>
+        /// <param name="terminalAngle">The ending angle of the sector (0-360 degrees)</param>
+        /// <returns>True if the angle is within the minor sector, false otherwise</returns>
+        bool IsAngleInMinorSector(float angle, float initialAngle, float terminalAngle)
+        {
+            // Normalize angles to ensure they're within 0-360 range
+            angle = NormalizeAngle(angle);
+            initialAngle = NormalizeAngle(initialAngle);
+            terminalAngle = NormalizeAngle(terminalAngle);
+
+            // Calculate the angular difference between initial and terminal angles
+            float angularDifference = Mathf.Abs(initialAngle - terminalAngle);
+
+            // If the difference is greater than 180 degrees, the sector wraps around the 0/360 boundary
+            // In this case, the minor sector is the smaller arc that crosses the 0-degree mark
+            if (angularDifference > 180f)
+            {
+                // Minor sector wraps around: angle is in sector if it's before initial OR after terminal
+                // Example: initial=30°, terminal=300° → minor sector is 300°-360° + 0°-30°
+                return angle >= terminalAngle || angle <= initialAngle;
+            }
+
+            // Standard case: no wrapping around the boundary
+            // The minor sector is simply the range between initial and terminal angles
+            if (initialAngle <= terminalAngle)
+            {
+                // Normal case: initial angle is less than terminal angle
+                // Minor sector is the arc from initial to terminal (inclusive)
+                return angle >= initialAngle && angle <= terminalAngle;
+            }
+            else
+            {
+                // Edge case: initial angle is greater than terminal angle but difference <= 180°
+                // This shouldn't happen with normalized angles, but handle it defensively
+                // Minor sector would be the arc from terminal to initial (inclusive)
+                return angle >= terminalAngle && angle <= initialAngle;
+            }
+        }
+
+        float CalculateAngleFromPosition(Transform transform, Vector3 position)
         {
             Vector3 center = transform.position;
             Quaternion rotation = transform.rotation;
 
             // Calculate direction from center to edge point
-            Vector3 direction = (edgePoint - center).normalized;
+            Vector3 direction = (position - center).normalized;
             Vector3 forward = rotation * Vector3.forward;
 
             // Calculate angle and normalize to 0-360 range
             float angle = Vector3.SignedAngle(forward, direction, Vector3.up);
-            return angle < 0 ? angle + 360f : angle;
+            return NormalizeAngle(angle);
+        }
+        #endregion
+
+        public bool IsPositionAngleInSector(
+            Transform transform,
+            Vector3 position,
+            SensorDetectionFilter filter
+        )
+        {
+            float angle = CalculateAngleFromPosition(transform, position);
+            bool isInMinorSector = IsAngleInMinorSector(
+                angle,
+                filter.InitialAngle,
+                filter.TerminalAngle
+            );
+
+            // Return the result based on the sector type
+            if (filter.SectorType == SectorType.SMALL_ANGLE)
+                return isInMinorSector;
+            else if (filter.SectorType == SectorType.LARGE_ANGLE)
+                return !isInMinorSector;
+            else
+                return true;
         }
 
-        void CalculateShapePoints(Transform transform, out List<EdgePoint> shapePoints)
+        public void CalculateShapePoints(Transform transform, out List<EdgePoint> shapePoints)
         {
             shapePoints = new List<EdgePoint>();
 
@@ -138,7 +214,9 @@ namespace Darklight.Behaviour
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
+                    shapePoints.Add(
+                        new EdgePoint(CalculateAngleFromPosition(transform, vertex), vertex)
+                    );
                 }
             }
             else if (IsCircle)
@@ -152,7 +230,9 @@ namespace Darklight.Behaviour
                 );
                 foreach (var vertex in vertices)
                 {
-                    shapePoints.Add(new EdgePoint(GetEdgePointAngle(transform, vertex), vertex));
+                    shapePoints.Add(
+                        new EdgePoint(CalculateAngleFromPosition(transform, vertex), vertex)
+                    );
                 }
             }
 
@@ -160,41 +240,13 @@ namespace Darklight.Behaviour
             shapePoints = shapePoints.OrderBy(point => point.Angle).ToList();
         }
 
-        bool IsPointInMinorSector(EdgePoint point, float initialAngle, float terminalAngle)
-        {
-            float difference = Mathf.Abs(initialAngle - terminalAngle);
-            // If the difference is greater than 180 degrees, then the sector is wrapped around
-            if (difference > 180f)
-            {
-                return point.Angle < initialAngle || point.Angle > terminalAngle;
-            }
-
-            if (initialAngle < terminalAngle)
-            {
-                // << MINOR SECTOR POINTS >>
-                // These points are the ones inbetween the initial and terminal points
-                return point.Angle >= initialAngle && point.Angle <= terminalAngle;
-            }
-            else
-            {
-                // << MAJOR SECTOR POINTS >>
-                // These points are the ones outside the initial and terminal points
-                return point.Angle <= initialAngle && point.Angle >= terminalAngle;
-            }
-        }
-        #endregion
-
-        public void CalculateSensorPoints(
+        public void CalculateSectorAngleEdgePoints(
             Transform transform,
             SensorDetectionFilter filter,
             out EdgePoint initialEdgePoint,
-            out EdgePoint terminalEdgePoint,
-            out List<EdgePoint> shapePoints,
-            out List<EdgePoint> sectorPoints
+            out EdgePoint terminalEdgePoint
         )
         {
-            CalculateShapePoints(transform, out shapePoints);
-
             // << GET THE INITIAL AND TERMINAL ANGLES >>
             float initialAngle = filter.InitialAngle;
             float terminalAngle = filter.TerminalAngle;
@@ -209,6 +261,27 @@ namespace Darklight.Behaviour
             // Get the initial and terminal edge points
             initialEdgePoint = GetEdgePoint(initialAngle, transform);
             terminalEdgePoint = GetEdgePoint(terminalAngle, transform);
+        }
+
+        public void CalculateSectorEdgePoints(
+            Transform transform,
+            SensorDetectionFilter filter,
+            out List<EdgePoint> sectorEdgePoints
+        )
+        {
+            // << CALCULATE THE SHAPE POINTS >>
+            CalculateShapePoints(transform, out List<EdgePoint> shapePoints);
+
+            // << CALCULATE THE INITIAL AND TERMINAL EDGE POINTS >>
+            CalculateSectorAngleEdgePoints(
+                transform,
+                filter,
+                out EdgePoint initialEdgePoint,
+                out EdgePoint terminalEdgePoint
+            );
+
+            // Add the initial and terminal edge points to the sector edge points
+            sectorEdgePoints = new List<EdgePoint> { initialEdgePoint, terminalEdgePoint };
 
             // << CALCULATE THE MINOR AND MAJOR SECTOR POINTS >>
             List<EdgePoint> minorSectorPoints = new List<EdgePoint>();
@@ -218,7 +291,13 @@ namespace Darklight.Behaviour
             for (int i = 0; i < shapePoints.Count; i++)
             {
                 EdgePoint currentPoint = shapePoints[i];
-                if (IsPointInMinorSector(currentPoint, initialAngle, terminalAngle))
+                if (
+                    IsAngleInMinorSector(
+                        currentPoint.Angle,
+                        initialEdgePoint.Angle,
+                        terminalEdgePoint.Angle
+                    )
+                )
                 {
                     minorSectorPoints.Add(currentPoint);
                 }
@@ -229,19 +308,18 @@ namespace Darklight.Behaviour
             }
 
             // Filter the sector points based on the sector type
-            sectorPoints = new List<EdgePoint>();
             if (filter.SectorType == SectorType.FULL)
             {
-                sectorPoints.AddRange(minorSectorPoints);
-                sectorPoints.AddRange(majorSectorPoints);
+                sectorEdgePoints.AddRange(minorSectorPoints);
+                sectorEdgePoints.AddRange(majorSectorPoints);
             }
             else if (filter.SectorType == SectorType.SMALL_ANGLE)
             {
-                sectorPoints.AddRange(minorSectorPoints);
+                sectorEdgePoints.AddRange(minorSectorPoints);
             }
             else if (filter.SectorType == SectorType.LARGE_ANGLE)
             {
-                sectorPoints.AddRange(majorSectorPoints);
+                sectorEdgePoints.AddRange(majorSectorPoints);
             }
         }
 

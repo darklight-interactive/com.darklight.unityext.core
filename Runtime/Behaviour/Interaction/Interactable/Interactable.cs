@@ -171,6 +171,16 @@ namespace Darklight.Behaviour
             var recievers = GetComponentsInChildren<InteractionReciever<TType>>();
             foreach (var reciever in recievers)
             {
+                // Use TryAdd to handle potential duplicates gracefully
+                if (_recievers.ContainsKey(reciever.InteractionType))
+                {
+                    Debug.LogWarning(
+                        $"[{name}] Duplicate receiver type {reciever.InteractionType} found! Skipping duplicate.",
+                        this
+                    );
+                    continue;
+                }
+
                 _recievers.Add(reciever.InteractionType, reciever);
                 reciever.Initialize(this);
             }

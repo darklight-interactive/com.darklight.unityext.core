@@ -14,6 +14,14 @@ namespace Darklight.Behaviour
 
         public virtual void Initialize(Interactable<TType> interactable)
         {
+            // Unsubscribe from previous interactable if it exists
+            if (_interactable != null)
+            {
+                _interactable.OnAcceptTarget -= OnAcceptTarget;
+                _interactable.OnAcceptInteraction -= OnAcceptInteraction;
+                _interactable.OnCompleteInteraction -= OnCompleteInteraction;
+            }
+
             _interactable = interactable;
             _interactable.OnAcceptTarget += OnAcceptTarget;
             _interactable.OnAcceptInteraction += OnAcceptInteraction;

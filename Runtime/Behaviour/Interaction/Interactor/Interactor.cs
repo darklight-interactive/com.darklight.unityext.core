@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Behaviour;
-using Darklight.Behaviour;
 using Darklight.Collections;
 using Darklight.Editor;
 using NaughtyAttributes;
@@ -16,43 +15,53 @@ namespace Darklight.Behaviour
     [ExecuteAlways]
     public class Interactor : Sensor
     {
-        Detector _interactableDetector;
-        Interactable _lastInteractable;
+        protected Detector detector;
+        protected Interactable lastInteractable;
 
         [SerializeField]
-        SensorDetectionFilter _interactableFilter;
+        protected SensorDetectionFilter interactableFilter;
 
         public Interactable TargetInteractable
         {
             get
             {
-                if (_interactableDetector.Result.Target == null)
+                if (detector.Result.Target == null)
                     return null;
-                return _interactableDetector.Result.Target.GetComponent<Interactable>();
+                return detector.Result.Target.GetComponent<Interactable>();
             }
         }
 
         void Start()
         {
-            GetOrAddDetector(_interactableFilter, out _interactableDetector);
+            GetOrAddDetector(interactableFilter, out detector);
         }
 
-        public override bool ExecuteScan(SensorDetectionFilter filter, out DetectionResult result)
+        public override bool ExecuteScan(
+            SensorDetectionFilter filter,
+            out DetectionResult result,
+            out string debugInfo
+        )
         {
-            base.ExecuteScan(filter, out result);
+            base.ExecuteScan(filter, out result, out debugInfo);
+
+            if (result.Target == null)
+            {
+                debugInfo += "\nTarget is null";
+                return false;
+            }
 
             // If the target is an interactable, ask it to accept the interactor targeting it
             if (result.Target.GetComponent<Interactable>() != null)
             {
                 if (result.Target.GetComponent<Interactable>().AcceptTarget(this))
                 {
-                    _lastInteractable = result.Target.GetComponent<Interactable>();
+                    lastInteractable = result.Target.GetComponent<Interactable>();
                 }
             }
-            else if (_lastInteractable != null)
+            else if (lastInteractable != null)
             {
-                _lastInteractable.Reset();
-                _lastInteractable = null;
+                lastInteractable.Reset();
+                lastInteractable = null;
             }
 
             return true;
@@ -66,30 +75,30 @@ namespace Darklight.Behaviour
             return interactable.AcceptInteraction(this, force);
         }
 
-        public virtual void InteractWithTarget(out bool result)
+        public virtual bool InteractWithTarget(out string debugInfo)
         {
-            result = false;
-            if (_interactableDetector.Result.Target == null)
+            debugInfo = "";
+            if (detector.Result.Target == null)
             {
-                //Debug.LogError($"[{name}] InteractWithTarget: Target is null");
-                return;
+                debugInfo = $"[{name}] InteractWithTarget: Target is null";
+                return false;
             }
 
-            Interactable interactable =
-                _interactableDetector.Result.Target.GetComponent<Interactable>();
+            Interactable interactable = detector.Result.Target.GetComponent<Interactable>();
             if (interactable == null)
             {
-                //Debug.LogError($"[{name}] InteractWithTarget: Interactable is null");
-                return;
+                debugInfo = $"[{name}] InteractWithTarget: Interactable is null";
+                return false;
             }
 
-            result = InteractWith(interactable);
-            //Debug.Log($"[{name}] InteractWithTarget: {result}");
+            bool result = InteractWith(interactable);
+            debugInfo = $"[{name}] InteractWithTarget: {result}";
+            return result;
         }
 
         public void InteractWithTarget()
         {
-            InteractWithTarget(out bool result);
+            InteractWithTarget(out _);
         }
     }
 }

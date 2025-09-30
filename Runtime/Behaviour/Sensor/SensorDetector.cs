@@ -33,11 +33,9 @@ namespace Darklight.Behaviour
 
             public void Execute(Sensor sensor)
             {
-                sensor.ExecuteScan(_filter, out _result);
+                sensor.ExecuteScan(_filter, out _result, out string debugInfo);
             }
         }
-
-
 
         [System.Serializable]
         public class DetectionResult
@@ -64,6 +62,17 @@ namespace Darklight.Behaviour
             {
                 _target = target;
                 _colliders = colliders;
+            }
+
+            public string GetDebugInfo()
+            {
+                string out_info = $"Target: {_target?.name}, Colliders: {_colliders?.Length}";
+                if (HasColliders)
+                {
+                    foreach (Collider collider in _colliders)
+                        out_info += $"\n{collider.name}";
+                }
+                return out_info;
             }
         }
     }
