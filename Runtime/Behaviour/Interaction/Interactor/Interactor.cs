@@ -21,6 +21,9 @@ namespace Darklight.Behaviour
         [SerializeField]
         protected SensorDetectionFilter interactableFilter;
 
+        /// <summary>
+        /// Main reference to the current target 
+        /// </summary>
         public Interactable TargetInteractable
         {
             get

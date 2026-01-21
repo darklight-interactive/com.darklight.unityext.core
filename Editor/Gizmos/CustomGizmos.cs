@@ -113,7 +113,7 @@ namespace Darklight.Editor
         /// </summary>
         /// <param name="center">The center position of the rectangle.</param>
         /// <param name="area">The width and height of the rectangle.</param>
-        /// <param name="normal">The normal normal the rectangle is facing.</param>
+        /// <param name="normal">The normal the rectangle is facing.</param>
         /// <param name="subdivisions">The number of subdivisions along each axis. 0 means no subdivisions (4 vertices).</param>
         /// <returns>An array of Vector3 representing the vertices of the rectangle.</returns>
         public static Vector3[] GenerateRectangleVertices(

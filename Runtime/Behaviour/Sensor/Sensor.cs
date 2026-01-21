@@ -286,7 +286,6 @@ namespace Darklight.Behaviour
                 .OrderBy(c => (c.transform.position - transform.position).sqrMagnitude)
                 .First();
         }
-
         #endregion
 
         #region < PUBLIC_METHODS > [[ SETTERS ]] ====================================================================

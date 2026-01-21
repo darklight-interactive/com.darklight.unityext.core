@@ -30,25 +30,50 @@ namespace Darklight.World
 {
     /// <summary>
     /// A 3D Vector Utility Class that can be used to store and manipulate 3D vectors.
+    /// 
+    /// This class validates the vector values every time a value is set. 
+    /// This allows for 'internal' clamping of the vector values, where a clamp value can be set for each axis of the vector and will be continuously validated against.
     /// </summary>
     [System.Serializable]
     public class MotionVector
     {
+        float _internalXClamp = Mathf.Infinity;
+        float _internalYClamp = Mathf.Infinity;
+        float _internalZClamp = Mathf.Infinity;
+
+
         [SerializeField]
         Vector3 _vector = Vector3.zero;
 
+        // << CONSTRUCTORS >> -------------------------------------------------------------------------------------------- >>
         public MotionVector()
         {
             Horizontal = Vector2.zero;
             Vertical = 0f;
         }
 
-        public MotionVector(Vector2 horizontal, float vertical)
+        public MotionVector(float horzClamp = Mathf.Infinity, float vertClamp = Mathf.Infinity) : this()
+        {
+            SetHorzInternalClamp(horzClamp);
+            SetVertInternalClamp(vertClamp);
+        }
+
+        public MotionVector(Vector2 horizontal, float vertical, float horzClamp = Mathf.Infinity, float vertClamp = Mathf.Infinity) : this(
+            horzClamp,
+            vertClamp
+        )
         {
             Horizontal = horizontal;
             Vertical = vertical;
         }
 
+
+
+        #region < PROPERTIES > ================================================================
+
+        /// <summary>
+        /// A static property that returns a new MotionVector with the value (0, 0, 0).
+        /// </summary>
         public static MotionVector Zero => new MotionVector(Vector2.zero, 0f);
 
         /// <summary>
@@ -61,16 +86,16 @@ namespace Darklight.World
             {
                 _vector.x = value.x;
                 _vector.z = value.y;
+                Validate();
             }
         }
-
         /// <summary>
-        /// The horizontal component of the vector as a 3D vector.
+        /// The horizontal component of the vector as a 3D vector. -> (horz.x, 0, horz.y)
         /// </summary>
         public Vector3 HorizontalVec3
         {
             get => new Vector3(Horizontal.x, 0f, Horizontal.y);
-            set { Horizontal = new Vector2(value.x, value.z); }
+            set { Horizontal = new Vector2(value.x, value.z); Validate(); }
         }
 
         /// <summary>
@@ -79,7 +104,7 @@ namespace Darklight.World
         public float Vertical
         {
             get => _vector.y;
-            set => _vector.y = value;
+            set { _vector.y = value; Validate(); }
         }
 
         /// <summary>
@@ -88,7 +113,7 @@ namespace Darklight.World
         public Vector3 VerticalVec3
         {
             get => new Vector3(0f, Vertical, 0f);
-            set => Vertical = value.y;
+            set { Vertical = value.y; Validate(); }
         }
 
         /// <summary>
@@ -101,6 +126,7 @@ namespace Darklight.World
             {
                 Horizontal = new Vector2(value.x, value.z);
                 Vertical = value.y;
+                Validate();
             }
         }
 
@@ -113,7 +139,19 @@ namespace Darklight.World
         /// The magnitude of the combined vector.
         /// </summary>
         public float Magnitude => Combined.magnitude;
+        #endregion
 
+        #region < PRIVATE_METHODS > [[ HELPER METHODS ]] ================================================================
+        void Validate()
+        {
+            // Clamp values
+            _vector.x = Mathf.Clamp(_vector.x, -_internalXClamp, _internalXClamp);
+            _vector.y = Mathf.Clamp(_vector.y, -_internalYClamp, _internalYClamp);
+            _vector.z = Mathf.Clamp(_vector.z, -_internalZClamp, _internalZClamp);
+        }
+        #endregion
+
+        #region < PUBLIC_METHODS > [[ SETTERS ]] ================================================================
         /// <summary>
         /// Sets the vector to the given 3D vector.
         /// </summary>
@@ -164,6 +202,49 @@ namespace Darklight.World
         }
 
         /// <summary>
+        /// Sets the internal clamp for the horizontal component of the vector.
+        /// </summary>
+        public void SetHorzInternalClamp(float horzClamp)
+        {
+            _internalXClamp = horzClamp;
+            _internalZClamp = horzClamp;
+        }
+
+        /// <summary>
+        /// Sets the internal clamp for the vertical component of the vector.
+        /// </summary>
+        public void SetVertInternalClamp(float yClamp)
+        {
+            _internalYClamp = yClamp;
+        }
+
+        /// <summary>
+        /// Sets the internal clamps for the vector.
+        /// </summary>
+        /// <param name="xClamp"></param>
+        /// <param name="yClamp"></param>
+        /// <param name="zClamp"></param>
+        public void SetInternalClamps(float xClamp, float yClamp, float zClamp)
+        {
+            _internalXClamp = xClamp;
+            _internalYClamp = yClamp;
+            _internalZClamp = zClamp;
+        }
+
+        /// <summary>
+        /// Sets the internal clamps for the vector to infinity.
+        /// </summary>
+        public void ResetInternalClamps()
+        {
+            _internalXClamp = Mathf.Infinity;
+            _internalYClamp = Mathf.Infinity;
+            _internalZClamp = Mathf.Infinity;
+        }
+        #endregion
+
+
+        #region < PUBLIC_METHODS > [[ HELPER METHODS ]] ================================================================
+        /// <summary>
         /// Clamps the vector to the given horizontal and vertical clamps.
         /// </summary>
         /// <param name="horzClamp">The horizontal clamp.</param>
@@ -177,14 +258,7 @@ namespace Darklight.World
             Vertical = Mathf.Clamp(Vertical, -vertClamp, vertClamp);
         }
 
-        /// <summary>
-        /// Resets the vector to zero.
-        /// </summary>
-        public void Reset()
-        {
-            Horizontal = Vector2.zero;
-            Vertical = 0f;
-        }
+        
 
         /// <summary>
         /// Prints the vector to the console.
@@ -193,6 +267,7 @@ namespace Darklight.World
         {
             return $"-> MOTIONVECTOR: Horizontal: {Horizontal}, Vertical: {Vertical}";
         }
+        #endregion
 
         /// <summary>
         /// Lerps between two motion vectors.
