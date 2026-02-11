@@ -15,6 +15,9 @@
  * Email: skysfalling22@gmail.com
  * Discord: skysfalling
  * ======================================================================= ]]
+ * DESCRIPTION:
+ *
+ * ------------------------------------------------------------------ >>
  * MAJOR AUTHORS:
  * Sky Casey
  * ======================================================================= ]]
@@ -29,21 +32,9 @@ using UnityEngine;
 namespace Darklight.Behaviour
 {
     /// <summary>
-    /// An abstract base for state machines to build upon.
-    /// This script defines an abstract generic base class for implementing type-safe 
-    /// state machines using enum-based state definitions. It provides core functionality 
-    /// for state management including:
-    /// - Generic enum-based state representation for compile-time type safety
-    /// - State transition logic with optional forced transitions
-    /// - Event-driven architecture through StateChangeEvent delegate
-    /// - Initial state configuration through constructor parameters
-    /// - Protected utility methods for state enumeration access
-    /// - Prevention of redundant state transitions through equality checking
-    /// 
-    /// Derived classes should implement specific state behaviors and override GoToState
-    /// to add custom transition logic, validation, or state-specific initialization.
+    /// An abstract base for state machines to build upon
     /// </summary>
-    /// <typeparam name="TEnum">The enum type representing the state machine states</typeparam>
+    /// <typeparam name="TEnum"></typeparam>
     [Serializable]
     public abstract class StateMachineBase<TEnum>
         where TEnum : Enum
@@ -61,17 +52,13 @@ namespace Darklight.Behaviour
         public StateMachineBase()
         {
             initialStateEnum = GetAllStateEnums()[0];
-            OnConstruct();
         }
 
         public StateMachineBase(TEnum initialState)
         {
             this.initialStateEnum = initialState;
-            OnConstruct();
         }
 
-        private void OnConstruct() => GoToState(initialStateEnum);
-        
         protected TEnum[] GetAllStateEnums() => (TEnum[])Enum.GetValues(typeof(TEnum));
 
         protected void RaiseStateChangedEvent(TEnum state) => OnStateChanged?.Invoke(state);
