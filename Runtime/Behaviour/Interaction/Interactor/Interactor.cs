@@ -15,8 +15,7 @@ namespace Darklight.Behaviour
     [ExecuteAlways]
     public class Interactor : Sensor
     {
-        protected Detector detector;
-        protected Interactable lastInteractable;
+        private Interactable _currentTarget;
 
         [SerializeField]
         protected SensorDetectionFilter interactableFilter;
@@ -24,20 +23,7 @@ namespace Darklight.Behaviour
         /// <summary>
         /// Main reference to the current target 
         /// </summary>
-        public Interactable TargetInteractable
-        {
-            get
-            {
-                if (detector.Result.Target == null)
-                    return null;
-                return detector.Result.Target.GetComponent<Interactable>();
-            }
-        }
-
-        void Start()
-        {
-            GetOrAddDetector(interactableFilter, out detector);
-        }
+        public Interactable CurrentTarget => _currentTarget;
 
         public override bool ExecuteScan(
             SensorDetectionFilter filter,
@@ -47,24 +33,28 @@ namespace Darklight.Behaviour
         {
             base.ExecuteScan(filter, out result, out debugInfo);
 
+            // << CHECK IF THERE IS A TARGET >>
             if (result.Target == null)
             {
                 debugInfo += "\nTarget is null";
                 return false;
             }
 
+            // << CHECK IF THE TARGET IS INTERACTABLE >>
             // If the target is an interactable, ask it to accept the interactor targeting it
-            if (result.Target.GetComponent<Interactable>() != null)
+            Interactable targetInteractable = result.Target.GetComponent<Interactable>();
+            if (targetInteractable != null)
             {
-                if (result.Target.GetComponent<Interactable>().AcceptTarget(this))
+                if (targetInteractable.AcceptTarget(this))
                 {
-                    lastInteractable = result.Target.GetComponent<Interactable>();
+                    _currentTarget = result.Target.GetComponent<Interactable>();
                 }
             }
-            else if (lastInteractable != null)
+            // << RESET THE LAST TARGET IF THE TARGET IS NOT INTERACTABLE >>
+            else if (_currentTarget != null)
             {
-                lastInteractable.Reset();
-                lastInteractable = null;
+                _currentTarget.Reset();
+                _currentTarget = null;
             }
 
             return true;
@@ -81,20 +71,13 @@ namespace Darklight.Behaviour
         public virtual bool InteractWithTarget(out string debugInfo)
         {
             debugInfo = "";
-            if (detector.Result.Target == null)
+            if (_currentTarget == null)
             {
                 debugInfo = $"[{name}] InteractWithTarget: Target is null";
                 return false;
             }
 
-            Interactable interactable = detector.Result.Target.GetComponent<Interactable>();
-            if (interactable == null)
-            {
-                debugInfo = $"[{name}] InteractWithTarget: Interactable is null";
-                return false;
-            }
-
-            bool result = InteractWith(interactable);
+            bool result = InteractWith(_currentTarget);
             debugInfo = $"[{name}] InteractWithTarget: {result}";
             return result;
         }

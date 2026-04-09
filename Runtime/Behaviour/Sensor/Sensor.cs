@@ -3,78 +3,106 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Darklight.Editor;
-using ImprovedTimers;
 using NaughtyAttributes;
 using UnityEngine;
-using UnityUtils;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace Darklight.Behaviour
 {
+    /// <summary>
+    /// Represents a component responsible for detecting and interacting with entities
+    /// or objects within a defined area or volume in the game world.
+    /// The Sensor class supports various detection shapes and targeting mechanisms
+    /// and provides functionality for enabling, disabling, and performing detection logic.
+    /// <br/>
+    /// NOTE: This component does NOT perform any actions on its own. It requires
+    /// additional scripts or components to use the ExecuteScan() method to perform
+    /// the actual detection and interaction logic.
+    /// </summary>
     [ExecuteAlways]
     public partial class Sensor : MonoBehaviour
     {
-        [SerializeField, ShowOnly]
-        bool _isDisabled;
+        private readonly Color _defaultColor = Color.white;
+        private readonly Color _collidingColor = Color.green;
+        private readonly Color _closestTargetColor = Color.red;
 
-        [HorizontalLine(color: EColor.Gray)]
+        private string _uuid;
+
+        [SerializeField, ReadOnly]
+        bool _isDisabled;
+        
+        [Tooltip("Enable debug visualization in editor")]
+        [SerializeField]
+        bool _debugMode = false;
+        
+        [Tooltip("The time since the sensor was last updated")]
+        [SerializeField, ReadOnly]
+        DetectionResult _lastResult;
+        
+        /// <summary>
+        /// The configuration for the sensor.
+        /// </summary>
+        [Header("Configuration")]
         [SerializeField, Expandable]
         [CreateAsset("NewSensorSettings", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorConfig")]
         SensorConfig _config;
+        
+        /// <summary>
+        /// The base detection filter for the sensor.
+        /// </summary>
+        [SerializeField, Expandable]
+        [CreateAsset("NewDetectionFilter", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorDetectionFilter")]
+        SensorDetectionFilter _filter;
+        
+        /// <summary>
+        /// Confirm that the config is not null
+        /// </summary>
+        public bool isValid => _config != null;
 
-        [SerializeField]
-        List<Detector> _detectors = new List<Detector>();
-
-        [SerializeField, Foldout("Debug")]
-        [Tooltip("Enable outline visualization in editor")]
-        bool _showOutline = true;
-
-        [SerializeField, Foldout("Debug")]
-        [Tooltip("Enable debug visualization in editor")]
-        bool _showDebug = false;
-
-        [SerializeField, Foldout("Debug")]
-        [Tooltip("Color of the gizmo when the sensor is not colliding")]
-        Color _defaultColor = Color.white;
-
-        [SerializeField, Foldout("Debug")]
-        [Tooltip("Color of the gizmo when the sensor is colliding")]
-        Color _collidingColor = Color.green;
-
-        [SerializeField, Foldout("Debug")]
-        [Tooltip("Color of the gizmo when the sensor is not colliding")]
-        Color _closestTargetColor = Color.red;
-
-        bool isValid => _config != null;
-
-        public string Key => _config.name;
-
+        /// <summary>
+        /// The unique identifier for the sensor.
+        /// </summary>
+        public string UUID => _uuid;
+        
+        /// <summary>
+        /// Check if the sensor is disabled.
+        /// </summary>
         public bool IsDisabled
         {
             get => _isDisabled;
             protected set => _isDisabled = value;
         }
+        
+        /// <summary>
+        /// Get the last detection result for the sensor.
+        /// </summary>
+        public DetectionResult LastResult => _lastResult;
 
         #region < PRIVATE_METHODS > [[ MONOBEHAVIOUR ]] ====================================================================
-        void Update()
+        void Awake() => EnsureUUID();
+
+#if UNITY_EDITOR
+        void OnValidate() => EnsureUUID();
+#endif
+
+        void EnsureUUID()
         {
-            if (!isValid)
+            if (!string.IsNullOrWhiteSpace(_uuid))
                 return;
 
-            if (_detectors != null)
-            {
-                foreach (var detector in _detectors)
-                {
-                    detector.Execute(this);
-                }
-            }
+            _uuid = Guid.NewGuid().ToString("N");
+#if UNITY_EDITOR
+            EditorUtility.SetDirty(this);
+#endif
         }
 
-        void OnDrawGizmos() => DrawGizmos();
-
-        void OnDrawGizmosSelected() => DrawGizmosSelected();
+        void OnDrawGizmos()
+        {
+            DrawGizmos();
+        }
+        
         #endregion
 
         #region < PRIVATE_METHODS > [[ UTILITIES ]] ====================================================================
@@ -98,15 +126,15 @@ namespace Darklight.Behaviour
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
         bool DetectCollidersInConfigShape(
             SensorDetectionFilter filter,
-            out Collider[] out_colliders
+            out Collider[] outColliders
         )
         {
-            out_colliders = new Collider[0];
+            outColliders = new Collider[0];
 
             // << DETECT COLLIDERS IN LAYER MASK >> ------------------------------------------------------------
             if (_config.IsBoxShape)
             {
-                out_colliders = Physics.OverlapBox(
+                outColliders = Physics.OverlapBox(
                     transform.position,
                     _config.RectHalfExtents,
                     transform.rotation,
@@ -115,14 +143,14 @@ namespace Darklight.Behaviour
             }
             else if (_config.IsSphereShape)
             {
-                out_colliders = Physics.OverlapSphere(
+                outColliders = Physics.OverlapSphere(
                     transform.position,
                     _config.SphereRadius,
                     filter.LayerMask
                 );
             }
 
-            return out_colliders.Length > 0;
+            return outColliders.Length > 0;
         }
 
         bool DetectCollidersInSector(SensorDetectionFilter filter, ref Collider[] colliders)
@@ -258,22 +286,18 @@ namespace Darklight.Behaviour
             }
 
             // << SET RESULT >> ------------------------------------------------------------
-            result = new DetectionResult(target, colliders);
+            result = new DetectionResult(filter, target, colliders);
             return true;
         }
         #endregion
 
         #region < PUBLIC_METHODS > [[ GETTERS ]] ====================================================================
-        public void GetOrAddDetector(SensorDetectionFilter filter, out Detector detector)
-        {
-            detector = _detectors.FirstOrDefault(d => d.Filter == filter);
-            if (detector == null)
-            {
-                detector = new Detector(filter);
-                _detectors.Add(detector);
-            }
-        }
 
+        /// <summary>
+        /// Finds and returns the closest collider to the sensor's position from the provided array of colliders.
+        /// </summary>
+        /// <param name="colliders">An array of colliders to search through.</param>
+        /// <param name="closest">The collider closest to the sensor's position, or null if no colliders are provided.</param>
         public void GetClosest(Collider[] colliders, out Collider closest)
         {
             if (colliders.Length == 0)
@@ -304,38 +328,29 @@ namespace Darklight.Behaviour
         #endregion
 
         #region < PRIVATE_METHODS > [[ GIZMOS ]] ====================================================================
-#if UNITY_EDITOR
         protected virtual void DrawGizmos()
         {
-            if (_config == null || !_showOutline)
-                return;
-        }
-
-        protected virtual void DrawGizmosSelected()
-        {
-            if (_config == null || !_showOutline)
+            if (!isValid || IsDisabled || !_debugMode)
                 return;
 
-            // << DRAW DEFAULT >> ------------------------------------------------------------
-            if (_detectors.Count == 0 || _detectors[0].IsValid == false)
+            if (!Application.isPlaying)
             {
-                _config.DrawOutlineGizmos(transform, _defaultColor);
-                return;
-            }
+                ExecuteScan(_filter, out _lastResult, out string debugInfo);
 
+            }
+            
+                        
             // << DRAW OUTLINE >> ------------------------------------------------------------
             Color outlineColor = _defaultColor;
-            if (_detectors[0].Result.HasColliders)
+            if (_lastResult.HasColliders)
                 outlineColor = _collidingColor;
-
             _config.DrawOutlineGizmos(transform, outlineColor);
 
             // << DRAW LINE TO TARGET >> ------------------------------------------------------------
-            if (_detectors[0].Result.HasTarget)
-                DrawLineToTarget(_closestTargetColor, _detectors[0].Result.Target.transform);
+            if (_lastResult.HasTarget)
+                DrawLineToTarget(_closestTargetColor, _lastResult.Target.transform);
 
-            // << DRAW DETECTION SECTOR >> ------------------------------------------------------------
-            DrawDetectionSector(transform, _detectors[0], _showDebug);
+            DrawDetectionSector(transform, _lastResult, true);
         }
 
         void DrawLineToTarget(Color gizmoColor, Transform target)
@@ -350,26 +365,22 @@ namespace Darklight.Behaviour
         /// <param name="gizmoColor">The color for the lines</param>
         /// <param name="position">The center position of the sensor</param>
         /// <param name="rotation">The rotation of the sensor transform</param>
-        /// <param name="filter">The sensor detection filter containing angle information</param>
-        void DrawDetectionSector(Transform transform, Detector detector, bool showDebug = false)
+        /// <param name="result">The sensor detection filter containing angle information</param>
+        void DrawDetectionSector(Transform transform, DetectionResult result, bool showDebug = false)
         {
             Vector3 position = transform.position;
             Quaternion rotation = transform.rotation;
-            SensorDetectionFilter filter = detector.Filter;
-
+            SensorDetectionFilter filter = result.Filter;
+            
             Color gizmoColor = _defaultColor;
-            if (detector.Result.HasColliders)
+            if (result.HasColliders)
                 gizmoColor = _collidingColor;
 
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
             if (!filter.IsFullSectorType)
             {
                 DrawSectorPolygon(filter, gizmoColor);
-            }
-
-            // << DRAW SECTOR RAYCASTS >> ------------------------------------------------------------
-            if (showDebug)
-            {
+                
                 _config.CalculateSectorAngleEdgePoints(
                     transform,
                     filter,
@@ -393,7 +404,7 @@ namespace Darklight.Behaviour
             sectorEdgePoints = sectorEdgePoints.OrderBy(k => k.Angle).ToList();
 
             // Check if any of the edge points are more than the initial angle and less than the terminal angle
-            // If not, then we need to seperate the edge points into two lists, one for the smaller angle and one for the larger angle
+            // If not, then we need to separate the edge points into two lists, one for the smaller angle and one for the larger angle
             if (
                 sectorEdgePoints.Any(k =>
                     IsAngleInBetween(k.Angle, filter.InitialAngle, filter.TerminalAngle)
@@ -472,7 +483,6 @@ namespace Darklight.Behaviour
             }
             Debug.Log(debugString);
         }
-#endif
         #endregion
 
         #region < PUBLIC_ENUMS > ====================================================================
@@ -505,6 +515,11 @@ namespace Darklight.Behaviour
             LARGE_ANGLE
         }
 
+        /// <summary>
+        /// Represents a point on the edge of a detection sector in 3D space.
+        /// This structure is used to define the angular and positional characteristics
+        /// of edge points that denote the boundaries of a sector-shaped detection area.
+        /// </summary>
         public struct EdgePoint
         {
             float _angle;
