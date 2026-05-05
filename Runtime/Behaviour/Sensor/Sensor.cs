@@ -211,6 +211,7 @@ namespace Darklight.Behaviour
         #endregion
 
         #region < PUBLIC_METHODS > [[ SCAN ]] ====================================================================
+        
         /// <summary>
         /// Executes the scan for the sensor based on the
         /// </summary>
@@ -287,7 +288,44 @@ namespace Darklight.Behaviour
 
             // << SET RESULT >> ------------------------------------------------------------
             result = new DetectionResult(filter, target, colliders);
+            _lastResult = result;
             return true;
+        }
+        
+        
+        /// <summary>
+        /// An expanded version of the ExecuteScan method that allows for the specification of a SensorConfig.
+        /// </summary>
+        /// <param name="config">
+        /// The SensorConfig to use for the scan.
+        /// </param>
+        /// <returns></returns>
+        public bool ExecuteScan(SensorConfig config, SensorDetectionFilter filter, out DetectionResult result,
+            out string debugInfo)
+        {
+            // Base Checks
+            if (config == null || filter == null)
+            {
+                result = default;
+                debugInfo = "SensorConfig or DetectionFilter cannot be null";
+                return false;
+            }
+            
+            _config = config;
+            _filter = filter;
+            
+            return ExecuteScan(filter, out result, out debugInfo);
+        }
+
+        /// <summary>
+        /// Executes the default scan using the preconfigured filter.
+        /// </summary>
+        /// <param name="result">The result of the default scan operation.</param>
+        /// <param name="debugInfo">Additional debug information generated during the scan.</param>
+        /// <returns>True if the scan was executed successfully, false otherwise.</returns>
+        public bool ExecuteScan(out DetectionResult result, out string debugInfo)
+        {
+            return ExecuteScan(_filter, out result, out debugInfo);
         }
         #endregion
 
@@ -313,6 +351,15 @@ namespace Darklight.Behaviour
         #endregion
 
         #region < PUBLIC_METHODS > [[ SETTERS ]] ====================================================================
+
+        public void SetConfig(SensorConfig config)
+        {
+            if (config == null)
+                return;
+            
+            _config = config;
+        }
+        
         public void StartTimedDisable(float duration)
         {
             if (IsDisabled)
@@ -377,7 +424,7 @@ namespace Darklight.Behaviour
                 gizmoColor = _collidingColor;
 
             // << DRAW SECTOR POLYGON >> ------------------------------------------------------------
-            if (!filter.IsFullSectorType)
+            if (filter != null && !filter.IsFullSectorType)
             {
                 DrawSectorPolygon(filter, gizmoColor);
                 

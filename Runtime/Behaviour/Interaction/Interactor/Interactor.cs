@@ -17,9 +17,6 @@ namespace Darklight.Behaviour
     {
         private Interactable _currentTarget;
 
-        [SerializeField]
-        protected SensorDetectionFilter interactableFilter;
-
         /// <summary>
         /// Main reference to the current target 
         /// </summary>
@@ -60,7 +57,7 @@ namespace Darklight.Behaviour
             return true;
         }
 
-        protected bool InteractWith(Interactable interactable, bool force = false)
+        bool InteractWith(Interactable interactable, bool force = false)
         {
             if (interactable == null)
                 return false;
@@ -68,7 +65,7 @@ namespace Darklight.Behaviour
             return interactable.AcceptInteraction(this, force);
         }
 
-        public virtual bool InteractWithTarget(out string debugInfo)
+        protected virtual bool InteractWithTarget(out string debugInfo)
         {
             debugInfo = "";
             if (_currentTarget == null)
