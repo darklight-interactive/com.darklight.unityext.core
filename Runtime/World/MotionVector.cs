@@ -89,12 +89,15 @@ namespace Darklight.World
                 Validate();
             }
         }
+
         /// <summary>
         /// The horizontal component of the vector as a 3D vector. -> (horz.x, 0, horz.y)
+        /// Returns <see cref="Vector3.zero"/> safely when horizontal magnitude is zero,
+        /// preventing warnings from <see cref="Quaternion.LookRotation"/>.
         /// </summary>
         public Vector3 HorizontalVec3
         {
-            get => new Vector3(Horizontal.x, 0f, Horizontal.y);
+            get => IsHorizontalZero ? Vector3.zero : new Vector3(Horizontal.x, 0f, Horizontal.y);
             set { Horizontal = new Vector2(value.x, value.z); Validate(); }
         }
 
@@ -132,13 +135,26 @@ namespace Darklight.World
 
         /// <summary>
         /// The normalized vector of the combined vector.
+        /// Returns <see cref="Vector3.zero"/> safely when the vector is zero.
         /// </summary>
-        public Vector3 Normalized => Combined.normalized;
+        public Vector3 Normalized => IsZero ? Vector3.zero : Combined.normalized;
 
         /// <summary>
         /// The magnitude of the combined vector.
         /// </summary>
         public float Magnitude => Combined.magnitude;
+        
+        /// <summary>
+        /// Returns true if both the horizontal and vertical components are effectively zero.
+        /// </summary>
+        public bool IsZero => IsHorizontalZero && Mathf.Abs(Vertical) < 0.0001f;
+
+        /// <summary>
+        /// Returns true if the horizontal component is effectively zero.
+        /// Useful for guarding against zero-vector warnings in <see cref="Quaternion.LookRotation"/>.
+        /// </summary>
+        public bool IsHorizontalZero => Horizontal.sqrMagnitude < 0.0001f;
+        
         #endregion
 
         #region < PRIVATE_METHODS > [[ HELPER METHODS ]] ================================================================
@@ -241,8 +257,7 @@ namespace Darklight.World
             _internalZClamp = Mathf.Infinity;
         }
         #endregion
-
-
+        
         #region < PUBLIC_METHODS > [[ HELPER METHODS ]] ================================================================
         /// <summary>
         /// Clamps the vector to the given horizontal and vertical clamps.
@@ -257,18 +272,7 @@ namespace Darklight.World
             );
             Vertical = Mathf.Clamp(Vertical, -vertClamp, vertClamp);
         }
-
         
-
-        /// <summary>
-        /// Prints the vector to the console.
-        /// </summary>
-        public string Print()
-        {
-            return $"-> MOTIONVECTOR: Horizontal: {Horizontal}, Vertical: {Vertical}";
-        }
-        #endregion
-
         /// <summary>
         /// Lerps between two motion vectors.
         /// </summary>
@@ -282,5 +286,15 @@ namespace Darklight.World
                 Mathf.Lerp(a.Vertical, b.Vertical, t)
             );
         }
+
+        /// <summary>
+        /// Prints the vector to the console.
+        /// </summary>
+        public string Print()
+        {
+            return $"-> MOTIONVECTOR: Horizontal: {Horizontal}, Vertical: {Vertical}";
+        }
+        #endregion
+
     }
 }
