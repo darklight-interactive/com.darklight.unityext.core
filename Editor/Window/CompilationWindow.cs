@@ -4,186 +4,190 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditor.Compilation;
 
-public class CompilationWindow : EditorWindow
+namespace Darklight.Editor
 {
-    private Vector2 scrollPosition;
-    private bool showAssemblyInfo = false;
-    private bool autoCompileEnabled = true;
-    private double lastCompileTime = 0;
-
-    // Cache assemblies data
-    private Assembly[] cachedAssemblies;
-    private float nextAssemblyUpdateTime;
-    private const float ASSEMBLY_UPDATE_INTERVAL = 1f; // Update assembly info every second
-
-    [MenuItem("Darklight/Window/Compilation")]
-    private static void ShowWindow()
+    public class CompilationWindow : EditorWindow
     {
-        var window = GetWindow<CompilationWindow>();
-        window.titleContent = new GUIContent("Compiler Window");
-        window.minSize = new Vector2(300, 200);
-        window.Show();
-    }
+        private Vector2 scrollPosition;
+        private bool showAssemblyInfo = false;
+        private bool autoCompileEnabled = true;
+        private double lastCompileTime = 0;
 
-    private void OnEnable()
-    {
-#if UNITY_2019_3_OR_NEWER
-        CompilationPipeline.compilationStarted += OnCompilationStarted;
-        CompilationPipeline.compilationFinished += OnCompilationFinished;
-        UpdateAssemblyCache();
-#endif
-    }
+        // Cache assemblies data
+        private Assembly[] cachedAssemblies;
+        private float nextAssemblyUpdateTime;
+        private const float ASSEMBLY_UPDATE_INTERVAL = 1f; // Update assembly info every second
 
-    private void UpdateAssemblyCache()
-    {
-#if UNITY_2019_3_OR_NEWER
-        if (Time.realtimeSinceStartup >= nextAssemblyUpdateTime)
+        [MenuItem(EditorPath.MENU_ROOT + "Compilation", priority = 0)]
+        private static void ShowWindow()
         {
-            cachedAssemblies = CompilationPipeline.GetAssemblies();
-            nextAssemblyUpdateTime = Time.realtimeSinceStartup + ASSEMBLY_UPDATE_INTERVAL;
+            var window = GetWindow<CompilationWindow>("Compilation");
+            window.titleContent = new GUIContent("Compiler Window");
+            window.minSize = new Vector2(300, 200);
+            window.Show();
         }
-#endif
-    }
 
-    private void OnDisable()
-    {
-#if UNITY_2019_3_OR_NEWER
-        CompilationPipeline.compilationStarted -= OnCompilationStarted;
-        CompilationPipeline.compilationFinished -= OnCompilationFinished;
-#endif
-    }
-
-    private void OnGUI()
-    {
-        using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
+        private void OnEnable()
         {
-            scrollPosition = scrollView.scrollPosition;
+    #if UNITY_2019_3_OR_NEWER
+            CompilationPipeline.compilationStarted += OnCompilationStarted;
+            CompilationPipeline.compilationFinished += OnCompilationFinished;
+            UpdateAssemblyCache();
+    #endif
+        }
 
-            EditorGUILayout.Space(10);
-
-            // Compilation Controls
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        private void UpdateAssemblyCache()
+        {
+    #if UNITY_2019_3_OR_NEWER
+            if (Time.realtimeSinceStartup >= nextAssemblyUpdateTime)
             {
-                EditorGUILayout.LabelField("Compilation Controls", EditorStyles.boldLabel);
-
-                if (GUILayout.Button("Force Recompile Scripts"))
-                {
-                    ForceRecompile();
-                }
-
-                autoCompileEnabled = EditorGUILayout.Toggle(
-                    "Auto-Compile Enabled",
-                    autoCompileEnabled
-                );
-                EditorPrefs.SetBool("kAutoRefresh", autoCompileEnabled);
-
-                if (lastCompileTime > 0)
-                {
-                    EditorGUILayout.LabelField(
-                        $"Last Compile Time: {FormatCompileTime(lastCompileTime)}"
-                    );
-                }
+                cachedAssemblies = CompilationPipeline.GetAssemblies();
+                nextAssemblyUpdateTime = Time.realtimeSinceStartup + ASSEMBLY_UPDATE_INTERVAL;
             }
+    #endif
+        }
 
-            EditorGUILayout.Space(10);
+        private void OnDisable()
+        {
+    #if UNITY_2019_3_OR_NEWER
+            CompilationPipeline.compilationStarted -= OnCompilationStarted;
+            CompilationPipeline.compilationFinished -= OnCompilationFinished;
+    #endif
+        }
 
-            // Assembly Information
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        private void OnGUI()
+        {
+            using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
-                showAssemblyInfo = EditorGUILayout.Foldout(
-                    showAssemblyInfo,
-                    "Assembly Information",
-                    true
-                );
-                if (showAssemblyInfo)
+                scrollPosition = scrollView.scrollPosition;
+
+                EditorGUILayout.Space(10);
+
+                // Compilation Controls
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
-                    // Only update assembly cache when needed
-                    if (cachedAssemblies == null)
+                    EditorGUILayout.LabelField("Compilation Controls", EditorStyles.boldLabel);
+
+                    if (GUILayout.Button("Force Recompile Scripts"))
                     {
-                        UpdateAssemblyCache();
+                        ForceRecompile();
                     }
 
-                    if (cachedAssemblies == null || cachedAssemblies.Length == 0)
-                        return;
-                    var sortedAssemblies = cachedAssemblies.OrderByDescending(a =>
-                        a.allReferences.Length
+                    autoCompileEnabled = EditorGUILayout.Toggle(
+                        "Auto-Compile Enabled",
+                        autoCompileEnabled
                     );
+                    EditorPrefs.SetBool("kAutoRefresh", autoCompileEnabled);
 
-                    foreach (var assembly in sortedAssemblies)
+                    if (lastCompileTime > 0)
                     {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            EditorGUILayout.LabelField($"Assembly: {assembly.name}");
-                        }
-                        EditorGUI.indentLevel++;
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            EditorGUILayout.LabelField($"Output: {assembly.outputPath}");
-                        }
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            EditorGUILayout.LabelField(
-                                $"References: {assembly.allReferences.Length}"
-                            );
-                        }
-                        EditorGUI.indentLevel--;
+                        EditorGUILayout.LabelField(
+                            $"Last Compile Time: {FormatCompileTime(lastCompileTime)}"
+                        );
                     }
                 }
-            }
 
-            EditorGUILayout.Space(10);
+                EditorGUILayout.Space(10);
 
-            // Compilation Status
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("Compilation Status", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"Is Compiling: {EditorApplication.isCompiling}");
-                EditorGUILayout.LabelField($"Is Playing: {EditorApplication.isPlaying}");
-                EditorGUILayout.LabelField($"Is Paused: {EditorApplication.isPaused}");
+                // Assembly Information
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    showAssemblyInfo = EditorGUILayout.Foldout(
+                        showAssemblyInfo,
+                        "Assembly Information",
+                        true
+                    );
+                    if (showAssemblyInfo)
+                    {
+                        // Only update assembly cache when needed
+                        if (cachedAssemblies == null)
+                        {
+                            UpdateAssemblyCache();
+                        }
+
+                        if (cachedAssemblies == null || cachedAssemblies.Length == 0)
+                            return;
+                        var sortedAssemblies = cachedAssemblies.OrderByDescending(a =>
+                            a.allReferences.Length
+                        );
+
+                        foreach (var assembly in sortedAssemblies)
+                        {
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                EditorGUILayout.LabelField($"Assembly: {assembly.name}");
+                            }
+                            EditorGUI.indentLevel++;
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                EditorGUILayout.LabelField($"Output: {assembly.outputPath}");
+                            }
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                EditorGUILayout.LabelField(
+                                    $"References: {assembly.allReferences.Length}"
+                                );
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(10);
+
+                // Compilation Status
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    EditorGUILayout.LabelField("Compilation Status", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField($"Is Compiling: {EditorApplication.isCompiling}");
+                    EditorGUILayout.LabelField($"Is Playing: {EditorApplication.isPlaying}");
+                    EditorGUILayout.LabelField($"Is Paused: {EditorApplication.isPaused}");
+                }
             }
         }
-    }
 
-    private void ForceRecompile()
-    {
-#if UNITY_2019_3_OR_NEWER
-        CompilationPipeline.RequestScriptCompilation();
-#elif UNITY_2017_1_OR_NEWER
-        var editorAssembly = Assembly.GetAssembly(typeof(Editor));
-        var editorCompilationInterfaceType = editorAssembly.GetType(
-            "UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface"
-        );
-        var dirtyAllScriptsMethod = editorCompilationInterfaceType.GetMethod(
-            "DirtyAllScripts",
-            BindingFlags.Static | BindingFlags.Public
-        );
-        dirtyAllScriptsMethod.Invoke(editorCompilationInterfaceType, null);
-#endif
-    }
+        private void ForceRecompile()
+        {
+    #if UNITY_2019_3_OR_NEWER
+            CompilationPipeline.RequestScriptCompilation();
+    #elif UNITY_2017_1_OR_NEWER
+            var editorAssembly = Assembly.GetAssembly(typeof(Editor));
+            var editorCompilationInterfaceType = editorAssembly.GetType(
+                "UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface"
+            );
+            var dirtyAllScriptsMethod = editorCompilationInterfaceType.GetMethod(
+                "DirtyAllScripts",
+                BindingFlags.Static | BindingFlags.Public
+            );
+            dirtyAllScriptsMethod.Invoke(editorCompilationInterfaceType, null);
+    #endif
+        }
 
-    private void OnCompilationStarted(object obj)
-    {
-        lastCompileTime = EditorApplication.timeSinceStartup;
-    }
+        private void OnCompilationStarted(object obj)
+        {
+            lastCompileTime = EditorApplication.timeSinceStartup;
+        }
 
-    private void OnCompilationFinished(object obj)
-    {
-        lastCompileTime = EditorApplication.timeSinceStartup - lastCompileTime;
-        Repaint();
-    }
+        private void OnCompilationFinished(object obj)
+        {
+            lastCompileTime = EditorApplication.timeSinceStartup - lastCompileTime;
+            Repaint();
+        }
 
-    private string FormatCompileTime(double seconds)
-    {
-        int minutes = (int)(seconds / 60);
-        seconds = seconds % 60;
-        int milliseconds = (int)((seconds % 1) * 1000);
-        int wholeSeconds = (int)seconds;
+        private string FormatCompileTime(double seconds)
+        {
+            int minutes = (int)(seconds / 60);
+            seconds = seconds % 60;
+            int milliseconds = (int)((seconds % 1) * 1000);
+            int wholeSeconds = (int)seconds;
 
-        if (minutes > 0)
-            return $"{minutes}m {wholeSeconds}s {milliseconds}ms";
-        if (wholeSeconds > 0)
-            return $"{wholeSeconds}s {milliseconds}ms";
-        return $"{milliseconds}ms";
+            if (minutes > 0)
+                return $"{minutes}m {wholeSeconds}s {milliseconds}ms";
+            if (wholeSeconds > 0)
+                return $"{wholeSeconds}s {milliseconds}ms";
+            return $"{milliseconds}ms";
+        }
     }
+    #endif
 }
-#endif
+

@@ -34,7 +34,7 @@ namespace Darklight.Matrix
         private bool _selectedNodeIsExpanded = false;
         private Vector2 _nodeInfoScrollPosition;
 
-        [MenuItem("Darklight/Window/Matrix Editor")]
+        [MenuItem(EditorPath.MENU_TOOL + "Matrix Editor")]
         private static void ShowWindow()
         {
             EditorWindow window = GetWindow<MatrixEditorWindow>();

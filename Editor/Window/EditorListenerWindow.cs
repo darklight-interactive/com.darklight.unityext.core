@@ -16,7 +16,7 @@ namespace Darklight.Editor
         private Vector2 _scrollPosition;
         private static EditorListenerWindow _window;
 
-        [MenuItem("Tools/Darklight/Editor Listener")]
+        [MenuItem(EditorPath.MENU_WINDOW + "Editor Listener")]
         public static void ShowWindow()
         {
             _window = GetWindow<EditorListenerWindow>("Editor Events");

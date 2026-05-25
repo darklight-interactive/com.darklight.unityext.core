@@ -1,6 +1,6 @@
 ﻿using System;
 using UnityEngine;
-
+using AYellowpaper.SerializedCollections;
 namespace Darklight
 {
     /// <summary>
@@ -16,6 +16,13 @@ namespace Darklight
         where TEnum : Enum
         where TAsset : UnityEngine.Object
     {
-        //[SerializeField]
+        [SerializeField] private SerializedDictionary<TEnum, TAsset> _assetDictionary = new();
+        
+        protected SerializedDictionary<TEnum, TAsset> assetDictionary => _assetDictionary;
+        
+        public bool TryGetValue(TEnum key, out TAsset asset)
+        {
+            return assetDictionary.TryGetValue(key, out asset);
+        }
     }
 }

@@ -13,12 +13,12 @@ namespace Darklight.Editor.Window
     /// <summary>
     /// Custom Editor Window to snap the Scene view camera to predefined world axes.
     /// </summary>
-    public class CameraSnapEditorWindow : EditorWindow
+    public class EditorCameraControlTool : EditorWindow
     {
-        [MenuItem("Window/Darklight/CameraSnapEditorWindow")]
+        [MenuItem(EditorPath.MENU_WINDOW + "Editor Camera Control")]
         public static void ShowWindow()
         {
-            GetWindow<CameraSnapEditorWindow>("CameraSnapEditorWindow");
+            GetWindow<EditorCameraControlTool>("Editor Camera Control");
         }
 
         private void OnGUI()
