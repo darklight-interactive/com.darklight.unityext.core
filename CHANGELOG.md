@@ -1,8 +1,8 @@
 # Changelog
 
-## [0.2.1] - 2024-12-19
+## [0.2.11] - 2026-05-25
 ### Added
-Testing Changelog
+- Added [Ayellowpaper Serialized Dictionary](https://github.com/ayellowpaper/SerializedDictionary) as Plugin 
 
 ### Changed
 

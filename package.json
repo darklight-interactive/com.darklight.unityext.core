@@ -1,6 +1,6 @@
 {
   "name": "com.darklight.core",
-  "version": "0.2.1",
+  "version": "0.2.11",
   "displayName": "Darklight Core Library",
   "description": "The Core Unity Extension Library for Darklight Interactive Studios.",
   "unity": "6000.0",
