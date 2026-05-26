@@ -1,0 +1,16 @@
+{
+    "name": "Darklight.Project",
+    "rootNamespace": "",
+    "references": [
+        "GUID:fb50eae3676730a4481d7655a7a7b3dc"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

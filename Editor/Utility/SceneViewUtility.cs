@@ -102,6 +102,16 @@ namespace Darklight.Editor.Utility
             }
         }
 
+        public static void SetViewRotation(Quaternion rotation)
+        {
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            if (sceneView != null)
+            {
+                sceneView.rotation = rotation;
+                sceneView.Repaint();
+            }
+        }
+        
         /// <summary>
         /// Resets the Scene view camera to the default position and orientation.
         /// </summary>

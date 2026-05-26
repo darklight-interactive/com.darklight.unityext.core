@@ -1,7 +1,8 @@
 ﻿using System;
 using UnityEngine;
 using AYellowpaper.SerializedCollections;
-namespace Darklight
+
+namespace Darklight.Project
 {
     /// <summary>
     /// A scriptable object that stores a dictionary reference to a group of assets.
