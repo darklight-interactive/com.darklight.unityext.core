@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Darklight.Editor.Utility
+namespace Darklight.Editor
 {
 #if UNITY_EDITOR
 

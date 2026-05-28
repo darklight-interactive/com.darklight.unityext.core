@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -21,7 +20,6 @@ namespace Darklight.Editor
 
         // Buffer for sphere circle points (33 points for 32 segments + 1 closing point)
         private static readonly Vector3[] s_CirclePoints = new Vector3[33];
-#if UNITY_EDITOR
 
         /// <summary>
         /// Generates the base vertices for a rectangle in local space.
@@ -65,14 +63,14 @@ namespace Darklight.Editor
                     vertices[vertexIndex++] = new Vector3(xPos, 0, -halfArea.y);
                 }
 
-                // Right edge (bottom to top, skip bottom corner)
+                // Right edge (bottom to top, skip a bottom corner)
                 for (int i = 1; i <= subdivisions; i++)
                 {
                     float zPos = -halfArea.y + (i * zStep);
                     vertices[vertexIndex++] = new Vector3(halfArea.x, 0, zPos);
                 }
 
-                // Top edge (right to left, skip right corner)
+                // Top edge (right to left, skip a right corner)
                 for (int i = subdivisions - 1; i >= 0; i--)
                 {
                     float xPos = -halfArea.x + (i * xStep);
@@ -102,10 +100,12 @@ namespace Darklight.Editor
             Vector3 center
         )
         {
+#if UNITY_EDITOR
             for (int i = 0; i < vertices.Length; i++)
             {
                 vertices[i] = rotation * vertices[i] + center;
             }
+#endif
         }
 
         /// <summary>
@@ -203,7 +203,6 @@ namespace Darklight.Editor
         }
 
         #region -- << LABELS >> ------------------------------------ >>
-
         /// <summary>
         /// Draws a label at the specified position using Handles.Label.
         /// </summary>
@@ -212,9 +211,11 @@ namespace Darklight.Editor
         /// <param name="labelStyle">The GUIStyle to use for the label.</param>
         public static void DrawLabel(string label, Vector3 position, GUIStyle labelStyle)
         {
+#if UNITY_EDITOR
             Handles.Label(position, label, labelStyle);
+#endif
         }
-
+        
         /// <summary>
         /// Draws a label at the specified position using Handles.Label with a specified color.
         /// </summary>
@@ -229,11 +230,13 @@ namespace Darklight.Editor
             GUIStyle labelStyle
         )
         {
+#if UNITY_EDITOR
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Handles.Label(position, label, labelStyle);
+#endif
         }
         #endregion
-
+        
         #region -- << DRAW LINE >> ------------------------------------ >>
         /// <summary>
         /// Draws a line between two points with a specified color and thickness.
@@ -244,6 +247,7 @@ namespace Darklight.Editor
         /// <param name="thickness">The thickness of the line.</param>
         public static void DrawLine(Vector3 start, Vector3 end, Color color, float thickness = 0f)
         {
+#if UNITY_EDITOR
             Handles.color = color;
 
             if (thickness <= 0)
@@ -253,6 +257,7 @@ namespace Darklight.Editor
             }
 
             Handles.DrawAAPolyLine(thickness, new Vector3[] { start, end });
+#endif
         }
 
         public static void DrawLineWithLabel(
@@ -263,11 +268,13 @@ namespace Darklight.Editor
             float thickness = 0f
         )
         {
+#if UNITY_EDITOR
             DrawLine(start, end, color, thickness);
 
             // Draw label at the middle of the line
             Vector3 middle = (start + end) / 2;
             Handles.Label(middle, label);
+#endif
         }
         #endregion << DRAW LINE >> ------------------------------------ >>
 
@@ -290,6 +297,7 @@ namespace Darklight.Editor
             Handles.CapFunction capFunction
         )
         {
+#if UNITY_EDITOR
             Handles.color = color;
             if (
                 Handles.Button(
@@ -303,14 +311,17 @@ namespace Darklight.Editor
             {
                 onClick?.Invoke(); // Invoke the action if the button is clicked
             }
+#endif
         }
         #endregion
 
         #region -- << DRAW POLYGON >> ------------------------------------ >>
         public static void DrawPolygon(Vector3[] vertices, Color color, float opacity = 1f)
         {
+#if UNITY_EDITOR
             Handles.color = new Color(color.r, color.g, color.b, opacity);
             Handles.DrawAAConvexPolygon(vertices);
+#endif
         }
         #endregion
 
@@ -332,6 +343,7 @@ namespace Darklight.Editor
             Color color
         )
         {
+#if UNITY_EDITOR
             Vector3[] vertices = GenerateRadialVertices(center, radius, rotation, segments);
 
             for (int i = 0; i < vertices.Length; i++)
@@ -341,6 +353,7 @@ namespace Darklight.Editor
                 Handles.color = color;
                 Handles.DrawLine(start, end);
             }
+#endif
         }
 
         /// <summary>
@@ -359,10 +372,12 @@ namespace Darklight.Editor
             Color color
         )
         {
+#if UNITY_EDITOR
             Vector3[] vertices = GenerateRadialVertices(center, radius, rotation, segments);
 
             Handles.color = color;
             Handles.DrawAAConvexPolygon(vertices);
+#endif
         }
         #endregion
 
@@ -387,6 +402,7 @@ namespace Darklight.Editor
             GUIStyle labelStyle
         )
         {
+#if UNITY_EDITOR
             DrawWireSquare(position, size, normal, color);
 
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
@@ -394,6 +410,7 @@ namespace Darklight.Editor
             Vector3 labelOffset = new Vector3(size / 2, size / 2, 0);
             Vector3 labelPosition = position + (size * labelOffset);
             Handles.Label(labelPosition, label, labelStyle);
+#endif
         }
 
         /// <summary>
@@ -414,11 +431,13 @@ namespace Darklight.Editor
             GUIStyle labelStyle
         )
         {
+#if UNITY_EDITOR
             DrawWireSquare(position, size, rotation, color);
             labelStyle.normal = new GUIStyleState { textColor = color }; // Set the text color
             Vector3 labelOffset = new Vector3(size / 2, size / 2, 0);
             Vector3 labelPosition = position + (size * labelOffset);
             Handles.Label(labelPosition, label, labelStyle);
+#endif
         }
 
         /// <summary>
@@ -430,12 +449,14 @@ namespace Darklight.Editor
         /// <param name="color">The color of the rectangle.</param>
         public static void DrawWireRect(Vector3 position, Vector2 area, Vector3 normal, Color color)
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, area, normal),
                 Color.clear,
                 color
             );
+#endif
         }
 
         /// <summary>
@@ -452,12 +473,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, area, rotation),
                 Color.clear,
                 color
             );
+#endif
         }
 
         /// <summary>
@@ -474,12 +497,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+#if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, area, normal),
                 color,
                 Color.clear
             );
+#endif
         }
 
         /// <summary>
@@ -496,12 +521,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+            #if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, area, rotation),
                 color,
                 Color.clear
             );
+            #endif
         }
 
         /// <summary>
@@ -513,12 +540,14 @@ namespace Darklight.Editor
         /// <param name="color">The color of the square.</param>
         public static void DrawWireSquare(Vector3 position, float size, Vector3 normal, Color color)
         {
+            #if UNITY_EDITOR
             Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, size * Vector2.one, normal),
                 Color.clear,
                 color
             );
+            #endif
         }
 
         /// <summary>
@@ -535,12 +564,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+            #if UNITY_EDITOR
             Handles.color = color == null ? Color.black : color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, size * Vector2.one, rotation),
                 Color.clear,
                 color
             );
+            #endif
         }
 
         /// <summary>
@@ -557,12 +588,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+            #if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, size * Vector2.one, normal),
                 color,
                 Color.clear
             );
+            #endif
         }
 
         /// <summary>
@@ -579,12 +612,14 @@ namespace Darklight.Editor
             Color color
         )
         {
+            #if UNITY_EDITOR
             Handles.color = color;
             Handles.DrawSolidRectangleWithOutline(
                 GenerateRectangleVertices(position, size * Vector2.one, rotation),
                 color,
                 Color.clear
             );
+            #endif
         }
 
         #endregion << DRAW 2D SQUARE & RECTANGLE >> ------------------------------------ >>
@@ -645,6 +680,7 @@ namespace Darklight.Editor
             Color color
         )
         {
+#if UNITY_EDITOR
             Handles.color = color;
             CalculateCubeVertices(position, size, rotation, out Vector3[] vertices);
 
@@ -682,6 +718,7 @@ namespace Darklight.Editor
                     vertices[7]
                 }
             );
+#endif
         }
 
         /// <summary>
@@ -695,6 +732,7 @@ namespace Darklight.Editor
             Color wireColor
         )
         {
+#if UNITY_EDITOR
             // Create semi-transparent color for faces
             Color transparentColor = new Color(
                 faceColor.r,
@@ -754,6 +792,7 @@ namespace Darklight.Editor
 
             // Add wireframe outline for better visibility
             DrawWireCube(position, size, rotation, wireColor);
+#endif
         }
         #endregion
 
@@ -767,7 +806,7 @@ namespace Darklight.Editor
         /// <param name="normal">The normal of the circle.</param>
         /// <param name="color">The color of the circle.</param>
         /// <param name="segments">The number of segments of the circle.
-        ///     Must be greater than 6. Default is 32.</param>
+        ///     Must be greater than 6. Default is 16.</param>
         public static void DrawWireCircle(
             Vector3 center,
             float radius,
@@ -776,9 +815,34 @@ namespace Darklight.Editor
             int segments = 16
         )
         {
+#if UNITY_EDITOR
+            radius = Mathf.Max(radius, 0.001f);
             segments = Mathf.Max(segments, 6);
-
             DrawWireRadialShape(center, radius, rotation, segments, color);
+#endif
+        }
+
+        /// <summary>
+        /// Draws a wire circle.
+        /// </summary>
+        /// <param name="transform">The transform that represents the circle's position and rotation.</param>
+        /// <param name="radius">The radius of the circle. Must be greater than 0.001f.</param>
+        /// <param name="color">The color of the circle.</param>
+        /// <param name="segments">The number of segments of the circle.
+        ///     <b>Must be greater than 6. Default is 16.</b>
+        /// </param>
+        public static void DrawWireCircle(
+            Transform transform,
+            float radius,
+            Color color,
+            int segments = 16
+        )
+        {
+#if UNITY_EDITOR
+            radius = Mathf.Max(radius, 0.001f);
+            segments = Mathf.Max(segments, 6);
+            DrawWireRadialShape(transform.position, radius, transform.rotation, segments, color);
+#endif
         }
 
         /// <summary>
@@ -798,9 +862,11 @@ namespace Darklight.Editor
             int segments = 16
         )
         {
+#if UNITY_EDITOR
             segments = Mathf.Max(segments, 6);
 
             DrawSolidRadialShape(center, radius, rotation, segments, color);
+#endif
         }
 
         #endregion
@@ -817,6 +883,7 @@ namespace Darklight.Editor
             int segments = 32
         )
         {
+#if UNITY_EDITOR
             Handles.color = color;
 
             // Pre-calculate circle points once and reuse for all three circles
@@ -848,6 +915,7 @@ namespace Darklight.Editor
 
             // Restore original matrix
             Handles.matrix = originalMatrix;
+#endif
         }
 
         /// <summary>
@@ -861,6 +929,7 @@ namespace Darklight.Editor
             int segments = 32
         )
         {
+#if UNITY_EDITOR
             // Draw solid sphere using Unity's built-in sphere handle
             Handles.color = new Color(
                 sphereColor.r,
@@ -878,9 +947,8 @@ namespace Darklight.Editor
 
             // Add wireframe for better visibility and depth perception
             DrawWireSphere(position, radius, wireColor, segments);
+#endif
         }
         #endregion
-#endif
-        // == [ END IF UNITY EDITOR ] ================================================================================================================
     }
 }

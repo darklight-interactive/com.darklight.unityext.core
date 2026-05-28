@@ -48,18 +48,35 @@ namespace AYellowpaper.SerializedCollections.Editor
 
         private Dictionary<string, SerializedDictionaryInstanceDrawer> _arrayData = new();
 
+        private SerializedDictionaryInstanceDrawer GetOrCreateDrawer(SerializedProperty property)
+        {
+            string path = property.propertyPath;
+            if (_arrayData.TryGetValue(path, out var existing))
+            {
+                // Re-create drawer if the serialized object has been disposed/changed
+                try { _ = existing.ListProperty.isExpanded; }
+                catch
+                {
+                    _arrayData.Remove(path);
+                    existing = null;
+                }
+            }
+            if (existing == null)
+            {
+                existing = new SerializedDictionaryInstanceDrawer(property, fieldInfo);
+                _arrayData[path] = existing;
+            }
+            return existing;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (!_arrayData.ContainsKey(property.propertyPath))
-                _arrayData.Add(property.propertyPath, new SerializedDictionaryInstanceDrawer(property, fieldInfo));
-            _arrayData[property.propertyPath].OnGUI(position, label);
+            GetOrCreateDrawer(property).OnGUI(position, label);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (!_arrayData.ContainsKey(property.propertyPath))
-                _arrayData.Add(property.propertyPath, new SerializedDictionaryInstanceDrawer(property, fieldInfo));
-            return _arrayData[property.propertyPath].GetPropertyHeight(label);
+            return GetOrCreateDrawer(property).GetPropertyHeight(label);
         }
     }
 }

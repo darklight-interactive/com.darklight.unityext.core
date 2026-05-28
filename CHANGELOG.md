@@ -1,11 +1,9 @@
 # Changelog
-
-## [0.2.11] - 2026-05-25
+## [0.2.11]
 ### Added
-- Added [Ayellowpaper Serialized Dictionary](https://github.com/ayellowpaper/SerializedDictionary) as Plugin 
-
+- Added [Ayellowpaper Serialized Dictionary](https://github.com/ayellowpaper/SerializedDictionary) as Plugin
 - AssetReferenceSO.cs that is GenericType ScriptableObject that can be used to store references to assets.
-
+- Abstracted Interactor and created SensorInteractor and TriggerInteractor
 ### Changed
 
 

@@ -112,10 +112,28 @@ namespace AYellowpaper.SerializedCollections.Editor
 
         public float GetPropertyHeight(GUIContent label)
         {
+            // Guard against disposed SerializedObject
+            if (ListProperty == null || !IsPropertyValid())
+                return SerializedDictionaryDrawer.TopHeaderClipHeight;
+
             if (!ListProperty.isExpanded)
                 return SerializedDictionaryDrawer.TopHeaderClipHeight;
 
             return ReorderableList.GetHeight();
+        }
+
+        private bool IsPropertyValid()
+        {
+            try
+            {
+                // Accessing isExpanded will throw if the SerializedObject is disposed
+                _ = ListProperty.isExpanded;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void DoList(Rect position)

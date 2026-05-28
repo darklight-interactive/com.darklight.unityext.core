@@ -100,7 +100,7 @@ namespace Darklight.Behaviour
         /// Handle what the interactable does when it is interacted with
         /// </summary>
         /// <param name="interactor">The interactor that is interacting with the interactable</param>
-        protected abstract void HandleInteraction();
+        protected abstract void HandleInteraction(Interactor interactor);
 
         /// <summary>
         /// Complete the interaction with the interactor. <br/>
