@@ -6,7 +6,7 @@ namespace Darklight.Behaviour
 {
     [ExecuteAlways]
     [RequireComponent(typeof(Collider))]
-    public class ColliderInteractor : Interactor
+    public class TriggerInteractor : Interactor
     {
         [SerializeField, Required]
         private Collider _collider;

@@ -143,7 +143,7 @@ namespace Darklight.Behaviour
                 return false;
             }
 
-            bool result = interactable.AcceptInteraction(this, force);
+            bool result = interactable.AcceptInteraction(this, out errMsg, force);
             if (result)
                 OnInteractAccepted?.Invoke();
             return result;
