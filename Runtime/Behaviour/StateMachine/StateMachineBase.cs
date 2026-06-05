@@ -68,6 +68,7 @@ namespace Darklight.Behaviour
             if (!force && EqualityComparer<TEnum>.Default.Equals(currentStateEnum, newState))
                 return false;
             currentStateEnum = newState;
+            RaiseStateChangedEvent(currentStateEnum);
             return true;
         }
     }

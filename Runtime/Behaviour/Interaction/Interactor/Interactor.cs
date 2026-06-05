@@ -102,13 +102,24 @@ namespace Darklight.Behaviour
                 return false;
             }
             
-            // << TARGET REJECTED >>
+            // << TARGET ALREADY SET >>
             if (!force && CurrentTarget != null)
                 return false;
             
             // << TARGET ACCEPTED >>
-            CurrentTarget = interactable;
-            return true;
+            if (interactable.AcceptTarget(this, out string errMsg, force))
+            {
+                CurrentTarget = interactable;
+                return true;
+            }
+            else
+            {
+                Debug.LogError(errMsg, this);
+            }
+            
+            // << TARGET REJECTED >>
+            if (force) ClearTarget();
+            return false;
         }
 
         protected void ClearTarget()
@@ -143,7 +154,7 @@ namespace Darklight.Behaviour
                 return false;
             }
 
-            bool result = interactable.AcceptInteraction(this, force);
+            bool result = interactable.AcceptInteraction(this, out errMsg, force);
             if (result)
                 OnInteractAccepted?.Invoke();
             return result;

@@ -6,15 +6,15 @@ namespace Darklight.Behaviour
 {
     [ExecuteAlways]
     [RequireComponent(typeof(Collider))]
-    public class ColliderInteractor : Interactor
+    public class TriggerInteractor : Interactor
     {
         [SerializeField, Required]
-        private Collider _collider;
+        protected new Collider collider;
 
         void Awake()
         {
-            _collider = GetComponent<Collider>();
-            _collider.isTrigger = true;
+            collider = GetComponent<Collider>();
+            collider.isTrigger = true;
         }
 
         protected virtual void OnTriggerEnter(Collider other)
@@ -29,20 +29,6 @@ namespace Darklight.Behaviour
                 ClearTarget();
         }
         
-        public override void Enable()
-        {
-            base.Enable();
-            _collider.enabled = true;
-        }
-        
-        public override void Disable()
-        {
-            base.Disable();
-            _collider.enabled = false;
-        }
-
-
-
         /*
         public bool TryFindTarget(out Interactable target, out string errMsg)
         {

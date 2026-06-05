@@ -244,10 +244,10 @@ namespace Darklight.Behaviour
 
             // << DETECT COLLIDERS IN CONFIG SHAPE >> ------------------------------------------------------------
             if (DetectCollidersInConfigShape(filter, out colliders))
-                debugInfo += $"\nDetected Colliders in Config Shape: {colliders.Length}";
+                debugInfo += $"Detected Colliders in Config Shape: {colliders.Length}";
             else
             {
-                debugInfo += $"\nNo Colliders detected in Config Shape";
+                debugInfo = $"No Colliders detected in Config Shape";
                 return false;
             }
 

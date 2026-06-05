@@ -26,8 +26,8 @@ namespace Darklight.Behaviour
         Action OnCompleteInteraction { get; set; }
         void Initialize();
         void Reset();
-        bool AcceptTarget(Interactor interactor, bool force = false);
-        bool AcceptInteraction(Interactor interactor, bool force = false);
+        bool AcceptTarget(Interactor interactor, out string errMsg, bool force = false);
+        bool AcceptInteraction(Interactor interactor, out string errMsg, bool force = false);
         void CompleteInteraction();
         bool Validate(out string outLog);
         string Print();
@@ -80,7 +80,7 @@ namespace Darklight.Behaviour
         /// <param name="interactor">The interactor that is targeting the interactable</param>
         /// <param name="force">Whether to force the target to be accepted</param>
         /// <returns>True if the target is accepted, false otherwise</returns>
-        public abstract bool AcceptTarget(Interactor interactor, bool force = false);
+        public abstract bool AcceptTarget(Interactor interactor, out string errMsg, bool force = false);
 
         /// <summary>
         /// Handle what the interactable does when it is targeted
@@ -92,9 +92,10 @@ namespace Darklight.Behaviour
         /// /// Accept an interaction from an interactor
         /// </summary>
         /// <param name="interactor">The interactor that is interacting with the interactable</param>
+        /// <param name="errMsg">The error message to display if the interaction is not accepted</param>
         /// <param name="force">Whether to force the interaction to be accepted</param>
         /// <returns>True if the interaction is accepted, false otherwise</returns>
-        public abstract bool AcceptInteraction(Interactor interactor, bool force = false);
+        public abstract bool AcceptInteraction(Interactor interactor, out string errMsg, bool force = false);
 
         /// <summary>
         /// Handle what the interactable does when it is interacted with
