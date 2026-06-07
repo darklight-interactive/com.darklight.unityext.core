@@ -10,7 +10,7 @@ namespace Darklight.Behaviour
         [SerializeField, Required]
         private Sensor _sensor;
 
-        void Awake()
+        protected virtual void Awake()
         {
             _sensor = GetComponent<Sensor>();
         }
@@ -34,7 +34,8 @@ namespace Darklight.Behaviour
             // << SCAN FOR TARGETS >>
             if (!_sensor.ExecuteScan(out Sensor.DetectionResult result, out errMsg))
             {
-                Debug.LogError(errMsg, this);
+                //Debug.LogError(errMsg, this);
+                ClearTarget();
                 return false;
             }
 
