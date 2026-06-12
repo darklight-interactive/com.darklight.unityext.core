@@ -188,6 +188,7 @@ namespace Darklight.Editor
             return $"{milliseconds}ms";
         }
     }
-    #endif
 }
+#endif
+
 

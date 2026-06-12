@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿#if UNITY_EDITOR
+using UnityEditor;
 using UnityEngine;
 
 namespace Darklight.Editor
@@ -111,3 +112,4 @@ namespace Darklight.Editor
         }
     }
 }
+#endif

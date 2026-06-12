@@ -1452,6 +1452,5 @@ namespace Darklight.Editor
 
         #endregion
     }
-#endif
-
 }
+#endif

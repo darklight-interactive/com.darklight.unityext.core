@@ -47,7 +47,7 @@ namespace Darklight.Game
         CameraRigSettings _settings;
 
         [SerializeField]
-        TripleAxisBounds _bounds;
+        protected TripleAxisBounds bounds3D;
 
         [Header("Input Orbit Control")]
         [SerializeField]
@@ -87,7 +87,7 @@ namespace Darklight.Game
         {
             get
             {
-                _rigOrigin = _bounds.Center;
+                _rigOrigin = bounds3D.Center;
                 if (_followTarget != null)
                     _rigOrigin = _followTarget.position;
                 return _rigOrigin;
@@ -215,7 +215,7 @@ namespace Darklight.Game
             );
 
             Vector3 adjustedPosition = Origin + offset;
-            if (_bounds != null)
+            if (bounds3D != null)
                 adjustedPosition = EnforceBounds(adjustedPosition);
 
             // Use the current orbit angle (either from input or settings)
@@ -277,12 +277,12 @@ namespace Darklight.Game
 
         Vector3 EnforceBounds(Vector3 position)
         {
-            float minXBound = _bounds.Left;
-            float maxXBound = _bounds.Right;
-            float minYBound = _bounds.Bottom;
-            float maxYBound = _bounds.Top;
-            float minZBound = _bounds.Front;
-            float maxZBound = _bounds.Back;
+            float minXBound = bounds3D.Left;
+            float maxXBound = bounds3D.Right;
+            float minYBound = bounds3D.Bottom;
+            float maxYBound = bounds3D.Top;
+            float minZBound = bounds3D.Front;
+            float maxZBound = bounds3D.Back;
 
             // << CALCULATE POSITION >> ------------------------------
             Vector3 adjustedPosition = position;
@@ -502,8 +502,8 @@ namespace Darklight.Game
         void OnDrawGizmosSelected()
         {
             // Draw the bounds
-            if (_drawBoundsGizmos && _bounds != null)
-                _bounds.DrawGizmos();
+            if (_drawBoundsGizmos && bounds3D != null)
+                bounds3D.DrawGizmos();
 
             // Draw the camera look direction
             if (_cameraLookGizmos)

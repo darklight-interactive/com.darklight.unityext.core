@@ -6,15 +6,12 @@ namespace Darklight.Core2D
 {
     public class CameraRig2D : CameraRig
     {
-        [SerializeField]
-        TripleAxisBounds _bounds;
-
         public Vector3 BoundsCenter
         {
             get
             {
-                if (_bounds != null)
-                    return _bounds.Center;
+                if (bounds3D != null)
+                    return bounds3D.Center;
                 return Vector3.zero;
             }
         }
@@ -23,8 +20,8 @@ namespace Darklight.Core2D
         {
             get
             {
-                if (_bounds != null)
-                    return _bounds.Center;
+                if (bounds3D != null)
+                    return bounds3D.Center;
                 return base.Origin;
             }
         }
@@ -42,7 +39,7 @@ namespace Darklight.Core2D
             );
 
             Vector3 adjustedPosition = Origin + offset;
-            if (_bounds != null)
+            if (bounds3D != null)
                 adjustedPosition = EnforceBounds(adjustedPosition);
 
             if (Mathf.Abs(Settings.OrbitAngle) > 0)
@@ -67,13 +64,13 @@ namespace Darklight.Core2D
 
         protected override float CalculateTargetFOV()
         {
-            if (_bounds == null)
+            if (bounds3D == null)
                 return Settings.PerspectiveFOV;
 
             // Get necessary parameters
             float distance = CameraZOffset; // Distance from the camera to the target (absolute value of z offset)
             float aspectRatio = CameraAspect; // Camera's aspect ratio (width divided by height)
-            float width = _bounds.Width; // Width of the bounds to fit
+            float width = bounds3D.Width; // Width of the bounds to fit
 
             // Calculate the maximum vertical FOV that fits within the bounds width
             float maxVerticalFOVToFitWidth =
@@ -91,10 +88,10 @@ namespace Darklight.Core2D
 
         Vector3 EnforceBounds(Vector3 position)
         {
-            float minXBound = _bounds.Left;
-            float maxXBound = _bounds.Right;
-            float minYBound = _bounds.Bottom;
-            float maxYBound = _bounds.Top;
+            float minXBound = bounds3D.Left;
+            float maxXBound = bounds3D.Right;
+            float minYBound = bounds3D.Bottom;
+            float maxYBound = bounds3D.Top;
 
             // << CALCULATE POSITION >> ------------------------------
             Vector3 adjustedPosition = position;

@@ -279,6 +279,7 @@ namespace Darklight.Editor
         #endregion << DRAW LINE >> ------------------------------------ >>
 
         #region -- << DRAW BUTTON >> ------------------------------------------------- >>
+#if UNITY_EDITOR
         /// <summary>
         /// Draws a Handles.Button and executes the given action when clicked.
         /// </summary>
@@ -297,7 +298,6 @@ namespace Darklight.Editor
             Handles.CapFunction capFunction
         )
         {
-#if UNITY_EDITOR
             Handles.color = color;
             if (
                 Handles.Button(
@@ -311,8 +311,8 @@ namespace Darklight.Editor
             {
                 onClick?.Invoke(); // Invoke the action if the button is clicked
             }
-#endif
         }
+#endif
         #endregion
 
         #region -- << DRAW POLYGON >> ------------------------------------ >>

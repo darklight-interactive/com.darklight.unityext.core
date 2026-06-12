@@ -1,7 +1,10 @@
 using NaughtyAttributes;
+using UnityEngine;
+
+#if UNITY_EDITOR
 using NaughtyAttributes.Editor;
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace Darklight.Editor.Example
 {
@@ -24,6 +27,8 @@ namespace Darklight.Editor.Example
         public int nativeProperty => 100;
     }
 
+    #if UNITY_EDITOR
+    
     [CustomEditor(typeof(EditorExample))]
     public class EditorExampleEditor : NaughtyInspector
     {
@@ -49,4 +54,5 @@ namespace Darklight.Editor.Example
             }
         }
     }
+    #endif
 }
