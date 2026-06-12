@@ -54,13 +54,37 @@ namespace Darklight.Behaviour
         /// </summary>
         [SerializeField, Expandable]
         [CreateAsset("NewDetectionFilter", AssetUtility.BEHAVIOUR_FILEPATH + "/SensorDetectionFilter")]
-        SensorDetectionFilter _filter;
+        SensorFilter _filter;
         
         /// <summary>
         /// Confirm that the config is not null
         /// </summary>
         public bool isValid => _config != null;
 
+        public SensorConfig Config
+        {
+            get => _config;
+            set
+            {
+                if (value == null)
+                    return;
+                
+                _config = value;
+            }
+        }
+
+        public SensorFilter Filter
+        {
+            get => _filter;
+            set
+            {
+                if (value == null)
+                    return;
+                
+                _filter = value;
+            }
+        }
+        
         /// <summary>
         /// The unique identifier for the sensor.
         /// </summary>
@@ -125,7 +149,7 @@ namespace Darklight.Behaviour
 
         #region < PRIVATE_METHODS > [[ COLLIDER DETECTION ]] ====================================================================
         bool DetectCollidersInConfigShape(
-            SensorDetectionFilter filter,
+            SensorFilter filter,
             out Collider[] outColliders
         )
         {
@@ -153,7 +177,7 @@ namespace Darklight.Behaviour
             return outColliders.Length > 0;
         }
 
-        bool DetectCollidersInSector(SensorDetectionFilter filter, ref Collider[] colliders)
+        bool DetectCollidersInSector(SensorFilter filter, ref Collider[] colliders)
         {
             List<Collider> initColliders = new List<Collider>(colliders);
             List<Collider> sectorColliders = new List<Collider>();
@@ -219,7 +243,7 @@ namespace Darklight.Behaviour
         /// <param name="result"> The result of the scan </param>
         /// <returns> True if the scan was successful, false otherwise </returns>
         public virtual bool ExecuteScan(
-            SensorDetectionFilter filter,
+            SensorFilter filter,
             out DetectionResult result,
             out string debugInfo
         )
@@ -300,7 +324,7 @@ namespace Darklight.Behaviour
         /// The SensorConfig to use for the scan.
         /// </param>
         /// <returns></returns>
-        public bool ExecuteScan(SensorConfig config, SensorDetectionFilter filter, out DetectionResult result,
+        public bool ExecuteScan(SensorConfig config, SensorFilter filter, out DetectionResult result,
             out string debugInfo)
         {
             // Base Checks
@@ -417,7 +441,7 @@ namespace Darklight.Behaviour
         {
             Vector3 position = transform.position;
             Quaternion rotation = transform.rotation;
-            SensorDetectionFilter filter = result.Filter;
+            SensorFilter filter = result.Filter;
             
             Color gizmoColor = _defaultColor;
             if (result.HasColliders)
@@ -439,7 +463,7 @@ namespace Darklight.Behaviour
             }
         }
 
-        void DrawSectorPolygon(SensorDetectionFilter filter, Color color)
+        void DrawSectorPolygon(SensorFilter filter, Color color)
         {
             _config.CalculateSectorEdgePoints(
                 transform,

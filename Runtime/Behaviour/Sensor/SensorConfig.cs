@@ -180,7 +180,7 @@ namespace Darklight.Behaviour
         public bool IsPositionAngleInSector(
             Transform transform,
             Vector3 position,
-            SensorDetectionFilter filter
+            SensorFilter filter
         )
         {
             float angle = CalculateAngleFromPosition(transform, position);
@@ -242,7 +242,7 @@ namespace Darklight.Behaviour
 
         public void CalculateSectorAngleEdgePoints(
             Transform transform,
-            SensorDetectionFilter filter,
+            SensorFilter filter,
             out EdgePoint initialEdgePoint,
             out EdgePoint terminalEdgePoint
         )
@@ -265,7 +265,7 @@ namespace Darklight.Behaviour
 
         public void CalculateSectorEdgePoints(
             Transform transform,
-            SensorDetectionFilter filter,
+            SensorFilter filter,
             out List<EdgePoint> sectorEdgePoints
         )
         {

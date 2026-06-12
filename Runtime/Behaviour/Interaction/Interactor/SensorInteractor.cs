@@ -8,23 +8,23 @@ namespace Darklight.Behaviour
     public class SensorInteractor : Interactor
     {
         [SerializeField, Required]
-        private Sensor _sensor;
+        protected Sensor sensor;
 
         protected virtual void Awake()
         {
-            _sensor = GetComponent<Sensor>();
+            sensor = GetComponent<Sensor>();
         }
 
         public override void Enable()
         {
             base.Enable();
-            _sensor?.Enable();
+            sensor?.Enable();
         }
         
         public override void Disable()
         {
             base.Disable();
-            _sensor?.Disable();
+            sensor?.Disable();
         }
 
         public bool ScanForTarget(out string errMsg)
@@ -32,7 +32,7 @@ namespace Darklight.Behaviour
             errMsg = "";
             
             // << SCAN FOR TARGETS >>
-            if (!_sensor.ExecuteScan(out Sensor.DetectionResult result, out errMsg))
+            if (!sensor.ExecuteScan(out Sensor.DetectionResult result, out errMsg))
             {
                 //Debug.LogError(errMsg, this);
                 ClearTarget();

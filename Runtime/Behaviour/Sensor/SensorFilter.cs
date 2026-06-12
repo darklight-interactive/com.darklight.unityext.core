@@ -8,7 +8,7 @@ namespace Darklight.Behaviour
         fileName = "NewDetectionFilter",
         menuName = "Darklight/Behaviour/SensorDetectionFilter"
     )]
-    public class SensorDetectionFilter : ScriptableObject
+    public class SensorFilter : ScriptableObject
     {
         [SerializeField]
         [Tooltip("Layer mask for detection")]

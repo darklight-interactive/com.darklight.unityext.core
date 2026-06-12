@@ -12,7 +12,7 @@ namespace Darklight.Behaviour
         public class DetectionResult
         {
             [SerializeField, ReadOnly]
-            SensorDetectionFilter _filter;
+            SensorFilter _filter;
             
             [SerializeField, ReadOnly]
             Collider _target;
@@ -20,7 +20,7 @@ namespace Darklight.Behaviour
             [SerializeField, ReadOnly]
             Collider[] _colliders;
 
-            public SensorDetectionFilter Filter => _filter;
+            public SensorFilter Filter => _filter;
             public Collider Target => _target;
             public Collider[] Colliders => _colliders;
 
@@ -34,7 +34,7 @@ namespace Darklight.Behaviour
                 _colliders = new Collider[0];
             }
 
-            public DetectionResult(SensorDetectionFilter filter, Collider target, Collider[] colliders)
+            public DetectionResult(SensorFilter filter, Collider target, Collider[] colliders)
             {
                 _filter = filter;
                 _target = target;
