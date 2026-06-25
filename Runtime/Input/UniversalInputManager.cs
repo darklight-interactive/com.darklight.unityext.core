@@ -139,10 +139,8 @@ namespace Darklight.Input
             ResetInputEvents();
         }
 
-        protected override void Initialize()
+        protected void Awake()
         {
-            base.Initialize();
-
             // Print all connected devices
             LoadAllConnectedDevices();
         }

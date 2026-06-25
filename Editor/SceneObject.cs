@@ -6,9 +6,11 @@ using UnityEditor;
 
 namespace Darklight.Editor
 {
-    // <summary>
-    //  A wrapper class for Scene Assets. This allows for the use of Scene Assets in the inspector.
-    // </summary>
+    /// <summary>
+    /// A serializable wrapper class for scene assets. This enables the use of scene assets
+    /// within the Unity inspector, allowing developers to associate scenes with properties
+    /// and manage them easily.
+    /// </summary>
     [System.Serializable]
     public class SceneObject
     {

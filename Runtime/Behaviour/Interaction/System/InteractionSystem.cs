@@ -35,17 +35,11 @@ namespace Darklight.Behaviour
         public InteractionSystem_Registry Registry => _registry;
         public CollectionDictionary<TType, GameObject> RecieverLibrary => _recieverLibrary;
 
-        public override void OnEditorReloaded()
-        {
-            base.OnEditorReloaded();
-            _registry.Reset();
-        }
-
         [Button]
-        protected override void Initialize()
+        protected void Awake()
         {
-            base.Initialize();
-
+            _registry.Reset();
+            
             // Confirm Settings are loaded
             if (_settings == null)
             {

@@ -1,4 +1,4 @@
-namespace Darklight
+namespace Darklight.Utility
 {
     public static class AssetUtility
     {
