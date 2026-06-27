@@ -12,19 +12,51 @@ namespace Darklight.Editor
     /// and manage them easily.
     /// </summary>
     [System.Serializable]
-    public class SceneObject
+    public class SceneObject : System.IEquatable<SceneObject>
     {
         [SerializeField]
         private string m_SceneName;
 
         public static implicit operator string(SceneObject sceneObject)
         {
-            return sceneObject.m_SceneName;
+            return sceneObject == null ? null : sceneObject.m_SceneName;
         }
 
         public static implicit operator SceneObject(string sceneName)
         {
             return new SceneObject() { m_SceneName = sceneName };
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as SceneObject);
+        }
+
+        public bool Equals(SceneObject other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return m_SceneName == other.m_SceneName;
+        }
+
+        public override int GetHashCode()
+        {
+            return (m_SceneName != null ? m_SceneName.GetHashCode() : 0);
+        }
+
+        public override string ToString()
+        {
+            return m_SceneName;
+        }
+
+        public static bool operator ==(SceneObject left, SceneObject right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(SceneObject left, SceneObject right)
+        {
+            return !Equals(left, right);
         }
     }
 

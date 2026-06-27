@@ -64,7 +64,7 @@ namespace Darklight.Behaviour
                 {
                     DontDestroyOnLoad(gameObject);
                 }
-                Debug.Log($"{Prefix} Singleton instance created.", this);
+                //Debug.Log($"{Prefix} Singleton instance created.", this);
                 return;
             }
 
